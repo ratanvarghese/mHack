@@ -1436,7 +1436,7 @@ m_consume_obj(struct monst *mtmp, struct obj *otmp)
             } else if (!resists_ston(mtmp)) {
                 if (vis)
                     pline("%s turns to stone!", Monnam(mtmp));
-                monstone(mtmp,0);
+                monstone(mtmp);
             }
         }
         if (heal)
@@ -3194,11 +3194,21 @@ mongone(struct monst *mdef)
 
 /* drop a statue or rock and remove monster */
 void
-monstone(struct monst *mdef, int material)
+monstone(struct monst *mdef)
+{
+    monstone_material(mdef, MINERAL);
+}
+
+/* drop an item and remove monster */
+void
+monstone_material(struct monst *mdef, int material)
 {
     struct obj *otmp, *obj, *oldminvent;
     coordxy x = mdef->mx, y = mdef->my;
     boolean wasinside = FALSE;
+
+    if(!(material == GOLD || material == MINERAL))
+        impossible("monstone_material: material %d?", material);
 
     /* vampshifter reverts to vampire;
        3.6.3: also used to unshift shape-changed sandestin */
@@ -3458,7 +3468,7 @@ xkilled(
     gd.disintegested = nocorpse; /* alternate vamp_rise mesg needed if true */
     /* dispose of monster and make cadaver */
     if (gs.stoned) {
-        monstone(mtmp, gs.petrify_material);
+        monstone_material(mtmp, gs.petrify_material);
     }
     else
         mondead(mtmp);
@@ -3482,7 +3492,7 @@ xkilled(
     mndx = monsndx(mdat);
 
     if (gs.stoned) {
-        gs.petrify_material = 0;
+        gs.petrify_material = MINERAL;
         gs.stoned = FALSE;
         goto cleanup;
     }

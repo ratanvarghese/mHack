@@ -235,7 +235,7 @@ mdisplacem(
                 }
                 pline("%s turns to %s!", Monnam(magr), mdef->mgoldtouch ? "gold" : "stone");
             }
-            monstone(magr,mdef->mgoldtouch ? GOLD: 0);
+            monstone_material(magr,mdef->mgoldtouch ? GOLD: MINERAL);
             if (!DEADMONSTER(magr))
                 return M_ATTK_HIT; /* lifesaved */
             else if (magr->mtame && !gv.vis)
@@ -750,7 +750,7 @@ gazemm(struct monst *magr, struct monst *mdef, struct attack *mattk)
             }
             if (canseemon(magr))
                 pline("%s is turned to stone!", Monnam(magr));
-            monstone(magr,0);
+            monstone(magr);
             if (!DEADMONSTER(magr))
                 return M_ATTK_MISS;
             return M_ATTK_AGR_DIED;
@@ -1020,7 +1020,7 @@ mdamagem(
             }
             if (gv.vis && canspotmon(magr))
                 pline("%s turns to %s!", Monnam(magr), mdef->mgoldtouch ? "gold" : "stone");
-            monstone(magr, magr->mgoldtouch ? GOLD : 0);
+            monstone_material(magr, magr->mgoldtouch ? GOLD : MINERAL);
             if (!DEADMONSTER(magr))
                 return M_ATTK_HIT; /* lifesaved */
             else if (magr->mtame && !gv.vis)

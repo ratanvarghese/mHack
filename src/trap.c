@@ -3670,8 +3670,16 @@ instapetrify(const char *str)
 }
 
 void
-minstapetrify(struct monst *mon, boolean byplayer, int material)
+minstapetrify(struct monst *mon, boolean byplayer)
 {
+    minstapetrify_material(mon, byplayer, MINERAL);
+}
+
+void
+minstapetrify_material(struct monst *mon, boolean byplayer, int material)
+{
+    if (!(material == MINERAL || material == GOLD))
+        impossible("minstapetrify_material: material %d?\n", material);
     if (resists_ston(mon))
         return;
     if (material && monmaterial(monsndx(mon->data)))
@@ -3699,7 +3707,7 @@ minstapetrify(struct monst *mon, boolean byplayer, int material)
         gs.petrify_material = material;
         xkilled(mon, XKILL_NOMSG);
     } else
-        monstone(mon,material);
+        monstone_material(mon,material);
 }
 
 void
@@ -3747,7 +3755,7 @@ mselftouch(
                   arg ? mon_nam(mon) : Monnam(mon),
                   corpse_xname(mwep, (const char *) 0, CXN_PFX_THE));
         }
-        minstapetrify(mon, byplayer, 0);
+        minstapetrify(mon, byplayer);
         /* if life-saved, might not be able to continue wielding */
         if (!DEADMONSTER(mon)
             && !which_armor(mon, W_ARMG) && !resists_ston(mon))

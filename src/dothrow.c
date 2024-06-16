@@ -885,7 +885,7 @@ hurtle_step(genericptr_t arg, coordxy x, coordxy y)
         }
         if ((touch_petrifies(gy.youmonst.data) || Gold_touch)
             && !which_armor(mon, W_ARMU | W_ARM | W_ARMC)) {
-            minstapetrify(mon, TRUE, Gold_touch ? GOLD : 0);
+            minstapetrify_material(mon, TRUE, Gold_touch ? GOLD : MINERAL);
         }
         wake_nearto(x, y, 10);
         return FALSE;
@@ -1041,13 +1041,13 @@ mhurtle_step(genericptr_t arg, coordxy x, coordxy y)
         /* check whether 'mon' is turned to stone by touching 'mtmp' */
         if (touch_petrifies(mtmp->data)
             && !which_armor(mon, W_ARMU | W_ARM | W_ARMC)) {
-            minstapetrify(mon, !gc.context.mon_moving, 0);
+            minstapetrify(mon, !gc.context.mon_moving);
             newsym(mon->mx, mon->my);
         }
         /* and whether 'mtmp' is turned to stone by being touched by 'mon' */
         if (touch_petrifies(mon->data)
             && !which_armor(mtmp, W_ARMU | W_ARM | W_ARMC)) {
-            minstapetrify(mtmp, !gc.context.mon_moving, 0);
+            minstapetrify(mtmp, !gc.context.mon_moving);
             newsym(mtmp->mx, mtmp->my);
         }
     } else if (u_at(x, y)) {
@@ -1058,7 +1058,7 @@ mhurtle_step(genericptr_t arg, coordxy x, coordxy y)
         if (((Upolyd && touch_petrifies(gy.youmonst.data)) || Gold_touch)
             && !which_armor(mon, W_ARMU | W_ARM | W_ARMC)) {
             /* give poly'd hero credit/blame despite a monster causing it */
-            minstapetrify(mon, TRUE, Gold_touch ? GOLD : 0);
+            minstapetrify_material(mon, TRUE, Gold_touch ? GOLD : MINERAL);
             newsym(mon->mx, mon->my);
         }
         /* and whether hero is turned to stone by being touched by 'mon' */
@@ -2246,7 +2246,7 @@ thitmonst(
         wakeup(mon, TRUE);
         if (obj->otyp == CORPSE && touch_petrifies(&mons[obj->corpsenm])) {
             if (is_animal(md)) {
-                minstapetrify(u.ustuck, TRUE, 0);
+                minstapetrify(u.ustuck, TRUE);
                 /* Don't leave a cockatrice corpse available in a statue */
                 if (!u.uswallow) {
                     delobj(obj);

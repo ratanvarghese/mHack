@@ -68,7 +68,7 @@ use_saddle(struct obj *otmp)
     /* Impossible unless saddles are allowed to turn to gold */
     if(Gold_touch) {
         if (!munstone(mtmp, TRUE)) {
-            minstapetrify(mtmp, TRUE, GOLD);
+            minstapetrify_material(mtmp, TRUE, GOLD);
         }
         if (!resists_ston(mtmp)) {
             return ECMD_TIME;
@@ -288,7 +288,7 @@ mount_steed(
 
     if(Gold_touch) {
         if (!munstone(mtmp, TRUE)) {
-            minstapetrify(mtmp, TRUE, GOLD);
+            minstapetrify_material(mtmp, TRUE, GOLD);
         }
         if (!resists_ston(mtmp)) {
             return (FALSE);

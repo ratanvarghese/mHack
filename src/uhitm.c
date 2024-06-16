@@ -835,7 +835,7 @@ hmon_hitmon_barehands(struct _hitmon_data *hmd, struct monst *mon)
 
     if(Gold_touch) {
         if (!munstone(mon, TRUE)) {
-            minstapetrify(mon, TRUE, GOLD);
+            minstapetrify_material(mon, TRUE, GOLD);
         }
         if (!resists_ston(mon)) {
             hmd->doreturn = TRUE;
@@ -1136,7 +1136,7 @@ hmon_hitmon_misc_obj(
                              : CXN_ARTICLE));
             obj->dknown = 1;
             if (!munstone(mon, TRUE))
-                minstapetrify(mon, TRUE, 0);
+                minstapetrify(mon, TRUE);
             if (resists_ston(mon))
                 break;
             /* note: hp may be <= 0 even if munstoned==TRUE */
@@ -1190,7 +1190,7 @@ hmon_hitmon_misc_obj(
             obj->known = 1; /* (not much point...) */
             useup_eggs(obj);
             if (!munstone(mon, TRUE))
-                minstapetrify(mon, TRUE, 0);
+                minstapetrify(mon, TRUE);
             if (resists_ston(mon))
                 break;
             hmd->doreturn = TRUE;
@@ -3840,7 +3840,7 @@ do_stone_mon(
     if (!resists_ston(mdef)) {
         if (gv.vis && canseemon(mdef))
             pline("%s turns to stone!", Monnam(mdef));
-        monstone(mdef,0);
+        monstone(mdef);
  post_stone:
         if (!DEADMONSTER(mdef)) {
             mhm->hitflags = M_ATTK_MISS;
@@ -4075,7 +4075,7 @@ mhitm_ad_ston(
     if (magr == &gy.youmonst) {
         /* uhitm */
         if (!munstone(mdef, TRUE))
-            minstapetrify(mdef, TRUE, 0);
+            minstapetrify(mdef, TRUE);
         mhm->damage = 0;
     } else if (mdef == &gy.youmonst) {
         /* mhitu */

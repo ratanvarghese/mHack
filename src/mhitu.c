@@ -1307,7 +1307,7 @@ gulpmu(struct monst *mtmp, struct attack *mattk)
             /* TODO: deal with note! */
             remove_monster(mtmp->mx, mtmp->my); /* u.ux,u.uy */
             place_monster(mtmp, omx, omy);
-            minstapetrify(mtmp, TRUE, Gold_touch ? GOLD : 0);
+            minstapetrify_material(mtmp, TRUE, Gold_touch ? GOLD : MINERAL);
             /* normally unstuck() would do this, but we're not
                fully swallowed yet so that won't work here */
             if (Punished)
@@ -1668,7 +1668,7 @@ gazemu(struct monst *mtmp, struct attack *mattk)
             }
             if (useeit)
                 pline("%s is turned to stone!", Monnam(mtmp));
-            gs.petrify_material = 0;
+            gs.petrify_material = MINERAL;
             gs.stoned = TRUE;
             killed(mtmp);
 

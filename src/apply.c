@@ -1118,7 +1118,7 @@ use_mirror(struct obj *obj)
             return ECMD_TIME;
         if (vis)
             pline("%s is turned to stone!", Monnam(mtmp));
-        gs.petrify_material = 0;
+        gs.petrify_material = MINERAL;
         gs.stoned = TRUE;
         killed(mtmp);
     } else if (monable && mtmp->data == &mons[PM_FLOATING_EYE]) {
