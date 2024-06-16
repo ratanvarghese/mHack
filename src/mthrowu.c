@@ -713,7 +713,7 @@ m_throw(
                 if (!Stoned && !Stone_resistance
                     && !(poly_when_stoned(gy.youmonst.data)
                          && polymon(PM_STONE_GOLEM))) {
-                    make_stoned(5L, (char *) 0, KILLED_BY, "", 0);
+                    make_stoned(5L, (char *) 0, KILLED_BY, "");
                 }
             }
             stop_occupation();

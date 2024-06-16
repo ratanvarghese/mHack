@@ -1035,7 +1035,7 @@ wiz_intrinsic(void)
             case STONED:
                 Sprintf(buf, fmt,
                         !Stoned ? "" : " still", "turning into stone");
-                make_stoned(newtimeout, buf, KILLED_BY, wizintrinsic, 0);
+                make_stoned(newtimeout, buf, KILLED_BY, wizintrinsic);
                 break;
             case STUNNED:
                 make_stunned(newtimeout, TRUE);

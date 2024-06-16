@@ -404,7 +404,7 @@ newman(void)
     if (Sick)
         make_sick(0L, (char *) 0, FALSE, SICK_ALL);
     if (Stoned)
-        make_stoned(0L, (char *) 0, 0, (char *) 0, 0);
+        make_stoned(0L, (char *) 0, 0, (char *) 0);
     if (u.uhp <= 0) {
         if (Polymorph_control) { /* even when Stunned || Unaware */
             if (u.uhp <= 0)
@@ -727,7 +727,7 @@ polymon(int mntmp)
     boolean sticking = sticks(gy.youmonst.data) && u.ustuck && !u.uswallow,
             was_blind = !!Blind, dochange = FALSE, was_expelled = FALSE,
             was_hiding_under = u.uundetected && hides_under(gy.youmonst.data);
-    int mlvl, newMaxStr, petrify_mat;
+    int mlvl, newMaxStr;
 
     if (gm.mvitals[mntmp].mvflags & G_GENOD) { /* allow G_EXTINCT */
         You_feel("rather %s-ish.",
@@ -793,14 +793,17 @@ polymon(int mntmp)
     Strcat(buf, pmname(&mons[mntmp], flags.female ? FEMALE : MALE));
     You("%s %s!", (u.umonnum != mntmp) ? "turn into" : "feel like", an(buf));
 
-    petrify_mat = u.petrify_material ? u.petrify_material : MINERAL;
-    if (Stoned && poly_when_petrified(&mons[mntmp], petrify_mat)) {
+    if (Stoned && poly_when_petrified(&mons[mntmp], u.petrify_material)) {
         /* poly_when_stoned already checked golem genocide */
-        mntmp = determine_polymon(petrify_mat);
-        if(petrify_mat == GOLD) {
-            make_stoned(0L, "You turn to gold!", 0, (char *) 0, 0);;
+        mntmp = determine_polymon(u.petrify_material);
+
+        if (u.petrify_material == GOLD) {
+            make_stoned(0L, "You turn to gold!", 0, (char *) 0);
+        } else if (u.petrify_material == MINERAL) {
+            make_stoned(0L, "You turn to stone!", 0, (char *) 0);
         } else {
-            make_stoned(0L, "You turn to stone!", 0, (char *) 0, 0);
+            impossible("polymon: u.petrify_material %d?", u.petrify_material);
+            make_stoned(0L, "You turn to something!", 0, (char *) 0);
         }
     }
 
@@ -827,7 +830,7 @@ polymon(int mntmp)
 
     if (Stone_resistance && Stoned) { /* parnes@eniac.seas.upenn.edu */
         make_stoned(0L, "You no longer seem to be petrifying.", 0,
-                    (char *) 0, 0);
+                    (char *) 0);
     }
     if (Sick_resistance && Sick) {
         make_sick(0L, (char *) 0, FALSE, SICK_ALL);

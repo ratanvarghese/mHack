@@ -231,9 +231,15 @@ make_slimed(long xtime, const char *msg)
     }
 }
 
+void
+make_stoned(long xtime, const char *msg, int killedby, const char *killername)
+{
+    make_stoned_material(xtime, msg, killedby, killername, MINERAL);
+}
+
 /* start or stop petrification */
 void
-make_stoned(long xtime, const char *msg, int killedby, const char *killername, int material)
+make_stoned_material(long xtime, const char *msg, int killedby, const char *killername, int material)
 {
     long old = Stoned;
     u.petrify_material = material;

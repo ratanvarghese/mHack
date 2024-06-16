@@ -450,7 +450,7 @@ slime_dialogue(void)
     case 1L: /* turning into slime */
         /* if also turning to stone, stop doing that (no message) */
         if (Stoned)
-            make_stoned(0L, (char *) 0, KILLED_BY_AN, (char *) 0, 0);
+            make_stoned(0L, (char *) 0, KILLED_BY_AN, (char *) 0);
         break;
     }
     exercise(A_DEX, FALSE);

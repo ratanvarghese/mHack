@@ -3803,9 +3803,12 @@ mhitm_ad_halu(
 boolean
 do_stone_u(struct monst *mtmp, int material)
 {
+    if(!(material == GOLD || material == MINERAL)) {
+        impossible("do_stone_u: material %d?", material);
+    }
     if (!Stoned && !Stone_resistance && !(material == GOLD && monmaterial(monsndx(gy.youmonst.data)) == GOLD)
-        && !(poly_when_petrified(gy.youmonst.data, material ? material : MINERAL)
-             && polymon(determine_polymon(material ? material : MINERAL)))) {
+        && !(poly_when_petrified(gy.youmonst.data, material)
+             && polymon(determine_polymon(material)))) {
         int kformat = KILLED_BY_AN;
         const char *kname = pmname(mtmp->data, Mgender(mtmp));
 
@@ -3814,7 +3817,7 @@ do_stone_u(struct monst *mtmp, int material)
                 kname = the(kname);
             kformat = KILLED_BY;
         }
-        make_stoned(5L, (char *) 0, kformat, kname, material);
+        make_stoned_material(5L, (char *) 0, kformat, kname, material);
         return 1;
         /* done_in_by(mtmp, STONING); */
     }
@@ -3929,7 +3932,7 @@ mhitm_ad_phys(
                     pline("%s hits you with the %s corpse.", Monnam(magr),
                           mons[otmp->corpsenm].pmnames[NEUTRAL]);
                     if (!Stoned) {
-                        if (do_stone_u(magr, 0)) {
+                        if (do_stone_u(magr, MINERAL)) {
                             mhm->hitflags = M_ATTK_HIT;
                             mhm->done = 1;
                             return;
@@ -4111,7 +4114,7 @@ mhitm_ad_ston(
                  * during a new moon could become quite a bit harder.
                  */
                 if (!rn2(10) || flags.moonphase == NEW_MOON) {
-                    if (do_stone_u(magr, 0)) {
+                    if (do_stone_u(magr, MINERAL)) {
                         mhm->hitflags = M_ATTK_HIT;
                         mhm->done = TRUE;
                         return;
