@@ -2173,8 +2173,6 @@ Goodbye(void)
     switch (Role_switch) {
     case PM_KNIGHT:
         return "Fare thee well"; /* Olde English */
-    case PM_MERCHANT:
-        return "Vale"; /* Latin */
     case PM_SAMURAI:
         return "Sayonara"; /* Japanese */
     case PM_TOURIST:
