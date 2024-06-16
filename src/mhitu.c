@@ -2369,7 +2369,7 @@ passiveum(
             acid_damage(MON_WEP(mtmp));
         goto assess_dmg;
     case AD_STON: /* cockatrice */
-        return passiveum_petrify(mtmp, mattk, 0);
+        return passiveum_petrify(mtmp, mattk, MINERAL);
     case AD_ENCH: /* KMH -- remove enchantment (disenchanter) */
         if (mon_currwep) {
             /* by_you==True: passive counterattack to hero's action
