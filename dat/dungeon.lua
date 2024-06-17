@@ -7,7 +7,7 @@ dungeon = {
    {
       name = "The Dungeons of Doom",
       bonetag = "D",
-      base = 25,
+      base = 20,
       range = 5,
       alignment = "unaligned",
       themerooms = "themerms.lua",
@@ -32,7 +32,7 @@ dungeon = {
          },
          {
             name = "Fort Ludios",
-            base = 18,
+            base = 13,
             range = 4,
             branchtype = "portal"
          },
@@ -53,8 +53,8 @@ dungeon = {
          {
             name = "rogue",
             bonetag = "R",
-            base = 15,
-            range = 4,
+            base = 14,
+            range = 2,
             flags = "roguelike",
          },
          {
@@ -74,8 +74,8 @@ dungeon = {
          },
          {
             name = "medusa",
-            base = -5,
-            range = 4,
+            base = -3,
+            range = 2,
             nlevels = 4,
             alignment = "chaotic"
          },
@@ -88,15 +88,15 @@ dungeon = {
    {
       name = "Gehennom",
       bonetag = "G",
-      base = 20,
-      range = 5,
+      base = 11,
+      range = 2,
       flags = { "mazelike", "hellish" },
       lvlfill = "hellfill",
       alignment = "noalign",
       branches = {
          {
             name = "Vlad's Tower",
-            base = 9,
+            base = 6,
             range = 5,
             direction = "up"
          }
@@ -112,27 +112,15 @@ dungeon = {
             base = -1
          },
          {
-            name = "juiblex",
-            bonetag = "J",
-            base = 4,
-            range = 4
-         },
-         {
-            name = "baalz",
-            bonetag = "B",
-            base = 6,
-            range = 4
-         },
-         {
-            name = "asmodeus",
-            bonetag = "A",
+            name = "orcus",
+            bonetag = "O",
             base = 2,
-            range = 6
+            range = 2
          },
          {
             name = "wizard1",
-            base = 11,
-            range = 6
+            base = 4,
+            range = 2
          },
          {
             name = "wizard2",
@@ -147,22 +135,16 @@ dungeon = {
             base = 2
          },
          {
-            name = "orcus",
-            bonetag = "O",
-            base = 10,
-            range = 6
-         },
-         {
             name = "fakewiz1",
             bonetag = "F",
-            base = -6,
-            range = 4
+            base = -4,
+            range = 2
          },
          {
             name = "fakewiz2",
             bonetag = "G",
-            base = -6,
-            range = 4
+            base = -4,
+            range = 2
          },
       }
    },
