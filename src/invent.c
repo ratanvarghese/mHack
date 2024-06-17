@@ -3383,7 +3383,7 @@ itemactions(struct obj *otmp)
     if (otmp == uwep || cantwield(gy.youmonst.data)) {
         ; /* either already wielded or can't wield anything; skip 'w' */
     } else if (otmp->oclass == WEAPON_CLASS || is_weptool(otmp)
-               || is_wet_towel(otmp) || otmp->otyp == HEAVY_IRON_BALL) {
+               || is_wet_towel(otmp) || otmp->otyp == HEAVY_BALL) {
         Sprintf(buf, "Wield this %s as your weapon",
                 (otmp->quan > 1L) ? "stack" : "item");
         ia_addmenu(win, IA_WIELD_OBJ, 'w', buf);
