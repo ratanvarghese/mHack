@@ -64,11 +64,23 @@ use_saddle(struct obj *otmp)
         return ECMD_TIME;
     }
     ptr = mtmp->data;
-    if (touch_petrifies(ptr) && !uarmg && !Stone_resistance) {
-        char kbuf[BUFSZ];
 
+    /* Impossible unless saddles are allowed to turn to gold */
+    if(Gold_touch) {
+        if (!munstone(mtmp, TRUE)) {
+            minstapetrify_material(mtmp, TRUE, GOLD);
+        }
+        if (!resists_ston(mtmp)) {
+            return ECMD_TIME;
+        }
+    }
+
+    /* No need to check monmaterial: monsters made of gold cannot fit on saddle. */
+    if ((touch_petrifies(ptr) || mtmp->mgoldtouch) && !uarmg && !Stone_resistance) {
+        char kbuf[BUFSZ];
+        int petrify_mat = mtmp->mgoldtouch ? GOLD : MINERAL;
         You("touch %s.", mon_nam(mtmp));
-        if (!(poly_when_stoned(gy.youmonst.data) && polymon(PM_STONE_GOLEM))) {
+        if (!(poly_when_petrified(gy.youmonst.data, petrify_mat) && polymon(determine_polymon(petrify_mat)))) {
             Sprintf(kbuf, "attempting to saddle %s",
                     an(pmname(mtmp->data, Mgender(mtmp))));
             instapetrify(kbuf);
@@ -273,6 +285,15 @@ mount_steed(
     }
 
     ptr = mtmp->data;
+
+    if(Gold_touch) {
+        if (!munstone(mtmp, TRUE)) {
+            minstapetrify_material(mtmp, TRUE, GOLD);
+        }
+        if (!resists_ston(mtmp)) {
+            return (FALSE);
+        }
+    }
     if (touch_petrifies(ptr) && !Stone_resistance) {
         char kbuf[BUFSZ];
 

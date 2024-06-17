@@ -639,6 +639,15 @@ pick_lock(
             gx.xlock.box = 0;
         }
     }
+
+    if(Gold_touch) {
+        struct obj* new_pick = turn_object_to_gold(pick, TRUE);
+        if(pick != new_pick) {
+            pick_obj(new_pick);
+            return PICKLOCK_DID_NOTHING;
+        }
+    }
+
     gc.context.move = 0;
     gx.xlock.chance = ch;
     gx.xlock.picktyp = picktyp;
@@ -1280,7 +1289,7 @@ chest_shatter_msg(struct obj *otmp)
     HBlinded = 1L,  BBlinded = 0L;
     thing = singular(otmp, xname);
     HBlinded = save_HBlinded,  BBlinded = save_BBlinded;
-    switch (objects[otmp->otyp].oc_material) {
+    switch (otmp->material) {
     case PAPER:
         disposition = "is torn to shreds";
         break;
@@ -1298,6 +1307,9 @@ chest_shatter_msg(struct obj *otmp)
         break;
     case WOOD:
         disposition = "splinters to fragments";
+        break;
+    case SLIME:
+        disposition = "splatters";
         break;
     default:
         disposition = "is destroyed";

@@ -1,0 +1,73 @@
+mhack
+
+General Fixes and Modified Features
+-----------------------------------
+Wizards start with extra wands and spellbooks.
+	However they no longer start with rings, potions or scrolls.
+In wizard mode, it is possible to embark on the quest without permission.
+
+Fixes to Post-X.X.X Problems that Were Exposed Via git Repository
+------------------------------------------------------------------
+
+
+Platform- and/or Interface-Specific Fixes
+-----------------------------------------
+
+
+General New Features
+--------------------
+Added wands skill, which can be #enhanced for more powerful wand effects.
+	Certain monsters have high effective wand skill as well.
+	This is not as comprehensive as the wands balance patch in other variants.
+	The main focus is to make the early game easier, not to make the late game
+	more difficult.
+Added Merchant role.
+	Merchants are always looking for markets to buy supplies and sell
+	their wares. They start with precious gems and expensive pieces of jewelry.
+	Merchants are always neutral, and can be either human or gnomish.
+	The special spell for merchants is wizard lock.
+	On the Merchant Quest, Pasion tasks the player with fighting Sostratus
+	for the Crown of Midas, a neutral dunce cap.
+Added the Crown of Midas
+	When worn, The Crown of Midas grants hunger, petrification resistance, and
+	the golden touch.
+	A player (or monster!) who fights bare-handed with the golden touch can
+	turn enemies into gold statues, subject to petrification resistance just
+	like stoning by cockatrice. Enemies are also subject to a petrifying
+	passive attack, as if they were attacking a cockatrice. Weapons that hit
+	a player or monster with the golden touch will turn to gold. Golems without
+	petrification resistance will turn into gold golems instead of stone golems.
+	Players with the golden touch also turn items to gold when applying, wearing,
+	throwing, eating, unlocking, locking, picking up, looting, removing (from a
+	container), quaffing or wielding the item. Some items, including most weapons,
+	can change their material to gold as part of the object materials system.
+	Other items, including most food, will turn into gold pieces. Artifacts and
+	the corpses of petrification-resistant monsters will not turn to gold.
+	Many items had to be added to the object materials system to implement the
+	Crown of Midas including heavy balls, conical hats and statues.
+	The Crown of Midas is intended to be hazardous to careless players, but
+	rewarding to those who can work around the various problems. It also makes
+	the Merchant quest somewhat dangerous, since Sostratus is likely to wear
+	the Crown and use it against the player.
+Added bribery skill, which can be #enhanced for cheaper bribes.
+	Bribery is expensive, but effective against most humanoid monsters.
+	The formula is 'B + ((B * M * M)/C)', where B is 1000 or less (depending on
+	the bribery skill), M is the monster level, and C is charisma.
+	Merchants start at basic in bribery, and can reach expert.
+	Rogues, Tourists and Priests can also enhance the skill. Other roles are
+	restricted, meaning they pay the full price for bribes.
+
+
+
+Platform- and/or Interface-Specific New Features
+------------------------------------------------
+
+
+NetHack Community Patches (or Variation) Included
+-------------------------------------------------
+Imported object materials from SpliceHack.
+Imported transmuter from SpliceHack.
+
+
+Code Cleanup and Reorganization
+-------------------------------

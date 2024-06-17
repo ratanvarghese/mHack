@@ -1118,6 +1118,7 @@ use_mirror(struct obj *obj)
             return ECMD_TIME;
         if (vis)
             pline("%s is turned to stone!", Monnam(mtmp));
+        gs.petrify_material = MINERAL;
         gs.stoned = TRUE;
         killed(mtmp);
     } else if (monable && mtmp->data == &mons[PM_FLOATING_EYE]) {
@@ -1483,7 +1484,7 @@ snuff_lit(struct obj *obj)
 
     if (obj->lamplit) {
         if (obj->otyp == OIL_LAMP || obj->otyp == MAGIC_LAMP
-            || obj->otyp == BRASS_LANTERN || obj->otyp == POT_OIL) {
+            || obj->otyp == LANTERN || obj->otyp == POT_OIL) {
             (void) get_obj_location(obj, &x, &y, 0);
             if (obj->where == OBJ_MINVENT ? cansee(x, y) : !Blind)
                 pline("%s %s out!", Yname2(obj), otense(obj, "go"));
@@ -1506,7 +1507,7 @@ splash_lit(struct obj *obj)
        but will be if submerged or placed into a container or swallowed by
        a monster (for mobile light source handling, not because it ought
        to stop being lit in all those situations...) */
-    if (obj->lamplit && obj->otyp == BRASS_LANTERN) {
+    if (obj->lamplit && obj->otyp == LANTERN) {
         struct monst *mtmp;
         boolean useeit = FALSE, uhearit = FALSE, snuff = TRUE;
 
@@ -1568,7 +1569,7 @@ catch_lit(struct obj *obj)
             /* age_is_relative && age==0 && still-exists means out of fuel */
             || (age_is_relative(obj) && obj->age == 0)
             /* lantern is classified as ignitable() but not by fire */
-            || obj->otyp == BRASS_LANTERN)
+            || obj->otyp == LANTERN)
             return FALSE;
         if (obj->otyp == CANDELABRUM_OF_INVOCATION && obj->cursed)
             return FALSE;
@@ -1612,7 +1613,7 @@ use_lamp(struct obj *obj)
     char buf[BUFSZ];
     const char *lamp = (obj->otyp == OIL_LAMP
                         || obj->otyp == MAGIC_LAMP) ? "lamp"
-                       : (obj->otyp == BRASS_LANTERN) ? "lantern"
+                       : (obj->otyp == LANTERN) ? "lantern"
                          : NULL;
 
     /*
@@ -1638,7 +1639,7 @@ use_lamp(struct obj *obj)
     /* magic lamps with an spe == 0 (wished for) cannot be lit */
     if ((!Is_candle(obj) && obj->age == 0)
         || (obj->otyp == MAGIC_LAMP && obj->spe == 0)) {
-        if (obj->otyp == BRASS_LANTERN) {
+        if (obj->otyp == LANTERN) {
             if (!Blind)
                 Your("lantern is out of power.");
             else
@@ -1754,7 +1755,7 @@ rub_ok(struct obj *obj)
         return GETOBJ_EXCLUDE;
 
     if (obj->otyp == OIL_LAMP || obj->otyp == MAGIC_LAMP
-        || obj->otyp == BRASS_LANTERN || is_graystone(obj)
+        || obj->otyp == LANTERN || is_graystone(obj)
         || obj->otyp == LUMP_OF_ROYAL_JELLY)
         return GETOBJ_SUGGEST;
 
@@ -1814,7 +1815,7 @@ dorub(void)
             You("%s smoke.", !Blind ? "see a puff of" : "smell");
         } else
             pline1(nothing_happens);
-    } else if (obj->otyp == BRASS_LANTERN) {
+    } else if (obj->otyp == LANTERN) {
         /* message from Adventure */
         pline("Rubbing the electric lamp is not particularly rewarding.");
         pline("Anyway, nothing exciting happens.");
@@ -2731,7 +2732,7 @@ use_stone(struct obj *tstone)
             return ECMD_TIME;
         } else {
             /* either a ring or the touchstone was not effective */
-            if (objects[obj->otyp].oc_material == GLASS) {
+            if (obj->material == GLASS) {
                 do_scratch = TRUE;
                 break;
             }
@@ -2740,7 +2741,7 @@ use_stone(struct obj *tstone)
         break; /* gem or ring */
 
     default:
-        switch (objects[obj->otyp].oc_material) {
+        switch (obj->material) {
         case CLOTH:
             pline("%s a little more polished now.", Tobjnam(tstone, "look"));
             return ECMD_TIME;
@@ -4127,6 +4128,14 @@ doapply(void)
         return ECMD_TIME; /* evading your grasp costs a turn; just be
                              grateful that you don't drop it as well */
 
+    if (Gold_touch) {
+        struct obj* new_obj = turn_object_to_gold(obj, TRUE);
+        if(obj != new_obj) {
+            pick_obj(new_obj);
+            return ECMD_TIME;
+        }
+    }
+
     if (obj->oclass == WAND_CLASS)
         return do_break_wand(obj);
 
@@ -4199,7 +4208,7 @@ doapply(void)
     case MAGIC_WHISTLE:
         use_magic_whistle(obj);
         break;
-    case TIN_WHISTLE:
+    case PEA_WHISTLE:
         use_whistle(obj);
         break;
     case EUCALYPTUS_LEAF:
@@ -4239,7 +4248,7 @@ doapply(void)
         break;
     case OIL_LAMP:
     case MAGIC_LAMP:
-    case BRASS_LANTERN:
+    case LANTERN:
         use_lamp(obj);
         break;
     case POT_OIL:
@@ -4266,12 +4275,12 @@ doapply(void)
     case UNICORN_HORN:
         use_unicorn_horn(&obj);
         break;
-    case WOODEN_FLUTE:
+    case FLUTE:
     case MAGIC_FLUTE:
     case TOOLED_HORN:
     case FROST_HORN:
     case FIRE_HORN:
-    case WOODEN_HARP:
+    case HARP:
     case MAGIC_HARP:
     case BUGLE:
     case LEATHER_DRUM:

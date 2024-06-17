@@ -4,6 +4,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "artifact.h"
 
 #define Your_Own_Role(mndx)  ((mndx) == gu.urole.mnum)
 #define Your_Own_Race(mndx)  ((mndx) == gu.urace.mnum)
@@ -654,7 +655,7 @@ stripspe(struct obj *obj)
         pline("%s briefly.", Yobjnam2(obj, "vibrate"));
         costly_alteration(obj, COST_UNCHRG);
         obj->spe = 0;
-        if (obj->otyp == OIL_LAMP || obj->otyp == BRASS_LANTERN)
+        if (obj->otyp == OIL_LAMP || obj->otyp == LANTERN)
             obj->age = 0;
     }
 }
@@ -691,7 +692,7 @@ charge_ok(struct obj *obj)
 
     if (obj->oclass == TOOL_CLASS) {
         /* suggest tools that aren't oc_charged but can still be recharged */
-        if (obj->otyp == BRASS_LANTERN
+        if (obj->otyp == LANTERN
             || (obj->otyp == OIL_LAMP)
             /* only list magic lamps if they are not identified yet */
             || (obj->otyp == MAGIC_LAMP
@@ -876,7 +877,7 @@ recharge(struct obj *obj, int curse_bless)
             }
             break;
         case OIL_LAMP:
-        case BRASS_LANTERN:
+        case LANTERN:
             if (is_cursed) {
                 stripspe(obj);
                 if (obj->lamplit) {
@@ -2383,9 +2384,11 @@ litroom(
     struct obj *obj) /* scroll, spellbook (for spell), or wand of light */
 {
     struct obj *otmp;
-    boolean blessed_effect = (obj && obj->oclass == SCROLL_CLASS
-                              && obj->blessed);
+
     boolean no_op = (u.uswallow || Underwater || Is_waterlevel(&u.uz));
+    boolean blessed_effect = (obj &&
+                             ((obj->oclass == SCROLL_CLASS && obj->blessed) ||
+                             (obj->oclass == WAND_CLASS && P_SKILL(P_WAND) > P_BASIC)));
     char is_lit = 0; /* value is irrelevant but assign something anyway; its
                       * address is used as a 'not null' flag for set_lit() */
 
@@ -2899,7 +2902,7 @@ void
 punish(struct obj *sobj)
 {
     /* angrygods() calls this with NULL sobj arg */
-    struct obj *reuse_ball = (sobj && sobj->otyp == HEAVY_IRON_BALL)
+    struct obj *reuse_ball = (sobj && sobj->otyp == HEAVY_BALL)
                                 ? sobj : (struct obj *) 0;
     /* analyzer doesn't know that the one caller that passes a NULL
      * sobj (angrygods) checks !Punished first, so add a guard */
@@ -2909,7 +2912,7 @@ punish(struct obj *sobj)
     if (!reuse_ball)
         You("are being punished for your misbehavior!");
     if (Punished) {
-        Your("iron ball gets heavier.");
+        Your("heavy ball gets heavier.");
         uball->owt += IRON_BALL_W_INCR * (1 + cursed_levy);
         return;
     }

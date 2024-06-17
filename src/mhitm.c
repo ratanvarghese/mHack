@@ -221,9 +221,10 @@ mdisplacem(
      */
     gv.vis = (canspotmon(magr) && canspotmon(mdef));
 
-    if (touch_petrifies(pd) && !resists_ston(magr)) {
+    if ((touch_petrifies(pd) || (mdef->mgoldtouch && monmaterial(monsndx(magr->data)) != GOLD))
+        && !resists_ston(magr)) {
         if (!which_armor(magr, W_ARMG)) {
-            if (poly_when_stoned(pa)) {
+            if (poly_when_petrified(pa, mdef->mgoldtouch ? GOLD : MINERAL)) {
                 mon_to_stone(magr);
                 return M_ATTK_HIT; /* no damage during the polymorph */
             }
@@ -232,9 +233,9 @@ mdisplacem(
                     pline("%s tries to move %s out of %s way.", Monnam(magr),
                           mon_nam(mdef), is_rider(pa) ? "the" : mhis(magr));
                 }
-                pline("%s turns to stone!", Monnam(magr));
+                pline("%s turns to %s!", Monnam(magr), mdef->mgoldtouch ? "gold" : "stone");
             }
-            monstone(magr);
+            monstone_material(magr,mdef->mgoldtouch ? GOLD: MINERAL);
             if (!DEADMONSTER(magr))
                 return M_ATTK_HIT; /* lifesaved */
             else if (magr->mtame && !gv.vis)
@@ -443,8 +444,9 @@ mattackm(
                 res[i] = hitmm(magr, mdef, mattk, mwep, dieroll);
                 if ((mdef->data == &mons[PM_BLACK_PUDDING]
                      || mdef->data == &mons[PM_BROWN_PUDDING])
-                    && (mwep && (objects[mwep->otyp].oc_material == IRON
-                                 || objects[mwep->otyp].oc_material == METAL))
+                    && (mwep && (mwep->material == IRON
+                                 || mwep->material == COLD_IRON
+                                 || mwep->material == METAL))
                     && mdef->mhp > 1 && !mdef->mcan) {
                     struct monst *mclone;
 
@@ -640,9 +642,7 @@ hitmm(
 {
     int compat;
     boolean weaponhit = (mattk->aatyp == AT_WEAP
-                         || (mattk->aatyp == AT_CLAW && mwep)),
-            silverhit = (weaponhit && mwep
-                         && objects[mwep->otyp].oc_material == SILVER);
+                         || (mattk->aatyp == AT_CLAW && mwep));
 
     pre_mm_attack(magr, mdef);
 
@@ -691,28 +691,6 @@ hitmm(
             }
             if (*buf)
                 pline("%s %s.", buf, mon_nam_too(mdef, magr));
-
-            if (mon_hates_silver(mdef) && silverhit) {
-                char *mdef_name = mon_nam_too(mdef, magr);
-
-                /* note: mon_nam_too returns a modifiable buffer; so
-                   does s_suffix, but it returns a single static buffer
-                   and we might be calling it twice for this message */
-                Strcpy(magr_name, s_suffix(magr_name));
-                if (!noncorporeal(mdef->data) && !amorphous(mdef->data)) {
-                    if (mdef != magr) {
-                        mdef_name = s_suffix(mdef_name);
-                    } else {
-                        (void) strsubst(mdef_name, "himself", "his own");
-                        (void) strsubst(mdef_name, "herself", "her own");
-                        (void) strsubst(mdef_name, "itself", "its own");
-                    }
-                    Strcat(mdef_name, " flesh");
-                }
-
-                pline("%s %s sears %s!", magr_name, /* s_suffix(magr_name), */
-                      simpleonames(mwep), mdef_name);
-            }
         }
     } else
         noises(magr, mattk);
@@ -1017,14 +995,22 @@ mdamagem(
     mhm.done = FALSE;
 
     if ((touch_petrifies(pd) /* or flesh_petrifies() */
-         || (mattk->adtyp == AD_DGST && pd == &mons[PM_MEDUSA]))
+         || (mattk->adtyp == AD_DGST && pd == &mons[PM_MEDUSA])
+         || (mdef->mgoldtouch && monmaterial(monsndx(magr->data)) != GOLD))
         && !resists_ston(magr)) {
         long protector = attk_protection((int) mattk->aatyp),
              wornitems = magr->misc_worn_check;
-
         /* wielded weapon gives same protection as gloves here */
-        if (mwep)
+        if (mwep) {
             wornitems |= W_ARMG;
+            if(mdef->mgoldtouch) {
+                struct obj* new_wep = turn_object_to_gold(mwep, canseemon(magr));
+                if(mwep != new_wep) {
+                    mpickobj(magr, new_wep);
+                    return M_ATTK_MISS;
+                }
+            }
+        }
 
         if (protector == 0L
             || (protector != ~0L && (wornitems & protector) != protector)) {
@@ -1033,8 +1019,8 @@ mdamagem(
                 return M_ATTK_HIT; /* no damage during the polymorph */
             }
             if (gv.vis && canspotmon(magr))
-                pline("%s turns to stone!", Monnam(magr));
-            monstone(magr);
+                pline("%s turns to %s!", Monnam(magr), mdef->mgoldtouch ? "gold" : "stone");
+            monstone_material(magr, magr->mgoldtouch ? GOLD : MINERAL);
             if (!DEADMONSTER(magr))
                 return M_ATTK_HIT; /* lifesaved */
             else if (magr->mtame && !gv.vis)

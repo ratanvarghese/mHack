@@ -61,7 +61,7 @@ staticfn int wield_ok(struct obj *) NO_NNARGS;
 /* probably should be renamed */
 #define erodeable_wep(optr)                             \
     ((optr)->oclass == WEAPON_CLASS || is_weptool(optr) \
-     || (optr)->otyp == HEAVY_IRON_BALL || (optr)->otyp == IRON_CHAIN)
+     || (optr)->otyp == HEAVY_BALL || (optr)->otyp == IRON_CHAIN)
 
 /* used by welded(), and also while wielding */
 #define will_weld(optr) \
@@ -166,6 +166,14 @@ ready_weapon(struct obj *wep)
     int res = ECMD_OK;
     boolean was_twoweap = u.twoweap, had_wep = (uwep != 0);
 
+    if(Gold_touch && wep) {
+        struct obj* new_wep = turn_object_to_gold(wep, TRUE);
+        if(wep != new_wep) {
+            pick_obj(new_wep);
+            return ECMD_TIME;
+        }
+    }
+
     if (!wep) {
         /* No weapon */
         if (uwep) {
@@ -182,7 +190,9 @@ ready_weapon(struct obj *wep)
             is_sword(wep) ? "sword" : wep->otyp == BATTLE_AXE ? "axe"
                                                               : "weapon");
         res = ECMD_FAIL;
-    } else if (!retouch_object(&wep, FALSE)) {
+    } else if ((wep->oartifact || !uarmg) && !retouch_object(&wep, FALSE)) {
+        /* don't retouch and take material damage if it's a non-artifact object
+         * and you're wearing gloves */
         res = ECMD_TIME; /* takes a turn even though it doesn't get wielded */
     } else {
         /* Weapon WILL be wielded after this point */

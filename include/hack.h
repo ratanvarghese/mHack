@@ -66,8 +66,9 @@
 #define CXN_PFX_THE 4   /* prefix with "the " (unless pname) */
 #define CXN_ARTICLE 8   /* include a/an/the prefix */
 #define CXN_NOCORPSE 16 /* suppress " corpse" suffix */
+#define CXN_FORCEMAT 32 /* force the material name */
 
-/* weight increment of heavy iron ball */
+/* weight increment of heavy ball */
 #define IRON_BALL_W_INCR 160
 
 /* number of turns it takes for vault guard to show up */
@@ -740,7 +741,7 @@ struct rogueroom {
     int nroom; /* Only meaningful for "real" rooms */
 };
 
-#define NUM_ROLES (13)
+#define NUM_ROLES (14)
 struct role_filter {
     boolean roles[NUM_ROLES + 1];
     short mask;
@@ -1455,8 +1456,9 @@ typedef uint32_t mmflags_nht;     /* makemon MM_ flags */
     ((int) ((var) < (lo) ? (lo) : (var) > (hi) ? (hi) : (var)))
 
 #define ARM_BONUS(obj) \
-    (objects[(obj)->otyp].a_ac + (obj)->spe                             \
-     - min((int) greatest_erosion(obj), objects[(obj)->otyp].a_ac))
+    (objects[(obj)->otyp].a_ac + (obj)->spe + material_bonus(obj) \
+     - min((int) greatest_erosion(obj), \
+          objects[(obj)->otyp].a_ac + material_bonus(obj)))
 
 #define makeknown(x) discover_object((x), TRUE, TRUE)
 #define distu(xx, yy) dist2((coordxy) (xx), (coordxy) (yy), u.ux, u.uy)

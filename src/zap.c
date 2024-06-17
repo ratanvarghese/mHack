@@ -158,11 +158,12 @@ bhitm(struct monst *mtmp, struct obj *otmp)
     boolean reveal_invis = FALSE, learn_it = FALSE;
     boolean dbldam = Role_if(PM_KNIGHT) && u.uhave.questart;
     boolean skilled_spell, helpful_gesture = FALSE;
-    int dmg, otyp = otmp->otyp; /* otmp is not NULL */
+    int dmg, nd, otyp = otmp->otyp; /* otmp is not NULL */
     const char *zap_type_text = "spell";
     struct obj *obj;
     boolean disguised_mimic = (mtmp->data->mlet == S_MIMIC
                                && M_AP_TYPE(mtmp) != M_AP_NOTHING);
+    int askill = (otmp->oclass == WAND_CLASS) ? P_SKILL(P_WAND) : P_BASIC;
 
     if (engulfing_u(mtmp))
         reveal_invis = FALSE;
@@ -190,7 +191,7 @@ bhitm(struct monst *mtmp, struct obj *otmp)
             if (otyp == SPE_FORCE_BOLT)
                 dmg = spell_damage_bonus(dmg);
             hit(zap_type_text, mtmp, exclam(dmg));
-            (void) resist(mtmp, otmp->oclass, dmg, TELL);
+            (void) resist_askillbonus(mtmp, otmp->oclass, dmg, TELL, askill);
         } else {
             miss(zap_type_text, mtmp);
             learn_it = FALSE;
@@ -198,7 +199,7 @@ bhitm(struct monst *mtmp, struct obj *otmp)
         break;
     case WAN_SLOW_MONSTER:
     case SPE_SLOW_MONSTER:
-        if (!resist(mtmp, otmp->oclass, 0, NOTELL)) {
+        if (!resist_askillbonus(mtmp, otmp->oclass, 0, NOTELL, askill)) {
             if (disguised_mimic)
                 seemimic(mtmp);
             mon_adjust_speed(mtmp, -1, otmp);
@@ -212,7 +213,7 @@ bhitm(struct monst *mtmp, struct obj *otmp)
         }
         break;
     case WAN_SPEED_MONSTER:
-        if (!resist(mtmp, otmp->oclass, 0, NOTELL)) {
+        if (!resist_askillbonus(mtmp, otmp->oclass, 0, NOTELL, askill)) {
             if (disguised_mimic)
                 seemimic(mtmp);
             mon_adjust_speed(mtmp, 1, otmp);
@@ -229,13 +230,16 @@ bhitm(struct monst *mtmp, struct obj *otmp)
         if (is_undead(mtmp->data) || is_vampshifter(mtmp)) {
             reveal_invis = TRUE;
             wake = TRUE;
-            dmg = rnd(8);
+            nd = (
+                (otyp == WAN_UNDEAD_TURNING) ? wanddice(P_SKILL(P_WAND)): u.ulevel / 2 + 1
+            );
+            dmg = d(nd,6);
             if (dbldam)
                 dmg *= 2;
             if (otyp == SPE_TURN_UNDEAD)
                 dmg = spell_damage_bonus(dmg);
             gc.context.bypasses = TRUE; /* for make_corpse() */
-            if (!resist(mtmp, otmp->oclass, dmg, NOTELL)) {
+            if (!resist_askillbonus(mtmp, otmp->oclass, dmg, NOTELL, askill)) {
                 if (!DEADMONSTER(mtmp))
                     monflee(mtmp, 0, FALSE, TRUE);
             }
@@ -252,7 +256,7 @@ bhitm(struct monst *mtmp, struct obj *otmp)
             /* magic resistance protects from polymorph traps, so make
                it guard against involuntary polymorph attacks too... */
             shieldeff(mtmp->mx, mtmp->my);
-        } else if (!resist(mtmp, otmp->oclass, 0, NOTELL)) {
+        } else if (!resist_askillbonus(mtmp, otmp->oclass, 0, NOTELL, askill)) {
             boolean polyspot = (otyp != POT_POLYMORPH),
                     give_msg = (!Hallucination
                                 && (canseemon(mtmp)
@@ -480,7 +484,7 @@ bhitm(struct monst *mtmp, struct obj *otmp)
             dmg *= 2;
         if (otyp == SPE_DRAIN_LIFE)
             dmg = spell_damage_bonus(dmg);
-        if (resists_drli(mtmp)) {
+        if (resists_drli(mtmp) || item_catches_drain(mtmp)) {
             shieldeff(mtmp->mx, mtmp->my);
         } else if (!resist(mtmp, otmp->oclass, dmg, NOTELL)
                    && !DEADMONSTER(mtmp)) {
@@ -1474,7 +1478,7 @@ polyuse(struct obj *objhdr, int mat, int minwt)
             continue;
 #endif
 
-        if (((int) objects[otmp->otyp].oc_material == mat)
+        if (((int) otmp->material == mat)
             == (rn2(minwt + 1) != 0)) {
             /* appropriately add damage to bill */
             if (costly_spot(otmp->ox, otmp->oy)) {
@@ -1518,59 +1522,48 @@ create_polymon(struct obj *obj, int okind)
     if (!obj || (!obj->nexthere && obj->quan == 1L))
         return;
 
-    /* some of these choices are arbitrary */
-    switch (okind) {
-    case IRON:
-    case METAL:
-    case MITHRIL:
-        pm_index = PM_IRON_GOLEM;
+    pm_index = determine_polymon(okind);
+    if(pm_index == PM_STONE_GOLEM && rn2(2)) {
+        pm_index = PM_CLAY_GOLEM;
+    }
+
+    switch (pm_index) {
+    case PM_IRON_GOLEM:
         material = "metal ";
         break;
-    case COPPER:
-    case SILVER:
-    case PLATINUM:
-    case GEMSTONE:
-    case MINERAL:
-        pm_index = rn2(2) ? PM_STONE_GOLEM : PM_CLAY_GOLEM;
+    case PM_STONE_GOLEM:
+    case PM_CLAY_GOLEM:
         material = "lithic ";
         break;
-    case 0:
-    case FLESH:
-        /* there is no flesh type, but all food is type 0, so we use it */
-        pm_index = PM_FLESH_GOLEM;
+    case PM_FLESH_GOLEM:
         material = "organic ";
         break;
-    case WOOD:
-        pm_index = PM_WOOD_GOLEM;
+    case PM_WOOD_GOLEM:
         material = "wood ";
         break;
-    case LEATHER:
-        pm_index = PM_LEATHER_GOLEM;
+    case PM_LEATHER_GOLEM:
         material = "leather ";
         break;
-    case CLOTH:
-        pm_index = PM_ROPE_GOLEM;
+    case PM_ROPE_GOLEM:
         material = "cloth ";
         break;
-    case BONE:
-        pm_index = PM_SKELETON; /* nearest thing to "bone golem" */
+    case PM_SKELETON:
         material = "bony ";
         break;
-    case GOLD:
-        pm_index = PM_GOLD_GOLEM;
+    case PM_SHADE:
+        material = "shadowy ";
+        break;
+    case PM_GOLD_GOLEM:
         material = "gold ";
         break;
-    case GLASS:
-        pm_index = PM_GLASS_GOLEM;
+    case PM_GLASS_GOLEM:
         material = "glassy ";
         break;
-    case PAPER:
-        pm_index = PM_PAPER_GOLEM;
+    case PM_PAPER_GOLEM:
         material = "paper ";
         break;
     default:
         /* if all else fails... */
-        pm_index = PM_STRAW_GOLEM;
         material = "";
         break;
     }
@@ -1603,7 +1596,7 @@ do_osshock(struct obj *obj)
         /* some may metamorphosize */
         for (i = obj->quan; i; i--)
             if (!rn2(Luck + 45)) {
-                gp.poly_zapped = objects[obj->otyp].oc_material;
+                gp.poly_zapped = obj->material;
                 break;
             }
     }
@@ -1838,8 +1831,8 @@ poly_obj(struct obj *obj, int id)
 
     case GEM_CLASS:
         if (otmp->quan > (long) rnd(4)
-            && objects[obj->otyp].oc_material == MINERAL
-            && objects[otmp->otyp].oc_material != MINERAL) {
+            && obj->material == MINERAL
+            && otmp->material != MINERAL) {
             otmp->otyp = ROCK; /* transmutation backfired */
             otmp->quan /= 2L;  /* some material has been lost */
         }
@@ -1955,8 +1948,7 @@ stone_to_flesh_obj(struct obj *obj) /* nonnull */
     boolean smell = FALSE, golem_xform = FALSE;
     int res = 1; /* affected object by default */
 
-    if (objects[obj->otyp].oc_material != MINERAL
-        && objects[obj->otyp].oc_material != GEMSTONE)
+    if (obj->material != MINERAL && obj->material != GEMSTONE)
         return 0;
     /* Heart of Ahriman usually resists; ordinary items rarely do */
     if (obj_resists(obj, 2, 98))
@@ -2044,7 +2036,14 @@ stone_to_flesh_obj(struct obj *obj) /* nonnull */
     case WEAPON_CLASS: /* crysknife */
         /*FALLTHRU*/
     default:
-        res = 0;
+        if (valid_obj_material(obj, FLESH)) {
+            pline("%s to flesh!", Tobjnam(obj, "turn"));
+            obj->material = FLESH;
+            obj->owt = weight(obj);
+        }
+        else {
+            res = 0;
+        }
         break;
     }
 
@@ -2507,8 +2506,13 @@ zapnodir(struct obj *obj)
             known = TRUE;
         break;
     case WAN_CREATE_MONSTER:
-        known = create_critters(rn2(23) ? 1 : rn1(7, 2),
-                                (struct permonst *) 0, FALSE);
+        if(P_SKILL(P_WAND) < P_SKILLED) {
+            known = create_critters(rn2(23) ? 1 : rn1(7, 2),
+                                    (struct permonst *) 0, FALSE);
+        } else {
+            known = TRUE;
+            make_familiar((struct obj *) 0, u.ux, u.uy, FALSE);
+        }
         break;
     case WAN_WISHING:
         known = TRUE;
@@ -2604,6 +2608,7 @@ dozap(void)
         weffects(obj);
         obj = gc.current_wand;
         gc.current_wand = 0;
+        use_skill(P_WAND, 1);
     }
     if (obj && obj->spe < 0) {
         pline("%s to dust.", Tobjnam(obj, "turn"));
@@ -3082,9 +3087,17 @@ cancel_monst(struct monst *mdef, struct obj *obj, boolean youattack,
         writing_vanishes[] = "Some writing vanishes from %s head!",
         your[] = "your"; /* should be extern */
     boolean youdefend = (mdef == &gy.youmonst);
+    int askill = P_BASIC;
+    if (obj->oclass == WAND_CLASS) {
+        if(youattack) {
+            askill = P_SKILL(P_WAND);
+        } else {
+            askill = mon_wand_skill(mdef);
+        }
+    }
 
     if (youdefend ? (!youattack && Antimagic)
-                  : resist(mdef, obj->oclass, 0, NOTELL))
+                  : resist_askillbonus(mdef, obj->oclass, 0, NOTELL, askill))
         return FALSE; /* resisted cancellation */
 
     if (self_cancel) { /* 1st cancel inventory */
@@ -3235,7 +3248,7 @@ zap_updown(struct obj *obj) /* wand or spell, nonnull */
                    && !Is_waterlevel(&u.uz) && !Underwater
                    && !Is_qstart(&u.uz)) {
             int dmg;
-            /* similar to zap_dig() */
+            /* similar to zap_dig(FALSE) */
             pline("A rock is dislodged from the %s and falls on your %s.",
                   ceiling(x, y), body_part(HEAD));
             dmg = rnd(hard_helmet(uarmh) ? 2 : 6);
@@ -3353,6 +3366,25 @@ zapwrapup(void)
     go.obj_zapped = FALSE;
 }
 
+int
+wanddice(int skill) {
+    switch(skill) {
+        case P_ISRESTRICTED:
+        case P_UNSKILLED:
+            return 2;
+        case P_BASIC:
+            return 6;
+        case P_SKILLED:
+            return 10;
+        case P_EXPERT:
+        case P_MASTER:
+        case P_GRAND_MASTER:
+            return 14;
+        default:
+            return 2;
+    }
+}
+
 /* called for various wand and spell effects - M. Stephenson */
 void
 weffects(struct obj *obj)
@@ -3383,13 +3415,15 @@ weffects(struct obj *obj)
     } else {
         /* neither immediate nor directionless */
 
-        if (otyp == WAN_DIGGING || otyp == SPE_DIG)
-            zap_dig();
+        if (otyp == WAN_DIGGING || otyp == SPE_DIG) {
+            int skill =  P_SKILL((otyp == WAN_DIGGING) ? P_WAND : P_MATTER_SPELL);
+            zap_dig(skill > ((otyp == WAN_DIGGING) ? P_SKILLED : P_BASIC));
+        }
         else if (otyp >= SPE_MAGIC_MISSILE && otyp <= SPE_FINGER_OF_DEATH)
             ubuzz(BZ_U_SPELL(BZ_OFS_SPE(otyp)), u.ulevel / 2 + 1);
         else if (otyp >= WAN_MAGIC_MISSILE && otyp <= WAN_LIGHTNING)
             ubuzz(BZ_U_WAND(BZ_OFS_WAN(otyp)),
-                  (otyp == WAN_MAGIC_MISSILE) ? 2 : 6);
+                  wanddice(P_SKILL(P_WAND)));
         else
             impossible("weffects: unexpected spell or wand");
         disclose = TRUE;
@@ -4009,7 +4043,7 @@ bhit(
         }
         /* limit range of ball so hero won't make an invalid move */
         if (weapon == THROWN_WEAPON && range > 0
-            && obj->otyp == HEAVY_IRON_BALL) {
+            && obj->otyp == HEAVY_BALL) {
             struct obj *bobj;
             struct trap *t;
 
@@ -4296,7 +4330,7 @@ zhitm(
         tmp *= 2;
     if (tmp > 0 && type >= 0
         && resist(mon, type < ZT_SPELL(0) ? WAND_CLASS : '\0', 0, NOTELL))
-        tmp /= 2;
+        tmp /= 2; /*redundant to check wand skill here, wand skill already boosted damage*/
     if (tmp < 0)
         tmp = 0; /* don't allow negative damage */
     debugpline3("zapped monster hp = %d (= %d - %d)", mon->mhp - tmp,
@@ -5439,9 +5473,21 @@ fracture_rock(struct obj *obj) /* no texts here! */
     if (by_you && obj->otyp == BOULDER)
         sokoban_guilt();
 
-    obj->otyp = ROCK;
-    obj->oclass = GEM_CLASS;
-    obj->quan = (long) rn1(60, 7);
+    int old_material = (obj->material);
+
+    if(old_material == GOLD) {
+        obj->otyp = GOLD_PIECE;
+        obj->oclass = COIN_CLASS;
+        obj->quan = (long) rn1(6000, 700);
+    } else if (old_material == IRON) {
+        obj->otyp = IRON_CHAIN;
+        obj->oclass = CHAIN_CLASS;
+        obj->quan = (long) rn1(20, 2);
+    } else { /*rock, hopefully*/
+        obj->otyp = ROCK;
+        obj->oclass = GEM_CLASS;
+        obj->quan = (long) rn1(60, 7);
+    }
     obj->owt = weight(obj);
     obj->dknown = obj->bknown = obj->rknown = 0;
     obj->known = objects[obj->otyp].oc_uses_known ? 0 : 1;
@@ -5979,8 +6025,14 @@ destroy_items(
 int
 resist(struct monst *mtmp, char oclass, int damage, int tell)
 {
+    return resist_askillbonus(mtmp, oclass, damage, tell, P_UNSKILLED);
+}
+
+int
+resist_askillbonus(struct monst *mtmp, char oclass, int damage, int tell, int askill)
+{
     int resisted;
-    int alev, dlev;
+    int alev, dlev, abonus;
 
     /* fake players always pass resistance test against Conflict
        (this doesn't guarantee that they're never affected by it) */
@@ -6011,6 +6063,28 @@ resist(struct monst *mtmp, char oclass, int damage, int tell)
         alev = u.ulevel;
         break; /* spell */
     }
+
+    switch(askill) {
+    case P_ISRESTRICTED:
+    case P_UNSKILLED:
+        abonus = 0;
+        break;
+    case P_BASIC:
+        abonus = 6;
+        break;
+    case P_SKILLED:
+        abonus = 12;
+        break;
+    case P_EXPERT:
+    case P_MASTER:
+    case P_GRAND_MASTER:
+        abonus = 18;
+        break;
+    default:
+        abonus = 0;
+    }
+    alev += abonus;
+
     /* defense level */
     dlev = (int) mtmp->m_lev;
     if (dlev > 50)
@@ -6051,7 +6125,7 @@ wishcmdassist(int triesleft)
   "Wish details:",
   "",
   "Enter the name of an object, such as \"potion of monster detection\",",
-  "\"scroll labeled README\", \"elven mithril-coat\", or \"Grimtooth\"",
+  "\"scroll labeled README\", \"elven ring mail\", or \"Grimtooth\"",
   "(without the quotes).",
   "",
   "For object types which come in stacks, you may specify a plural name",

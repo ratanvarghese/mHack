@@ -14,6 +14,7 @@
 staticfn void kickdmg(struct monst *, boolean);
 staticfn boolean maybe_kick_monster(struct monst *, coordxy, coordxy);
 staticfn void kick_monster(struct monst *, coordxy, coordxy);
+staticfn boolean is_corrupt(struct monst *) NONNULLARG1;
 staticfn int kick_object(coordxy, coordxy, char *) NONNULLARG3;
 staticfn int really_kick_object(coordxy, coordxy);
 staticfn char *kickstr(char *, const char *) NONNULLPTRS;
@@ -37,6 +38,7 @@ kickdmg(struct monst *mon, boolean clumsy)
     int dmg = (ACURRSTR + ACURR(A_DEX) + ACURR(A_CON)) / 15;
     int specialdmg, kick_skill = P_NONE;
     boolean trapkilled = FALSE;
+    struct obj* hated_obj = NULL;
 
     if (uarmf && uarmf->otyp == KICKING_BOOTS)
         dmg += 5;
@@ -53,7 +55,7 @@ kickdmg(struct monst *mon, boolean clumsy)
     if (mon->data == &mons[PM_SHADE])
         dmg = 0;
 
-    specialdmg = special_dmgval(&gy.youmonst, mon, W_ARMF, (long *) 0);
+    specialdmg = special_dmgval(&gy.youmonst, mon, W_ARMF, &hated_obj);
 
     if (mon->data == &mons[PM_SHADE] && !specialdmg) {
         pline_The("%s.", kick_passes_thru);
@@ -90,6 +92,8 @@ kickdmg(struct monst *mon, boolean clumsy)
     dmg += specialdmg; /* for blessed (or hypothetically, silver) boots */
     if (uarmf)
         dmg += uarmf->spe;
+    if (specialdmg && hated_obj)
+        searmsg(&gy.youmonst, mon, hated_obj, TRUE);
     dmg += u.udaminc; /* add ring(s) of increase damage */
     if (dmg > 0)
         mon->mhp -= dmg;
@@ -200,7 +204,8 @@ kick_monster(struct monst *mon, coordxy x, coordxy y)
                 continue;
 
             kickdieroll = rnd(20);
-            specialdmg = special_dmgval(&gy.youmonst, mon, W_ARMF, (long *) 0);
+            struct obj* hated_obj;
+            specialdmg = special_dmgval(&gy.youmonst, mon, W_ARMF, &hated_obj);
             if (mon->data == &mons[PM_SHADE] && !specialdmg) {
                 /* doesn't matter whether it would have hit or missed,
                    and shades have no passive counterattack */
@@ -209,6 +214,9 @@ kick_monster(struct monst *mon, coordxy x, coordxy y)
             } else if (tmp > kickdieroll) {
                 You("kick %s.", mon_nam(mon));
                 sum = damageum(mon, uattk, specialdmg);
+                if (hated_obj) {
+                    searmsg(&gy.youmonst, mon, hated_obj, FALSE);
+                }
                 (void) passive(mon, uarmf, (sum != M_ATTK_MISS),
                                !(sum & M_ATTK_DEF_DIED), AT_KICK, FALSE);
                 if ((sum & M_ATTK_DEF_DIED))
@@ -286,6 +294,59 @@ kick_monster(struct monst *mon, coordxy x, coordxy y)
     kickdmg(mon, clumsy);
 }
 
+staticfn boolean
+is_corrupt(struct monst *mtmp)
+{
+    struct permonst *ptr = mtmp->data;
+    /* Psychologically unable to accept a bribe */
+    if(!humanoid(ptr) || mindless(ptr)) {
+        return FALSE;
+    }
+    /* Does not care for money or the things it can buy */
+    if(!(likes_gold(ptr) || likes_gems(ptr) || likes_objs(ptr) || likes_magic(ptr))) {
+        return FALSE;
+    }
+    /* Hates your race */
+    if((Race_if(PM_ELF) && is_orc(ptr)) || (Race_if(PM_ORC) && is_elf(ptr))) {
+        return FALSE;
+    }
+    /* Takes pride in their job, or at least fears their employer */
+    if(ptr == &mons[gu.urole.guardnum] || ptr->mlet == S_ANGEL || ptr->mlet == S_LICH
+        || is_watch(ptr) || mtmp->isshk || mtmp->ispriest || mtmp->isgd) {
+        return FALSE;
+    }
+    /* Has ambitions beyond mere wealth */
+    if(is_covetous(ptr) || is_mplayer(ptr) || (ptr->geno & G_UNIQ)) {
+        return FALSE;
+    }
+    return TRUE;
+}
+
+long
+bribe_price(struct monst *mtmp)
+{
+    int base = 0L;
+    switch(P_SKILL(P_BRIBERY)) {
+    case P_MASTER:
+    case P_GRAND_MASTER: 
+    case P_EXPERT:
+        base = 250L;
+        break;
+    case P_SKILLED:
+        base = 500L;
+        break;
+    case P_BASIC:
+        base = 750L;
+        break;
+    case P_ISRESTRICTED:
+    case P_UNSKILLED:
+    default:
+        base = 1000L;
+    }
+    return base + ((base * mtmp->m_lev * mtmp->m_lev) / ACURR(A_CHA));
+}
+
+
 /*
  *  Return TRUE if caught (the gold taken care of), FALSE otherwise.
  *  The gold object is *not* attached to the fobj chain!
@@ -295,7 +356,7 @@ ghitm(struct monst *mtmp, struct obj *gold)
 {
     boolean msg_given = FALSE;
 
-    if (!likes_gold(mtmp->data) && !mtmp->isshk && !mtmp->ispriest
+    if (!is_corrupt(mtmp) && !mtmp->isshk && !mtmp->ispriest
         && !mtmp->isgd && !is_mercenary(mtmp->data)) {
         wakeup(mtmp, TRUE);
     } else if (!mtmp->mcanmove) {
@@ -362,39 +423,20 @@ ghitm(struct monst *mtmp, struct obj *gold)
                         : mtmp->mpeaceful
                           ? "I'll take care of that; please move along."
                           : "I'll take that; now get moving.");
-        } else if (is_mercenary(mtmp->data)) {
+        } else if (is_watch(mtmp->data)) {
+            SetVoice(mtmp, 0, 80, 0);
+            verbalize("I don't take bribes from scum like you!");
+        } else if (is_corrupt(mtmp)) {
             boolean was_angry = !mtmp->mpeaceful;
-            long goldreqd = 0L;
-
-            if (mtmp->data == &mons[PM_SOLDIER])
-                goldreqd = 100L;
-            else if (mtmp->data == &mons[PM_SERGEANT])
-                goldreqd = 250L;
-            else if (mtmp->data == &mons[PM_LIEUTENANT])
-                goldreqd = 500L;
-            else if (mtmp->data == &mons[PM_CAPTAIN])
-                goldreqd = 750L;
-
-            if (goldreqd && rn2(3)) {
-                umoney = money_cnt(gi.invent);
-                goldreqd += (umoney + u.ulevel * rn2(5)) / ACURR(A_CHA);
-                if (value > goldreqd)
-                    mtmp->mpeaceful = TRUE;
+            long goldreqd = bribe_price(mtmp);
+            if(value >= goldreqd) {
+                mtmp->mpeaceful = TRUE;
+                use_skill(P_BRIBERY, 1);
             }
 
-            if (!mtmp->mpeaceful) {
-                SetVoice(mtmp, 0, 80, 0);
-                if (goldreqd)
-                    verbalize("That's not enough, coward!");
-                else /* unbribable (watchman) */
-                    verbalize("I don't take bribes from scum like you!");
-            } else if (was_angry) {
-                SetVoice(mtmp, 0, 80, 0);
-                verbalize("That should do.  Now beat it!");
-            } else {
-                SetVoice(mtmp, 0, 80, 0);
-                verbalize("Thanks for the tip, %s.",
-                          flags.female ? "lady" : "buddy");
+            bribe_comment(mtmp, was_angry);
+            if(value >= (goldreqd*2) && mtmp->mpeaceful && was_angry) {
+                You("wonder if you overpaid.");
             }
         }
         return TRUE;
@@ -433,7 +475,7 @@ container_impact_dmg(
         const char *result = (char *) 0;
 
         otmp2 = otmp->nobj;
-        if (objects[otmp->otyp].oc_material == GLASS
+        if (obj->material == GLASS
             && otmp->oclass != GEM_CLASS && !obj_resists(otmp, 33, 100)) {
             result = "shatter";
         } else if (otmp->otyp == EGG && !rn2(3)) {
@@ -551,6 +593,12 @@ really_kick_object(coordxy x, coordxy y)
                     killer_xname(gk.kickedobj));
             instapetrify(gk.killer.name);
         }
+    }
+
+    if (!uarmf && Hate_material(gk.kickedobj->material)) {
+        searmsg(NULL, &gy.youmonst, gk.kickedobj, FALSE);
+        losehp(rnd(sear_damage(gk.kickedobj->material)),
+               "kicking something disagreeable", KILLED_BY);
     }
 
     isgold = (gk.kickedobj->oclass == COIN_CLASS);
@@ -1645,7 +1693,7 @@ ship_object(struct obj *otmp, coordxy x, coordxy y, boolean shop_floor_obj)
     if (!cc.y)
         return FALSE;
 
-    /* objects other than attached iron ball always fall down ladder,
+    /* objects other than attached heavy ball always fall down ladder,
        but have a chance of staying otherwise */
     nodrop = (otmp == uball) || (otmp == uchain)
              || (toloc != MIGR_LADDER_UP && rn2(3));
@@ -1709,8 +1757,7 @@ ship_object(struct obj *otmp, coordxy x, coordxy y, boolean shop_floor_obj)
     if (breaktest(otmp)) {
         const char *result;
 
-        if (objects[otmp->otyp].oc_material == GLASS
-            || otmp->otyp == EXPENSIVE_CAMERA) {
+        if (otmp->material == GLASS || otmp->otyp == EXPENSIVE_CAMERA) {
             if (otmp->otyp == MIRROR)
                 change_luck(-2);
             result = "crash";

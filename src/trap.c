@@ -113,7 +113,7 @@ burnarmor(struct monst *victim)
         case 0:
             item = hitting_u ? uarmh : which_armor(victim, W_ARMH);
             if (item) {
-                mat_idx = objects[item->otyp].oc_material;
+                mat_idx = item->material;
                 Sprintf(buf, "%s %s", materialnm[mat_idx],
                         helm_simple_name(item));
             }
@@ -3720,10 +3720,20 @@ instapetrify(const char *str)
 void
 minstapetrify(struct monst *mon, boolean byplayer)
 {
+    minstapetrify_material(mon, byplayer, MINERAL);
+}
+
+void
+minstapetrify_material(struct monst *mon, boolean byplayer, int material)
+{
+    if (!(material == MINERAL || material == GOLD))
+        impossible("minstapetrify_material: material %d?\n", material);
     if (resists_ston(mon))
         return;
-    if (poly_when_stoned(mon->data)) {
-        mon_to_stone(mon);
+    if (material && monmaterial(monsndx(mon->data)))
+        return;
+    if (poly_when_petrified(mon->data, material ? material : MINERAL)) {
+        mon_to_material(mon, material ? material : MINERAL);
         return;
     }
     if (!vamp_stone(mon))
@@ -3733,13 +3743,19 @@ minstapetrify(struct monst *mon, boolean byplayer)
        intrinsic speed (comparable to similar effect on the hero) */
     mon_adjust_speed(mon, -3, (struct obj *) 0);
 
-    if (cansee(mon->mx, mon->my))
-        pline_mon(mon, "%s turns to stone.", Monnam(mon));
+    if (cansee(mon->mx, mon->my)) {
+        if(material == GOLD) {
+            pline_mon(mon, "%s turns to gold.", Monnam(mon));
+        } else {
+            pline_mon(mon, "%s turns to stone.", Monnam(mon));
+        }
+    }
     if (byplayer) {
         gs.stoned = TRUE;
+        gs.petrify_material = material;
         xkilled(mon, XKILL_NOMSG);
     } else
-        monstone(mon);
+        monstone_material(mon,material);
 }
 
 void
@@ -3814,7 +3830,7 @@ float_up(void)
             coord cc;
 
             cc.x = u.ux, cc.y = u.uy;
-            /* caveat: this finds the first buried iron ball within
+            /* caveat: this finds the first buried heavy ball within
                one step of the specified location, not necessarily the
                buried [former] uball at the original anchor point */
             (void) buried_ball(&cc);
@@ -4446,7 +4462,7 @@ lava_damage(struct obj *obj, coordxy x, coordxy y)
        and books--let fire damage deal with them), cloth, leather, wood, bone
        unless it's inherently or explicitly fireproof or contains something;
        note: potions are glass so fall through to fire_damage() and boil */
-    if (objects[otyp].oc_material < DRAGON_HIDE
+    if (obj->material < DRAGON_HIDE
         && ocls != SCROLL_CLASS && ocls != SPBOOK_CLASS
         && objects[otyp].oc_oprop != FIRE_RES
         && otyp != WAN_FIRE && otyp != FIRE_HORN
@@ -5563,13 +5579,15 @@ help_monster_out(
     }
 
     /* is it a cockatrice?... */
-    if (touch_petrifies(mtmp->data) && !uarmg && !Stone_resistance) {
+    if ((touch_petrifies(mtmp->data) || (mtmp->mgoldtouch && monmaterial(monsndx(gy.youmonst.data)) != GOLD))
+        && !uarmg && !Stone_resistance) {
         const char *mtmp_pmname = mon_pmname(mtmp);
+        int petrify_mat = mtmp->mgoldtouch ? GOLD : MINERAL;
 
         You("grab the trapped %s using your bare %s.",
             mtmp_pmname, makeplural(body_part(HAND)));
 
-        if (poly_when_stoned(gy.youmonst.data) && polymon(PM_STONE_GOLEM)) {
+        if (poly_when_petrified(gy.youmonst.data, petrify_mat) && polymon(determine_polymon(petrify_mat))) {
             display_nhwindow(WIN_MESSAGE, FALSE);
         } else {
             char kbuf[BUFSZ];
@@ -6538,6 +6556,10 @@ thitm(
             dam = dmgval(obj, mon);
             if (dam < 1)
                 dam = 1;
+            if (mon_hates_material(mon, obj->material)) {
+                /* extra damage already applied by dmgval() */
+                searmsg(NULL, mon, obj, TRUE);
+            }
         }
         if (!harmless) {
             mon->mhp -= dam;

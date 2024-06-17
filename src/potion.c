@@ -138,6 +138,8 @@ make_sick(long xtime,
           int type)
 {
     struct kinfo *kptr;
+    struct obj *otmp;
+    int copperarmor;
     long old = Sick;
 
 #if 0   /* tell player even if hero is unconscious */
@@ -147,6 +149,20 @@ make_sick(long xtime,
     if (xtime > 0L) {
         if (Sick_resistance)
             return;
+        /* Copper's anti-microbial properties make it effective in warding off
+         * sickness. */
+        for (otmp = gi.invent; otmp; otmp = otmp->nobj) {
+            if ((otmp->owornmask & W_ARMOR) && otmp->material == COPPER) {
+                copperarmor++;
+            }
+        }
+        if (rn2(5) < copperarmor) {
+            /* practially, someone could have copper helm, boots, body armor,
+             * shield, gloves. If they're *all* copper, you're immune to
+             * sickness. */
+            You_feel("briefly ill.");
+            return;
+        }
         if (!old) {
             /* newly sick */
             You_feel("deathly sick.");
@@ -215,11 +231,18 @@ make_slimed(long xtime, const char *msg)
     }
 }
 
-/* start or stop petrification */
 void
 make_stoned(long xtime, const char *msg, int killedby, const char *killername)
 {
+    make_stoned_material(xtime, msg, killedby, killername, MINERAL);
+}
+
+/* start or stop petrification */
+void
+make_stoned_material(long xtime, const char *msg, int killedby, const char *killername, int material)
+{
     long old = Stoned;
+    u.petrify_material = material;
 
 #if 0   /* tell player even if hero is unconscious */
     if (Unaware)
@@ -585,6 +608,14 @@ dodrink(void)
         remove_worn_item(otmp, FALSE);
     }
     otmp->in_use = TRUE; /* you've opened the stopper */
+
+    if (Gold_touch) {
+        struct obj* new_obj = turn_object_to_gold(otmp, TRUE);
+        if(otmp != new_obj) {
+            pick_obj(new_obj);
+            return ECMD_TIME;
+        }
+    }
 
     if (objdescr_is(otmp, "milky")
         && !(gm.mvitals[PM_GHOST].mvflags & G_GONE)
