@@ -6314,26 +6314,26 @@ paladin
 	 Dame            26 to 29
 	Paladin             30
 mer* ranks
-part-timer
-cashier
-secretary
-bookkeeper
-*manager
-department head
+peddler
+vendor
+hustler
+entrepreneur
 executive
-chair*man
+capitalist
+oligopolist
+duopolist
+monopolist
 	Merchant ranks
 	  title            level
-	Part-timer        1 to 2
-	Cashier           3 to 5
-	Secretary         6 to 9
-	Bookkeeper       10 to 13
-	Branch Manager   14 to 17
-	Regional Manager 18 to 21
-	Department Head  22 to 25
-	Executive        26 to 29
-	Chairman,
-	 Chairwoman         30
+	Peddler           1 to 2
+	Vendor            3 to 5
+	Hustler           6 to 9
+	Entrepreneur     10 to 13
+	Executive        14 to 17
+	Capitalist       18 to 21
+	Oligopolist      22 to 25
+	Duopolist        26 to 29
+	Monopolist          30
 mon* ranks
 monk
 candidate
