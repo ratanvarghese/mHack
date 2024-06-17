@@ -1,4 +1,4 @@
-/* NetHack 3.7	wintty.c	$NHDT-Date: 1708290310 2024/02/18 21:05:10 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.386 $ */
+/* NetHack 3.7	wintty.c	$NHDT-Date: 1717967340 2024/06/09 21:09:00 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.410 $ */
 /* Copyright (c) David Cohrs, 1991                                */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -208,15 +208,10 @@ boolean GFlag = FALSE;
 boolean HE_resets_AS; /* see termcap.c */
 #endif
 
-#if defined(MICRO) || defined(WIN32CON)
-static const char to_continue[] = "to continue";
-#define getret() getreturn(to_continue)
-#else
-static void getret(void);
-#endif
 static void bail(const char *); /* __attribute__((noreturn)) */
 static void newclipping(coordxy, coordxy);
 static void new_status_window(void);
+static void getret(void);
 static void erase_menu_or_text(winid, struct WinDesc *, boolean);
 static void free_window_info(struct WinDesc *, boolean);
 static boolean toggle_menu_curr(winid, tty_menu_item *, int, boolean,
@@ -770,10 +765,12 @@ tty_get_nh_event(void)
     return;
 }
 
-#if !defined(MICRO) && !defined(WIN32CON)
 static void
 getret(void)
 {
+#if defined(MICRO) || defined(WIN32CON)
+    getreturn("to continue");
+#else
     HUPSKIP();
     xputs("\n");
     if (flags.standout)
@@ -784,12 +781,14 @@ getret(void)
     if (flags.standout)
         standoutend();
     xwaitforspace(" ");
-}
 #endif
+    iflags.raw_printed = 0;
+}
 
 void
 tty_suspend_nhwindows(const char *str)
 {
+    term_curs_set(1);
     settty(str); /* calls end_screen, perhaps raw_print */
     if (!str)
         tty_raw_print(""); /* calls fflush(stdout) */
@@ -800,6 +799,7 @@ tty_resume_nhwindows(void)
 {
     gettty();
     setftty(); /* calls start_screen */
+    term_curs_set(0);
     docrt();
 }
 
@@ -816,7 +816,6 @@ tty_exit_nhwindows(const char *str)
 {
     winid i;
 
-    term_curs_set(1);
     tty_suspend_nhwindows(str);
     /*
      * Disable windows to avoid calls to window routines.
@@ -1567,7 +1566,14 @@ process_menu_window(winid window, struct WinDesc *cw)
             if (!counting && strchr(gacc, morc))
                 goto group_accel;
 
-            count = (count * 10L) + (long) (morc - '0');
+            {
+                long dgt = (long) (morc - '0');
+
+                /* count = (10 * count) + (morc - '0'); */
+                count = AppendLongDigit(count, dgt);
+                if (count < 0L) /* overflow */
+                    continue; /* reset_count is True */
+            }
             /*
              * It is debatable whether we should allow 0 to
              * start a count.  There is no difference if the
@@ -2037,7 +2043,7 @@ void
 tty_curs(
     winid window,
     int x, int y) /* not xchar: perhaps xchar is unsigned
-                                     * then curx-x would be unsigned too */
+                   * then curx-x would be unsigned too */
 {
     struct WinDesc *cw = 0;
     int cx = ttyDisplay->curx;
@@ -2053,10 +2059,9 @@ tty_curs(
 #if defined(TILES_IN_GLYPHMAP) && defined(MSDOS)
     adjust_cursor_flags(cw);
 #endif
-    cw->curx = --x; /* column 0 is never used */
-    cw->cury = y;
+
 #ifdef DEBUG
-    if (x < 0 || y < 0 || y >= cw->rows || x > cw->cols) {
+    if (x < 1 || y < 0 || y >= cw->rows || x > cw->cols) {
         const char *s = "[unknown type]";
 
         switch (cw->type) {
@@ -2079,17 +2084,21 @@ tty_curs(
             s = "[base window]";
             break;
         }
-        debugpline4("bad curs positioning win %d %s (%d,%d)", window, s, x, y);
-        /* This return statement caused a functional difference between
-           DEBUG and non-DEBUG operation, so it is being commented
-           out. It caused tty_curs() to fail to move the cursor to the
-           location it needed to be if the x,y range checks failed,
-           leaving the next piece of output to be displayed at whatever
-           random location the cursor happened to be at prior. */
-
-        /* return; */
+        /* avoid sending a line to the message window if we're complaining
+           about cursor positioning in message window; perhaps raw_printf?
+           this ought to be using impossible() so that someone might
+           actually see it */
+        if (cw->type != NHW_MESSAGE)
+            debugpline4("tty_curs: bad positioning win %d %s <%d,%d>",
+                        window, s, x, y);
+        /* don't try to fix up x,y here because then tty_curs() would
+           behave differently depending on whether DEBUG is defined;
+           garbage in, garbage out is the order of the day... */
     }
-#endif
+#endif /* DEBUG */
+    cw->curx = --x; /* column 0 is not used */
+    cw->cury = y;
+
     x += cw->offx;
     y += cw->offy;
 
@@ -3965,6 +3974,8 @@ tty_raw_print(const char *str)
     HUPSKIP();
     if (ttyDisplay)
         ttyDisplay->rawprint++;
+    else if (*str)
+        iflags.raw_printed++;
     print_vt_code2(AVTC_SELECT_WINDOW, NHW_BASE);
 #if defined(MICRO) || defined(WIN32CON)
     msmsg("%s\n", str);
@@ -3980,6 +3991,8 @@ tty_raw_print_bold(const char *str)
     HUPSKIP();
     if (ttyDisplay)
         ttyDisplay->rawprint++;
+    else if (*str)
+        iflags.raw_printed++;
     print_vt_code2(AVTC_SELECT_WINDOW, NHW_BASE);
     term_start_raw_bold();
 #if defined(MICRO) || defined(WIN32CON)
@@ -5257,9 +5270,6 @@ play_usersound_via_idx(int idx, int volume)
 #endif
 
 #undef RESIZABLE
-#ifdef getret
-#undef getret
-#endif
 #undef HUPSKIP
 #undef HUPSKIP_RESULT
 #undef ttypanic

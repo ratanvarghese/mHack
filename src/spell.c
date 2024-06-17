@@ -1,4 +1,4 @@
-/* NetHack 3.7	spell.c	$NHDT-Date: 1708126538 2024/02/16 23:35:38 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.163 $ */
+/* NetHack 3.7	spell.c	$NHDT-Date: 1718303203 2024/06/13 18:26:43 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.171 $ */
 /*      Copyright (c) M. Stephenson 1988                          */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -285,8 +285,7 @@ deadbook(struct obj *book2)
                are not artifacts */
             pline("At least one of your relics is cursed...");
         } else if (arti1_primed && arti2_primed) {
-            unsigned soon =
-                (unsigned) d(2, 6); /* time til next intervene() */
+            unsigned soon = (unsigned) d(2, 6); /* time til next intervene() */
 
             /* successful invocation */
             mkinvokearea();
@@ -294,7 +293,7 @@ deadbook(struct obj *book2)
             record_achievement(ACH_INVK);
             /* in case you haven't killed the Wizard yet, behave as if
                you just did */
-            u.uevent.udemigod = 1; /* wizdead() */
+            u.uevent.udemigod = 1; /* wizdeadorgone() */
             if (!u.udg_cnt || u.udg_cnt > soon)
                 u.udg_cnt = soon;
         } else { /* at least one relic not prepared properly */
@@ -360,11 +359,12 @@ learn(void)
     int i;
     short booktype;
     char splname[BUFSZ];
-    boolean costly = TRUE;
+    boolean costly = TRUE, faded_to_blank = FALSE;
     struct obj *book = gc.context.spbook.book;
 
     /* JDS: lenses give 50% faster reading; 33% smaller read time */
-    if (gc.context.spbook.delay && ublindf && ublindf->otyp == LENSES && rn2(2))
+    if (gc.context.spbook.delay && ublindf
+        && ublindf->otyp == LENSES && rn2(2))
         gc.context.spbook.delay++;
     if (Confusion) { /* became confused while learning */
         (void) confused_book(book);
@@ -402,6 +402,7 @@ learn(void)
         if (book->spestudied > MAX_SPELL_STUDY) {
             pline("This spellbook is too faint to be read any more.");
             book->otyp = booktype = SPE_BLANK_PAPER;
+            faded_to_blank = TRUE;
             /* reset spestudied as if polymorph had taken place */
             book->spestudied = rn2(book->spestudied);
         } else {
@@ -411,7 +412,6 @@ learn(void)
             book->spestudied++;
             exercise(A_WIS, TRUE); /* extra study */
         }
-        makeknown((int) booktype);
     } else { /* (spellid(i) == NO_SPELL) */
         /* for a normal book, spestudied will be zero, but for
            a polymorphed one, spestudied will be non-zero and
@@ -420,6 +420,7 @@ learn(void)
             /* pre-used due to being the product of polymorph */
             pline("This spellbook is too faint to read even once.");
             book->otyp = booktype = SPE_BLANK_PAPER;
+            faded_to_blank = TRUE;
             /* reset spestudied as if polymorph had taken place */
             book->spestudied = rn2(book->spestudied);
         } else {
@@ -434,7 +435,17 @@ learn(void)
                 You("add %s to your repertoire, as '%c'.",
                     splname, spellet(i));
         }
+    }
+    if (i < MAXSPELL) {
+        /* might be learning a new spellbook type or spellbook of blank paper;
+           if so, persistent inventory will get updated */
         makeknown((int) booktype);
+        /* makeknown() calls update inventory when discovering something
+           new but is a no-op for something that's already known so wouldn't
+           update persistent inventory to reflect faded book if spellbook of
+           blank paper happens to already be discovered */
+        if (faded_to_blank)
+            update_inventory();
     }
 
     if (book->cursed) { /* maybe a demon cursed it */
@@ -894,11 +905,13 @@ skill_based_spellbook_id(void)
    doesn't have enough power), it only covers open space; this also
    means that it can't hit monsters inside walls, which makes sense as
    they would be earthed */
-#define CHAIN_LIGHTNING_TYP(typ) (IS_POOL(typ) || SPACE_POS(typ))
-#define CHAIN_LIGHTNING_POS(x, y)                                       \
-    (isok(x, y) && (CHAIN_LIGHTNING_TYP(levl[x][y].typ) ||              \
-                    (IS_DOOR(levl[x][y].typ) &&                         \
-                     !(levl[x][y].doormask & (D_CLOSED | D_LOCKED)))))
+#define CHAIN_LIGHTNING_TYP(typ) \
+    (SPACE_POS(typ) || (typ) == POOL || (typ) == MOAT /* not WATER */   \
+     || (typ) == DRAWBRIDGE_UP || (typ) == LAVAPOOL)  /* not LAVAWALL */
+#define CHAIN_LIGHTNING_POS(x, y) \
+    (isok(x, y) && (CHAIN_LIGHTNING_TYP(levl[x][y].typ)                 \
+                    || (IS_DOOR(levl[x][y].typ)                         \
+                        && !(levl[x][y].doormask & (D_CLOSED | D_LOCKED)))))
 
 struct chain_lightning_zap {
     /* direction in which this zap is currently moving; this is an
@@ -970,8 +983,8 @@ propagate_chain_lightning(
     clq->q[clq->tail++] = zap;
 
     /* Draw it. */
-    tmp_at(DISP_CHANGE, zapdir_to_glyph(
-               xdir[zap.dir], ydir[zap.dir], clq->displayed_beam));
+    tmp_at(DISP_CHANGE, zapdir_to_glyph(xdir[zap.dir], ydir[zap.dir],
+                                        clq->displayed_beam));
     tmp_at(zap.x, zap.y);
 }
 
@@ -1009,20 +1022,40 @@ cast_chain_lightning(void)
             struct monst *mon = m_at(zap.x, zap.y);
 
             if (mon) {
-                struct obj *unused; /* AD_ELEC can't destroy armor */
-                int dmg = zhitm(mon, BZ_U_SPELL(AD_ELEC - 1), 2, &unused);
+                struct obj *unused = 0; /* AD_ELEC can't destroy armor */
+                int dmg;
+
+                gn.notonhead = (mon->mx != gb.bhitpos.x
+                                || mon->my != gb.bhitpos.y);
+                dmg = zhitm(mon, BZ_U_SPELL(AD_ELEC - 1), 2, &unused);
 
                 if (dmg) {
                     /* mon has been damaged, but we haven't yet printed the
                        messages or given kill credit; assume the hero can
                        sense their spell hitting monsters, because they can
                        steer it away from peacefuls */
-                    if (DEADMONSTER(mon))
+                    if (DEADMONSTER(mon)) {
                         xkilled(mon, XKILL_GIVEMSG);
-                    else
+                    } else {
                         pline("You shock %s%s", mon_nam(mon), exclam(dmg));
+                        /* if a long worm, only map 'I' for its head */
+                        if (!canseemon(mon) && !gn.notonhead)
+                            /* FIXME: this doesn't work, possibly because
+                               cleaning up tmp_at() restores old glyph? */
+                            map_invisible(zap.x, zap.y);
+                    }
                 } else if (canseemon(mon)) {
                     pline("%s resists.", Monnam(mon));
+                }
+                if (!DEADMONSTER(mon)) {
+                    /* wakeup is via attack, but since mon is already
+                       hostile we pass via_attack==False rather than True,
+                       otherwise other monsters witnessing this would treat
+                       it as seeing hero attack a peaceful; mimic will be
+                       exposed; forcefight makes hider unhide */
+                    gc.context.forcefight++;
+                    wakeup(mon, FALSE);
+                    gc.context.forcefight--;
                 }
             }
 

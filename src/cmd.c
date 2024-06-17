@@ -1,4 +1,4 @@
-/* NetHack 3.7	cmd.c	$NHDT-Date: 1710029089 2024/03/10 00:04:49 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.712 $ */
+/* NetHack 3.7	cmd.c	$NHDT-Date: 1717967336 2024/06/09 21:08:56 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.729 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2013. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -1725,7 +1725,7 @@ struct ext_func_tab extcmdlist[] = {
     { M('l'), "loot", "loot a box on the floor",
               doloot, AUTOCOMPLETE | CMD_M_PREFIX, NULL },
     { '\0',   "migratemons",
-#ifdef DEBUG_MIGRATING_MONSTERS
+#ifdef DEBUG_MIGRATING_MONS
               "show migrating monsters and migrate N random ones",
 #else
               "show migrating monsters",
@@ -4669,7 +4669,10 @@ get_count(
         }
 
         if (digit(key)) {
-            cnt = 10L * cnt + (long) (key - '0');
+            long dgt = (long) (key - '0');
+
+            /* cnt = (10 * cnt) + (key - '0'); */
+            cnt = AppendLongDigit(cnt, dgt);
             if (cnt < 0L)
                 cnt = 0L;
             else if (maxcount > 0L && cnt > maxcount)

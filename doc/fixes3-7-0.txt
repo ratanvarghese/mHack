@@ -1,4 +1,4 @@
-NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.1428 $ $NHDT-Date: 1713657038 2024/04/20 23:50:38 $
+NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.1445 $ $NHDT-Date: 1718303201 2024/06/13 18:26:41 $
 
 General Fixes and Modified Features
 -----------------------------------
@@ -567,6 +567,8 @@ perm_invent: when buying shop goods using itemized purchasing while persistent
 	soon as any item was bought (actual item-by-item purchase worked ok)
 perm_invent: making an engraving which reduced known enchantment of a weapon
 	or known charge count of a marker didn't update persistent inventory
+perm_invent: over-reading a spellbook so that in faded to blank didn't update
+	persistent inventory to show that if blank spellbook was already known
 change getloc fastmove keys in number_pad mode from hardcoded HJKL to the
 	run/rush movement keys (meta+number)
 allow using rush/run prefix key in getloc to fastmove the cursor
@@ -1412,6 +1414,10 @@ shopkeepers magnified the cost of shop items used up as a group; normally
 the tile for Ixoth (knight's quest nemesis) depicted a demon rather than a
 	dragon; change it to be a red dragon
 untrapping containers or doors gives some experience
+only honor DEBUGFILES (for activating debugpline() calls) when in wizard mode
+if hero is on scroll of scare monster or Elbereth, werecreature switching from
+	human to beast form or general monster polymorphing into a susceptible
+	form will become scared right away instead on its next move
 
 
 Fixes to 3.7.0-x General Problems Exposed Via git Repository
@@ -1943,6 +1949,17 @@ if a tame or peaceful monster was trapped and blind hero hadn't seen the trap
 	be suggested; but #untrap would fail due "you know of no traps there"
 camera flash hitting a hidden mimic mentioned it as being a mimic but didn't
 	bring it out of hiding
+when chain lightning hit a sleeping monster, the victim didn't wake up
+on medusa-4, Medusa and the downstairs were located in different chambers
+on medusa-3 and medusa-4, Perseus's statue was located in a different chamber
+	from Medusa
+omit "a" from "drowned in a limitless water" when drowning on Plane of Water
+restoring a save file could trigger impossible "rnd(0) attempted" if it tried
+	to make an unhidden mimic hide as an object; if the code was marked as
+	a released version, it would crash due to divide by 0 error instead
+fix regression of a post-3.6 fix:  if 2 Wizards of Yendor were in play and 1
+	escaped the dungeon, bookkeeping for current number of Wizards stayed
+	at 2, interferring with future Wizard behavior
 
 
 Fixes to 3.7.0-x Platform and/or Interface Problems Exposed Via git Repository
@@ -2019,6 +2036,7 @@ tty: if a group accelerator matched a menu command ('^' in menu for '/')
 	it wouldn't work to select, just to manipulate the menu
 tty: after resize changes which included screen erasure changes, ^C and yes|y
 	to "Really quit?" while a menu was open would lead to a panic
+tty: make cursor visible again when using ! or ^Z to temporarily leave nethack
 Unix: after lua changes to Makefiles, 'make spotless' for dat subdirectory
 	left some generated data files which should have been deleted
 Unix: reject "--sX" on command line except if "X" is "cores" (so "--scores");
@@ -2097,6 +2115,9 @@ curses: change petattr attributes, dropping support for curses-only ones
 curses: swap the grey and no-color color initialization
 curses: allow changing default colors with the 'palette' config option
 	(only if compiled with CHANGE_COLOR)
+curses: if messages have been issued during start-up (for instance, warnings
+	about issues in run-time config file), prompt user to press <return>
+	so that they can be read before curses erases the screen
 macOS: Xcode project was failing to build if the path to the NetHack source
 	tree contained a space; the issue was within some shell script code
 	contained within the project
@@ -2577,6 +2598,7 @@ if hero is punished or tethered to a buried iron ball and has no inventory (or
 	in the status display so that it will be visible for screenshots or
 	during streaming video
 'query_menu' option to use a menu when asked certain yes/no questions
+pyrolisk eggs explode when broken
 
 
 Platform- and/or Interface-Specific New Features

@@ -1,4 +1,4 @@
-/* NetHack 3.7	wizcmds.c	$NHDT-Date: 1709675219 2024/03/05 21:46:59 $  $NHDT-Branch: keni-mdlib-followup $:$NHDT-Revision: 1.713 $ */
+/* NetHack 3.7	wizcmds.c	$NHDT-Date: 1716592982 2024/05/24 23:23:02 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.7 $ */
 /*-Copyright (c) Robert Patrick Rankin, 2024. */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -1401,6 +1401,24 @@ you_sanity_check(void)
         if (u.ustuck != mtmp)
             impossible("sanity_check: you over monster");
     }
+    /* [should we also check for (u.uhp < 1), (Upolyd && u.mh < 1),
+       and (u.uen < 0) here?] */
+    if (u.uhp > u.uhpmax) {
+        impossible("current hero health (%d) better than maximum? (%d)",
+                   u.uhp, u.uhpmax);
+        u.uhp = u.uhpmax;
+    }
+    if (Upolyd && u.mh > u.mhmax) {
+        impossible(
+              "current hero health as monster (%d) better than maximum? (%d)",
+                   u.mh, u.mhmax);
+        u.mh = u.mhmax;
+    }
+    if (u.uen > u.uenmax) {
+        impossible("current hero energy (%d) better than maximum? (%d)",
+                   u.uen, u.uenmax);
+        u.uen = u.uenmax;
+    }
 
     check_wornmask_slots();
     (void) check_invent_gold("invent");
@@ -1791,13 +1809,13 @@ wiz_migrate_mons(void)
     list_migrating_mons(&tolevel);
 
 #ifdef DEBUG_MIGRATING_MONS
-    inbuf[0] = '\033', inbuf[1] = '\0';
+    inbuf[0] = inbuf[1] = '\0';
     if (tolevel.dnum || tolevel.dlevel)
         getlin("How many random monsters to migrate to next level? [0]",
                inbuf);
     else
         pline("Can't get there from here.");
-    if (*inbuf == '\033')
+    if (*inbuf == '\033' || *inbuf == '\0')
         return ECMD_OK;
 
     mcount = atoi(inbuf);
