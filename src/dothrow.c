@@ -97,6 +97,13 @@ throw_obj(struct obj *obj, int shotlimit)
         goto unsplit_stack;
     }
 
+    if(Gold_touch) {
+        struct obj* new_obj = turn_object_to_gold(obj, TRUE);
+        if(obj != new_obj) {
+            obj = new_obj;
+        }
+    }
+
     /*
      * Throwing gold is usually for getting rid of it when
      * a leprechaun approaches, or for bribing an oncoming
@@ -363,7 +370,7 @@ dothrow(void)
 
     obj = getobj("throw", throw_ok, GETOBJ_PROMPT | GETOBJ_ALLOWCNT);
     /* it is also possible to throw food */
-    /* (or jewels, or iron balls... ) */
+    /* (or jewels, or heavy balls... ) */
 
     return obj ? throw_obj(obj, shotlimit) : ECMD_CANCEL;
 }
@@ -876,9 +883,9 @@ hurtle_step(genericptr_t arg, coordxy x, coordxy y)
                     an(pmname(mon->data, NEUTRAL)));
             instapetrify(gk.killer.name);
         }
-        if (touch_petrifies(gy.youmonst.data)
+        if ((touch_petrifies(gy.youmonst.data) || Gold_touch)
             && !which_armor(mon, W_ARMU | W_ARM | W_ARMC)) {
-            minstapetrify(mon, TRUE);
+            minstapetrify_material(mon, TRUE, Gold_touch ? GOLD : MINERAL);
         }
         wake_nearto(x, y, 10);
         return FALSE;
@@ -1048,10 +1055,10 @@ mhurtle_step(genericptr_t arg, coordxy x, coordxy y)
         pline("%s bumps into you.", Some_Monnam(mon));
         stop_occupation();
         /* check whether 'mon' is turned to stone by touching poly'd hero */
-        if (Upolyd && touch_petrifies(gy.youmonst.data)
+        if (((Upolyd && touch_petrifies(gy.youmonst.data)) || Gold_touch)
             && !which_armor(mon, W_ARMU | W_ARM | W_ARMC)) {
             /* give poly'd hero credit/blame despite a monster causing it */
-            minstapetrify(mon, TRUE);
+            minstapetrify_material(mon, TRUE, Gold_touch ? GOLD : MINERAL);
             newsym(mon->mx, mon->my);
         }
         /* and whether hero is turned to stone by being touched by 'mon' */
@@ -1090,7 +1097,7 @@ hurtle(int dx, int dy, int range, boolean verbose)
      * for diagonal movement, give the player a message and return.
      */
     if (Punished && !carried(uball)) {
-        You_feel("a tug from the iron ball.");
+        You_feel("a tug from the heavy ball.");
         nomul(0);
         return;
     } else if (u.utrap) {
@@ -1565,7 +1572,7 @@ throwit(struct obj *obj,
          * than 1, so the effects from throwing attached balls are
          * actually possible
          */
-        if (obj->otyp == HEAVY_IRON_BALL)
+        if (obj->otyp == HEAVY_BALL)
             range = urange - (int) (obj->owt / 100);
         else
             range = urange - (int) (obj->owt / 40);
@@ -1889,7 +1896,7 @@ omon_adj(struct monst *mon, struct obj *obj, boolean mon_notices)
     }
     /* some objects are more likely to hit than others */
     switch (obj->otyp) {
-    case HEAVY_IRON_BALL:
+    case HEAVY_BALL:
         if (obj != uball)
             tmp += 2;
         break;
@@ -2187,7 +2194,7 @@ thitmonst(
                 wakeup(mon, TRUE);
         }
 
-    } else if (otyp == HEAVY_IRON_BALL) {
+    } else if (otyp == HEAVY_BALL) {
         exercise(A_STR, TRUE);
         if (tmp >= dieroll) {
             int was_swallowed = guaranteed_hit;

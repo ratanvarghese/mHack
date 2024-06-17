@@ -465,6 +465,23 @@ arti_reflects(struct obj *obj)
     return FALSE;
 }
 
+/* used to check whether a monster has the golden touch from an artifact */
+boolean
+arti_golden_touch(struct obj *obj)
+{
+    const struct artifact *arti = get_artifact(obj);
+
+    if (arti != &artilist[ART_NONARTIFACT]) {
+        /* while being worn */
+        if ((obj->owornmask & ~W_ART) && (arti->spfx & SPFX_GOLD))
+            return TRUE;
+        /* just being carried - should not be possible*/
+        if (arti->cspfx & SPFX_GOLD)
+            return TRUE;
+    }
+    return FALSE;
+}
+
 /* decide whether this obj is effective when attacking against shades;
    does not consider the bonus for blessed objects versus undead */
 boolean
@@ -657,6 +674,8 @@ set_artifact_intrinsic(struct obj *otmp, boolean on, long wp_mask)
         mask = &EPoison_resistance;
     else if (dtyp == AD_DRLI)
         mask = &EDrain_resistance;
+    else if (dtyp == AD_STON)
+        mask = &EStone_resistance;
 
     if (mask && wp_mask == W_ART && !on) {
         /* find out if some other artifact also confers this intrinsic;
@@ -788,6 +807,16 @@ set_artifact_intrinsic(struct obj *otmp, boolean on, long wp_mask)
             EProtection |= wp_mask;
         else
             EProtection &= ~wp_mask;
+    }
+    if (spfx & SPFX_GOLD) {
+        if (on) {
+            Gold_touch |= wp_mask;
+            EHunger |= wp_mask;
+        }
+        else {
+            Gold_touch &= ~wp_mask;
+            EHunger |= wp_mask;
+        }
     }
 
     if (wp_mask == W_ART && !on && oart->inv_prop) {

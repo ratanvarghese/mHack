@@ -2755,6 +2755,14 @@ doeat(void)
         }
     }
 
+    if (Gold_touch) {
+        struct obj* new_obj = turn_object_to_gold(otmp, TRUE);
+        if(otmp != new_obj) {
+            pick_obj(new_obj);
+            return ECMD_TIME;
+        }
+    }
+
     /* from floorfood(), &hands_obj means iron bars at current spot */
     if (otmp == &hands_obj) {
         /* hero in metallivore form is eating [diggable] iron bars

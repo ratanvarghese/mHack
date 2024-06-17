@@ -638,6 +638,8 @@ static const struct instance_globals_n g_init_n = {
     STRANGE_OBJECT, /* nocreate2 */
     STRANGE_OBJECT, /* nocreate3 */
     STRANGE_OBJECT, /* nocreate4 */
+    STRANGE_OBJECT, /* nocreate5 */
+    STRANGE_OBJECT, /* nocreate6 */
     TRUE, /* havestate*/
     IVMAGIC  /* n_magic to validate that structure layout has been preserved */
 };
@@ -764,6 +766,7 @@ static const struct instance_globals_s g_init_s = {
     UNDEFINED_PTR, /* stairs */
     DUMMY, /* smeq */
     FALSE, /* stoned */
+    MINERAL, /* petrify_material */
     { DUMMY }, /* spl_book */
     UNDEFINED_PTR, /* subrooms */
     /* do.c */

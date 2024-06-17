@@ -148,6 +148,7 @@ extern boolean arti_immune(struct obj *, int);
 extern boolean spec_ability(struct obj *, unsigned long);
 extern boolean confers_luck(struct obj *) NONNULLPTRS;
 extern boolean arti_reflects(struct obj *);
+extern boolean arti_golden_touch(struct obj *);
 extern boolean shade_glare(struct obj *) NONNULLPTRS;
 extern boolean restrict_name(struct obj *, const char *) NONNULLPTRS;
 extern boolean attacks(int, struct obj *);
@@ -762,6 +763,7 @@ extern void quickmimic(struct monst *) NONNULLARG1;
 
 /* ### dokick.c ### */
 
+extern long bribe_price(struct monst *) NONNULLARG1;
 extern boolean ghitm(struct monst *, struct obj *) NONNULLPTRS;
 extern void container_impact_dmg(struct obj *, coordxy, coordxy) NONNULLARG1;
 extern int dokick(void);
@@ -1648,7 +1650,9 @@ extern struct obj *obj_absorb(struct obj **, struct obj **);
 extern struct obj *obj_meld(struct obj **, struct obj **);
 extern void pudding_merge_message(struct obj *, struct obj *) NONNULLARG12;
 extern boolean valid_obj_material(struct obj *, int) NONNULLARG1;
-extern boolean warp_material(struct obj *, boolean) NONNULLARG1;
+extern int select_new_material(struct obj *) NONNULLARG1;
+extern boolean warp_material(struct obj *, boolean, int) NONNULLARG1;
+extern struct obj *turn_object_to_gold(struct obj *, boolean) NONNULLARG1;
 extern struct obj *init_dummyobj(struct obj *, short, long);
 
 /* ### mkroom.c ### */
@@ -1715,11 +1719,13 @@ extern void mondead(struct monst *) NONNULLARG1;
 extern void mondied(struct monst *) NONNULLARG1;
 extern void mongone(struct monst *) NONNULLARG1;
 extern void monstone(struct monst *) NONNULLARG1;
+extern void monstone_material(struct monst *, int) NONNULLARG1;
 extern void monkilled(struct monst *, const char *, int) NONNULLARG1;
 extern void set_ustuck(struct monst *);
 extern void unstuck(struct monst *) NONNULLARG1;
 extern void killed(struct monst *) NONNULLARG1;
 extern void xkilled(struct monst *, int) NONNULLARG1;
+extern void mon_to_material(struct monst *, int) NONNULLARG1;
 extern void mon_to_stone(struct monst *) NONNULLARG1;
 extern void m_into_limbo(struct monst *) NONNULLARG1;
 extern void migrate_mon(struct monst *, xint16, xint16) NONNULLARG1;
@@ -1776,6 +1782,8 @@ extern void set_mon_data(struct monst *, struct permonst *) NONNULLARG12;
 extern struct attack *attacktype_fordmg(struct permonst *, int, int) NONNULLARG1;
 extern boolean attacktype(struct permonst *, int) NONNULLARG1;
 extern boolean noattacks(struct permonst *) NONNULLARG1;
+extern int determine_polymon(int);
+extern boolean poly_when_petrified(struct permonst *, int) NONNULLARG1;
 extern boolean poly_when_stoned(struct permonst *) NONNULLARG1;
 extern boolean defended(struct monst *, int) NONNULLARG1;
 extern boolean resists_drli(struct monst *) NONNULLARG1;
@@ -2146,6 +2154,7 @@ extern char *corpse_xname(struct obj *, const char *, unsigned) NONNULLARG1;
 extern char *cxname(struct obj *) NONNULLARG1;
 extern char *cxname_singular(struct obj *) NONNULLARG1;
 extern char *killer_xname(struct obj *) NONNULLARG1;
+extern char *xname_forcemat(struct obj *) NONNULLARG1;
 extern char *short_oname(struct obj *, char *(*)(struct obj *),
                          char *(*)(struct obj *), unsigned) NONNULLARG12;
 extern const char *singular(struct obj *, char *(*)(struct obj *)) NONNULLPTRS;
@@ -2358,6 +2367,7 @@ extern int loot_mon(struct monst *, int *, boolean *) NO_NNARGS;
 extern int dotip(void);
 extern struct autopickup_exception *check_autopickup_exceptions(struct obj *) NONNULLARG1;
 extern boolean autopick_testobj(struct obj *, boolean) NONNULLARG1;
+extern void tipcontainer(struct obj *);
 
 /* ### pline.c ### */
 
@@ -2428,6 +2438,7 @@ extern void make_stunned(long, boolean);
 extern void make_sick(long, const char *, boolean, int) NO_NNARGS;
 extern void make_slimed(long, const char *) NO_NNARGS;
 extern void make_stoned(long, const char *, int, const char *) NO_NNARGS;
+extern void make_stoned_material(long, const char *, int, const char *, int) NO_NNARGS;
 extern void make_vomiting(long, boolean);
 extern void make_blinded(long, boolean);
 extern void toggle_blindness(void);
@@ -2892,6 +2903,7 @@ extern const char *maybe_gasp(struct monst *) NONNULLARG1;
 extern const char *cry_sound(struct monst *) NONNULLARG1;
 extern int dotalk(void);
 extern int tiphat(void);
+extern void bribe_comment(struct monst *, boolean) NONNULLARG1;
 #ifdef USER_SOUNDS
 extern int add_sound_mapping(const char *) NONNULLARG1;
 extern void play_sound_for_message(const char *) NONNULLARG1;
@@ -3178,6 +3190,7 @@ extern void feeltrap(struct trap *) NONNULLARG1;
 extern int mintrap(struct monst *, unsigned) NONNULLARG1;
 extern void instapetrify(const char *) NO_NNARGS;
 extern void minstapetrify(struct monst *, boolean) NONNULLARG1;
+extern void minstapetrify_material(struct monst *, boolean, int) NONNULLARG1;
 extern void selftouch(const char *) NONNULLARG1;
 extern void mselftouch(struct monst *, const char *, boolean) NONNULLARG1;
 extern void float_up(void);
@@ -3325,9 +3338,11 @@ extern void mhitm_ad_sedu(struct monst *, struct attack *, struct monst *,
                           struct mhitm_data *) NONNULLPTRS;
 extern void mhitm_ad_ssex(struct monst *, struct attack *, struct monst *,
                           struct mhitm_data *) NONNULLPTRS;
+extern void mhitm_ad_mtrl(struct monst *, struct attack *, struct monst *,
+                           struct mhitm_data *) NONNULLPTRS;
 extern void mhitm_adtyping(struct monst *, struct attack *, struct monst *,
                            struct mhitm_data *) NONNULLPTRS;
-extern boolean do_stone_u(struct monst *) NONNULLARG1;
+extern boolean do_stone_u(struct monst *, int) NONNULLARG1;
 extern void do_stone_mon(struct monst *, struct attack *, struct monst *,
                          struct mhitm_data *) NONNULLARG134;
 extern int damageum(struct monst *, struct attack *, int) NONNULLARG12;

@@ -726,6 +726,8 @@ struct instance_globals_n {
     short nocreate2;
     short nocreate3;
     short nocreate4;
+    short nocreate5;
+    short nocreate6;
 
     boolean havestate;
     unsigned long magic; /* validate that structure layout is preserved */
@@ -897,6 +899,7 @@ struct instance_globals_s {
     stairway *stairs;
     int smeq[MAXNROFROOMS + 1];
     boolean stoned; /* done to monsters hit by 'c' */
+    int petrify_material;
     struct spell spl_book[MAXSPELL + 1];
     struct mkroom *subrooms;
 

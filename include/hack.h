@@ -68,7 +68,7 @@
 #define CXN_NOCORPSE 16 /* suppress " corpse" suffix */
 #define CXN_FORCEMAT 32 /* force the material name */
 
-/* weight increment of heavy iron ball */
+/* weight increment of heavy ball */
 #define IRON_BALL_W_INCR 160
 
 /* number of turns it takes for vault guard to show up */
@@ -740,7 +740,7 @@ struct rogueroom {
     int nroom; /* Only meaningful for "real" rooms */
 };
 
-#define NUM_ROLES (13)
+#define NUM_ROLES (14)
 struct role_filter {
     boolean roles[NUM_ROLES + 1];
     short mask;

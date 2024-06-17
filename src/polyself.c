@@ -133,7 +133,7 @@ float_vs_flight(void)
         BFlying &= ~I_SPECIAL;
     /* being trapped on the ground (bear trap, web, molten lava survived
        with fire resistance, former lava solidified via cold, tethered
-       to a buried iron ball) overrides floating--the floor is reachable */
+       to a buried heavy ball) overrides floating--the floor is reachable */
     if ((HLevitation || ELevitation) && stuck_in_floor)
         BLevitation |= I_SPECIAL;
     else
@@ -793,10 +793,18 @@ polymon(int mntmp)
     Strcat(buf, pmname(&mons[mntmp], flags.female ? FEMALE : MALE));
     You("%s %s!", (u.umonnum != mntmp) ? "turn into" : "feel like", an(buf));
 
-    if (Stoned && poly_when_stoned(&mons[mntmp])) {
-        /* poly_when_stoned already checked stone golem genocide */
-        mntmp = PM_STONE_GOLEM;
-        make_stoned(0L, "You turn to stone!", 0, (char *) 0);
+    if (Stoned && poly_when_petrified(&mons[mntmp], u.petrify_material)) {
+        /* poly_when_stoned already checked golem genocide */
+        mntmp = determine_polymon(u.petrify_material);
+
+        if (u.petrify_material == GOLD) {
+            make_stoned(0L, "You turn to gold!", 0, (char *) 0);
+        } else if (u.petrify_material == MINERAL) {
+            make_stoned(0L, "You turn to stone!", 0, (char *) 0);
+        } else {
+            impossible("polymon: u.petrify_material %d?", u.petrify_material);
+            make_stoned(0L, "You turn to something!", 0, (char *) 0);
+        }
     }
 
     u.mtimedone = rn1(500, 500);
@@ -1028,7 +1036,7 @@ polymon(int mntmp)
         if (attacktype(uptr, AT_SPIT))
             pline(use_thec, monsterc, "spit venom");
         if (uptr->mlet == S_NYMPH)
-            pline(use_thec, monsterc, "remove an iron ball");
+            pline(use_thec, monsterc, "remove a heavy ball");
         if (attacktype(uptr, AT_GAZE))
             pline(use_thec, monsterc, "gaze at monsters");
         if (might_hide && webmaker(uptr))

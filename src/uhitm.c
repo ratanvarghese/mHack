@@ -833,6 +833,21 @@ hmon_hitmon_barehands(struct _hitmon_data *hmd, struct monst *mon)
 {
     long spcdmgflg; /* worn masks */
 
+    if(Gold_touch) {
+        if (!munstone(mon, TRUE)) {
+            minstapetrify_material(mon, TRUE, GOLD);
+        }
+        if (!resists_ston(mon)) {
+            hmd->doreturn = TRUE;
+            hmd->retval = !DEADMONSTER(mon);
+            return;
+        }
+    }
+
+    if(mon->mgoldtouch) {
+        do_stone_u(mon, GOLD);
+    }
+
     if (hmd->mdat == &mons[PM_SHADE]) {
         hmd->dmg = 0;
     } else {
@@ -1082,7 +1097,7 @@ hmon_hitmon_misc_obj(
 {
     switch (obj->otyp) {
     case BOULDER:         /* 1d20 */
-    case HEAVY_IRON_BALL: /* 1d25 */
+    case HEAVY_BALL: /* 1d25 */
     case IRON_CHAIN:      /* 1d4+1 */
         hmd->dmg = dmgval(obj, mon);
         if (mon_hates_material(mon, obj->material)) {
@@ -1338,6 +1353,19 @@ hmon_hitmon_do_hit(
     if (!obj) { /* attack with bare hands */
         hmon_hitmon_barehands(hmd, mon);
     } else {
+        if(mon->mgoldtouch) {
+            struct obj* new_obj = turn_object_to_gold(obj, TRUE);
+            if(obj != new_obj) {
+                if(hmd->thrown == HMON_THROWN) {
+                    mpickobj(mon, new_obj);
+                } else {
+                    pick_obj(new_obj);
+                }
+                hmd->doreturn = TRUE;
+                hmd->retval = TRUE;
+                return;
+            }
+        }
         /* obj is not NULL here because of the !obj check in this if block,
          , so no guard is needed ahead of stone_missile(obj) */
         /* stone missile does not hurt xorn or earth elemental, but doesn't
@@ -1596,7 +1624,7 @@ hmon_hitmon_msg_hit(
         else /* hand_to_hand */
             You("%s %s%s",
                 (obj && (is_shield(obj)
-                         || obj->otyp == HEAVY_IRON_BALL)) ? "bash"
+                         || obj->otyp == HEAVY_BALL)) ? "bash"
                 : (obj && (objects[obj->otyp].oc_skill == P_WHIP
                            || is_wet_towel(obj))) ? "lash"
                   : Role_if(PM_BARBARIAN) ? "smite"
@@ -1876,7 +1904,7 @@ shade_aware(struct obj *obj)
      *    when it comes to shades.
      */
     if (obj->otyp == BOULDER
-        || obj->otyp == HEAVY_IRON_BALL
+        || obj->otyp == HEAVY_BALL
         || obj->otyp == IRON_CHAIN      /* dmgval handles those first three */
         || obj->otyp == MIRROR          /* silver in the reflective surface */
         || obj->otyp == CLOVE_OF_GARLIC /* causes shades to flee */
@@ -3773,11 +3801,14 @@ mhitm_ad_halu(
 }
 
 boolean
-do_stone_u(struct monst *mtmp)
+do_stone_u(struct monst *mtmp, int material)
 {
-    if (!Stoned && !Stone_resistance
-        && !(poly_when_stoned(gy.youmonst.data)
-             && polymon(PM_STONE_GOLEM))) {
+    if(!(material == GOLD || material == MINERAL)) {
+        impossible("do_stone_u: material %d?", material);
+    }
+    if (!Stoned && !Stone_resistance && !(material == GOLD && monmaterial(monsndx(gy.youmonst.data)) == GOLD)
+        && !(poly_when_petrified(gy.youmonst.data, material)
+             && polymon(determine_polymon(material)))) {
         int kformat = KILLED_BY_AN;
         const char *kname = pmname(mtmp->data, Mgender(mtmp));
 
@@ -3786,7 +3817,7 @@ do_stone_u(struct monst *mtmp)
                 kname = the(kname);
             kformat = KILLED_BY;
         }
-        make_stoned(5L, (char *) 0, kformat, kname);
+        make_stoned_material(5L, (char *) 0, kformat, kname, material);
         return 1;
         /* done_in_by(mtmp, STONING); */
     }
@@ -3901,7 +3932,7 @@ mhitm_ad_phys(
                     pline("%s hits you with the %s corpse.", Monnam(magr),
                           mons[otmp->corpsenm].pmnames[NEUTRAL]);
                     if (!Stoned) {
-                        if (do_stone_u(magr)) {
+                        if (do_stone_u(magr, MINERAL)) {
                             mhm->hitflags = M_ATTK_HIT;
                             mhm->done = 1;
                             return;
@@ -3961,6 +3992,15 @@ mhitm_ad_phys(
                        || magr != u.ustuck) {
                 hitmsg(magr, mattk);
                 mhm->hitflags |= M_ATTK_HIT;
+            }
+
+            if(magr->mgoldtouch) {
+                if(!otmp || (mhm->hitflags & M_ATTK_HIT) > 0) {
+                    if (do_stone_u(magr, GOLD)) {
+                        mhm->done = 1;
+                        return;
+                    }
+                }
             }
         }
     } else {
@@ -4074,7 +4114,7 @@ mhitm_ad_ston(
                  * during a new moon could become quite a bit harder.
                  */
                 if (!rn2(10) || flags.moonphase == NEW_MOON) {
-                    if (do_stone_u(magr)) {
+                    if (do_stone_u(magr, MINERAL)) {
                         mhm->hitflags = M_ATTK_HIT;
                         mhm->done = TRUE;
                         return;
@@ -4608,6 +4648,63 @@ mhitm_ad_ssex(struct monst *magr, struct attack *mattk, struct monst *mdef,
 }
 
 void
+mhitm_ad_mtrl(
+    struct monst *magr, struct attack *mattk,
+    struct monst *mdef, struct mhitm_data *mhm)
+{
+
+    if (magr == &gy.youmonst) {
+        /* uhitm */
+        /* there's no msomearmor() function, so just do damage */
+    } else if (mdef == &gy.youmonst) {
+        /* mhitu */
+        int armpro = magic_negation(mdef);
+        boolean uncancelled = !magr->mcan && (rn2(10) >= 3 * armpro);
+
+        hitmsg(magr, mattk);
+        /* uncancelled is sufficient enough; please
+           don't make this attack less frequent */
+        if (uncancelled) {
+            struct obj *obj = some_armor(&gy.youmonst);
+
+            if (!obj) {
+                /* some rings are susceptible;
+                   amulets and blindfolds aren't (at present) */
+                switch (rn2(5)) {
+                case 0:
+                    break;
+                case 1:
+                    obj = uright;
+                    break;
+                case 2:
+                    obj = uleft;
+                    break;
+                case 3:
+                    obj = uamul;
+                    break;
+                case 4:
+                    obj = ublindf;
+                    break;
+                }
+            }
+            if (obj && warp_material(obj, FALSE, select_new_material(obj))) {
+                pline("That's odd, you don't remember putting on %s...",
+                    an(xname_forcemat(obj)));
+                update_inventory();
+                disp.botl = TRUE;
+            }
+            if (obj)
+                mhm->damage = 0;
+            if (!rn2(20))
+                (void) rloc(magr, TRUE);
+        }
+    } else {
+        /* mhitm */
+        /* there's no msomearmor() function, so just do damage */
+    }
+}
+
+void
 mhitm_adtyping(
     struct monst *magr, struct attack *mattk,
     struct monst *mdef, struct mhitm_data *mhm)
@@ -4655,6 +4752,7 @@ mhitm_adtyping(
     case AD_FAMN: mhitm_ad_famn(magr, mattk, mdef, mhm); break;
     case AD_DGST: mhitm_ad_dgst(magr, mattk, mdef, mhm); break;
     case AD_HALU: mhitm_ad_halu(magr, mattk, mdef, mhm); break;
+    case AD_MTRL: mhitm_ad_mtrl(magr, mattk, mdef, mhm); break;
     default:
         mhm->damage = 0;
     }
@@ -5760,6 +5858,7 @@ passive(
             monstunseesu(M_SEEN_MAGR);
         }
         break;
+    case AD_MTRL:
     case AD_ENCH: /* KMH -- remove enchantment (disenchanter) */
         if (mhitb) {
             if (aatyp == AT_KICK) {
@@ -5909,7 +6008,7 @@ passive_obj(
     /* if caller hasn't specified an object, use uwep, uswapwep or uarmg */
     if (!obj) {
         obj = (u.twoweap && uswapwep && !rn2(2)) ? uswapwep : uwep;
-        if (!obj && mattk->adtyp == AD_ENCH)
+        if (!obj && (mattk->adtyp == AD_ENCH || mattk->adtyp == AD_MTRL))
             obj = uarmg; /* no weapon? then must be gloves */
         if (!obj)
             return; /* no object to affect */
@@ -5947,6 +6046,13 @@ passive_obj(
     case AD_CORR:
         if (!mon->mcan) {
             (void) erode_obj(obj, (char *) 0, ERODE_CORRODE, EF_GREASE);
+        }
+        break;
+    case AD_MTRL:
+        if (!mon->mcan) {
+            if(warp_material(obj, TRUE, select_new_material(obj)) && carried(obj)) {
+                pline("Your %s warps!", simpleonames(obj));
+            }
         }
         break;
     case AD_ENCH:

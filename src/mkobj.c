@@ -1952,8 +1952,8 @@ weight(struct obj *obj)
         /* 3.7: always weigh at least 1 unit; used to yield 0 for 1..49 */
         wt = (int) ((obj->quan + 50L) / 100L);
         return max(wt, 1);
-    } else if (obj->otyp == HEAVY_IRON_BALL && obj->owt != 0) {
-        return (int) obj->owt; /* kludge for "very" heavy iron ball */
+    } else if (obj->otyp == HEAVY_BALL && obj->owt != 0) {
+        return (int) obj->owt; /* kludge for "very" heavy ball */
     } else if (obj->otyp == CANDELABRUM_OF_INVOCATION && obj->spe) {
         return wt + obj->spe * (int) objects[TALLOW_CANDLE].oc_weight;
     }
@@ -3867,12 +3867,13 @@ static const struct icp shiny_materials[] = {
 
 /* for objects which are normally wooden */
 static const struct icp wood_materials[] = {
-    {799, WOOD},
+    {789, WOOD},
     {100, MINERAL},
     { 50, IRON},
     { 30, BONE},
     { 10, COPPER},
     { 10, SILVER},
+    { 10, GOLD},
     {  1, SLIME}
 };
 
@@ -3947,7 +3948,10 @@ static const struct icp horn_materials[] = {
 static const struct icp elvenhelm_materials[] = {
     {700, LEATHER},
     {200, COPPER},
-    { 99, WOOD},
+    { 90, WOOD},
+    {  5, CLOTH},
+    {  3, SILVER},
+    {  1, GOLD},
     {  1, SHADOW},
 };
 static const struct icp bow_materials[] = {
@@ -3960,6 +3964,11 @@ static const struct icp bow_materials[] = {
     { 20, SILVER},
     { 20, PLASTIC},
     { 10, GOLD}
+};
+static const struct icp statue_materials[] = {
+    {900, MINERAL},
+    { 99, IRON},
+    {  1, GOLD}
 };
 
 /* TODO: Orcish? */
@@ -3982,6 +3991,9 @@ material_list(struct obj* obj)
         case HELM_OF_BRILLIANCE:
             return NULL;
         /* Any other cases for specific object types go here. */
+        case DUNCE_CAP:
+        case CORNUTHAUM:
+            return elvenhelm_materials;
         case SHIELD_OF_REFLECTION:
             return shiny_materials;
         case BOW:
@@ -3997,6 +4009,7 @@ material_list(struct obj* obj)
         case SKELETON_KEY:
         case LOCK_PICK:
         case TIN_OPENER:
+        case HEAVY_BALL:
             return metal_materials;
         case BELL:
         case BUGLE:
@@ -4014,6 +4027,8 @@ material_list(struct obj* obj)
         case FROST_HORN:
         case HORN_OF_PLENTY:
             return horn_materials;
+        case STATUE:
+            return statue_materials;
         default:
             break;
     }
@@ -4045,27 +4060,35 @@ material_list(struct obj* obj)
     return NULL;
 }
 
-/* Based on init_obj_material by aosdict. */
-boolean
-warp_material(struct obj* obj, boolean by_you)
+int
+select_new_material(struct obj* obj)
 {
-    if (obj->oartifact)
-        return FALSE;
     int origmat = obj->material;
-
     int j = 0;
     int newmat;
     while (j < 1000) {
         newmat = 1 + rn2(NUM_MATERIAL_TYPES);
         if (newmat != origmat && valid_obj_material(obj, newmat))
-            break;
+            return newmat;
         j++;
     }
-    if (valid_obj_material(obj, newmat) && !Hate_material(newmat))
-        obj->material = newmat;
+    return objects[obj->otyp].oc_material;
+}
+
+/* Based on init_obj_material by aosdict. */
+boolean
+warp_material(struct obj* obj, boolean by_you, int new_material)
+{
+    if (obj->oartifact)
+        return FALSE;
+    int origmat = obj->material;
+
+    if (valid_obj_material(obj, new_material) /*&& !Hate_material(new_material)*/)
+        obj->material = new_material;
     else
+        return FALSE;
         /* can use a 0 in the list to default to the base material */
-        obj->material = objects[obj->otyp].oc_material;
+        /* obj->material = objects[obj->otyp].oc_material; */
     obj->owt = weight(obj);
     if (origmat != obj->material) {
         /* Charge for the cost of the object */
@@ -4143,4 +4166,33 @@ valid_obj_material(struct obj* obj, int mat)
     }
 }
 
+struct obj *
+turn_object_to_gold(struct obj * obj, boolean tell_player)
+{
+    if(obj->material == GOLD || obj->oartifact) {
+        return obj;
+    } else if(obj->otyp == CORPSE && pm_resistance(&mons[obj->corpsenm], MR_STONE)) {
+        return obj;
+    } else if(warp_material(obj, TRUE, GOLD)) {
+        if(tell_player) {
+            pline("%s turned to gold!", Ysimple_name2(obj));
+        }
+        return obj;
+    } else {
+        if(Is_container(obj)) {
+            tipcontainer(obj);
+        }
+
+        struct obj *gold = mksobj(GOLD_PIECE, FALSE, FALSE);
+        gold->quan = objects[obj->otyp].oc_cost + 1; /*add 1 to avoid quantity of 0*/
+        gold->owt = weight(gold);
+
+        replace_object(obj, gold);
+        if(tell_player) {
+            pline("%s turned into gold pieces!", Ysimple_name2(obj));
+        }
+        dealloc_obj(obj);
+        return gold;
+    }
+}
 /*mkobj.c*/

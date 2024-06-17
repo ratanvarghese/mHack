@@ -1522,65 +1522,48 @@ create_polymon(struct obj *obj, int okind)
     if (!obj || (!obj->nexthere && obj->quan == 1L))
         return;
 
-    /* some of these choices are arbitrary */
-    switch (okind) {
-    case IRON:
-    case COLD_IRON:
-    case METAL:
-    case MITHRIL:
-    case ADAMANTINE:
-        pm_index = PM_IRON_GOLEM;
+    pm_index = determine_polymon(okind);
+    if(pm_index == PM_STONE_GOLEM && rn2(2)) {
+        pm_index = PM_CLAY_GOLEM;
+    }
+
+    switch (pm_index) {
+    case PM_IRON_GOLEM:
         material = "metal ";
         break;
-    case COPPER:
-    case SILVER:
-    case PLATINUM:
-    case GEMSTONE:
-    case MINERAL:
-        pm_index = rn2(2) ? PM_STONE_GOLEM : PM_CLAY_GOLEM;
+    case PM_STONE_GOLEM:
+    case PM_CLAY_GOLEM:
         material = "lithic ";
         break;
-    case 0:
-    case FLESH:
-        /* there is no flesh type, but all food is type 0, so we use it */
-        pm_index = PM_FLESH_GOLEM;
+    case PM_FLESH_GOLEM:
         material = "organic ";
         break;
-    case WOOD:
-        pm_index = PM_WOOD_GOLEM;
+    case PM_WOOD_GOLEM:
         material = "wood ";
         break;
-    case LEATHER:
-        pm_index = PM_LEATHER_GOLEM;
+    case PM_LEATHER_GOLEM:
         material = "leather ";
         break;
-    case CLOTH:
-        pm_index = PM_ROPE_GOLEM;
+    case PM_ROPE_GOLEM:
         material = "cloth ";
         break;
-    case BONE:
-        pm_index = PM_SKELETON; /* nearest thing to "bone golem" */
+    case PM_SKELETON:
         material = "bony ";
         break;
-    case SHADOW:
-        pm_index = PM_SHADE; /* nearest thing to "shadow" */
+    case PM_SHADE:
         material = "shadowy ";
         break;
-    case GOLD:
-        pm_index = PM_GOLD_GOLEM;
+    case PM_GOLD_GOLEM:
         material = "gold ";
         break;
-    case GLASS:
-        pm_index = PM_GLASS_GOLEM;
+    case PM_GLASS_GOLEM:
         material = "glassy ";
         break;
-    case PAPER:
-        pm_index = PM_PAPER_GOLEM;
+    case PM_PAPER_GOLEM:
         material = "paper ";
         break;
     default:
         /* if all else fails... */
-        pm_index = PM_STRAW_GOLEM;
         material = "";
         break;
     }
@@ -4058,7 +4041,7 @@ bhit(
         }
         /* limit range of ball so hero won't make an invalid move */
         if (weapon == THROWN_WEAPON && range > 0
-            && obj->otyp == HEAVY_IRON_BALL) {
+            && obj->otyp == HEAVY_BALL) {
             struct obj *bobj;
             struct trap *t;
 
@@ -5488,9 +5471,21 @@ fracture_rock(struct obj *obj) /* no texts here! */
     if (by_you && obj->otyp == BOULDER)
         sokoban_guilt();
 
-    obj->otyp = ROCK;
-    obj->oclass = GEM_CLASS;
-    obj->quan = (long) rn1(60, 7);
+    int old_material = (obj->material);
+
+    if(old_material == GOLD) {
+        obj->otyp = GOLD_PIECE;
+        obj->oclass = COIN_CLASS;
+        obj->quan = (long) rn1(6000, 700);
+    } else if (old_material == IRON) {
+        obj->otyp = IRON_CHAIN;
+        obj->oclass = CHAIN_CLASS;
+        obj->quan = (long) rn1(20, 2);
+    } else { /*rock, hopefully*/
+        obj->otyp = ROCK;
+        obj->oclass = GEM_CLASS;
+        obj->quan = (long) rn1(60, 7);
+    }
     obj->owt = weight(obj);
     obj->dknown = obj->bknown = obj->rknown = 0;
     obj->known = objects[obj->otyp].oc_uses_known ? 0 : 1;

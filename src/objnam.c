@@ -36,7 +36,6 @@ staticfn char *strprepend(char *, const char *);
 staticfn char *nextobuf(void);
 staticfn void releaseobuf(char *);
 staticfn void xcalled(char *, int, const char *, const char *);
-staticfn char *xname_forcemat(struct obj *);
 staticfn char *xname_flags(struct obj *, unsigned);
 staticfn char *minimal_xname(struct obj *);
 staticfn void add_erosion_words(struct obj *, char *);
@@ -674,12 +673,12 @@ xname_flags(
             Strcat(buf, " ");
         }
         if (!dknown)
-            Strcpy(buf, "amulet");
+            Strcat(buf, "amulet");
         else if (typ == AMULET_OF_YENDOR || typ == FAKE_AMULET_OF_YENDOR)
             /* each must be identified individually */
-            Strcpy(buf, known ? actualn : dn);
+            Strcat(buf, known ? actualn : dn);
         else if (nn)
-            Strcpy(buf, actualn);
+            Strcat(buf, actualn);
         else if (un)
             xcalled(buf, BUFSZ - PREFIX, "amulet", un);
         else
@@ -822,10 +821,14 @@ xname_flags(
             char anbuf[10];
             const char *statue_pmname = obj_pmname(obj);
 
-            Snprintf(buf, bufspaceleft, "%s%s of %s%s",
+            Snprintf(buf, bufspaceleft, "%s%s%s%s of %s%s",
                      (Role_if(PM_ARCHEOLOGIST)
                       && (obj->spe & CORPSTAT_HISTORIC) != 0) ? "historic "
                        : "",
+                     (forcemat || obj->material != objects[obj->otyp].oc_material)
+                       ? materialnm[obj->material] : "",
+                     (forcemat || obj->material != objects[obj->otyp].oc_material)
+                       ? " " : "",
                      actualn,
                      type_is_pname(&mons[omndx]) ? ""
                        : the_unique_pm(&mons[omndx]) ? "the "
@@ -843,8 +846,15 @@ xname_flags(
         }
         break;
     case BALL_CLASS:
-        Sprintf(buf, "%sheavy iron ball",
-                (obj->owt > ocl->oc_weight) ? "very " : "");
+        if(obj->owt > ocl->oc_weight) {
+            Strcpy(buf, "very ");
+        }
+        Strcat(buf, "heavy ");
+        if(forcemat || obj->material != objects[obj->otyp].oc_material) {
+            Strcat(buf, materialnm[obj->material]);
+            Strcat(buf, " ");
+        }
+        Strcat(buf, "ball");
         break;
     case POTION_CLASS:
         if (dknown && obj->odiluted)
@@ -1765,6 +1775,11 @@ doname(struct obj *obj)
 char *
 doname_with_price(struct obj *obj)
 {
+    if(Role_if(PM_MERCHANT)) {
+        if(shop_object(u.ux, u.uy) && !obj->no_charge && !Blind && !Deaf) {
+            makeknown(obj->otyp);
+        }
+    }
     return doname_base(obj, DONAME_WITH_PRICE);
 }
 
@@ -3343,7 +3358,8 @@ static const struct alt_spellings {
     { "smooth shield", SHIELD_OF_REFLECTION },
     { "grey dragon scale mail", GRAY_DRAGON_SCALE_MAIL },
     { "grey dragon scales", GRAY_DRAGON_SCALES },
-    { "iron ball", HEAVY_IRON_BALL },
+    { "iron ball", HEAVY_BALL },
+    { "heavy iron ball", HEAVY_BALL },
     { "lantern", LANTERN },
     { "mattock", DWARVISH_MATTOCK },
     { "amulet of poison resistance", AMULET_VERSUS_POISON },
@@ -4028,7 +4044,7 @@ readobjnam_preparse(struct _readobjnam_data *d)
         } else if (!strncmpi(d->bp, "zombifying ", l = 11)) {
             d->zombify = TRUE;
         } else if (!strncmpi(d->bp, "very ", l = 5)) {
-            /* very rusted very heavy iron ball */
+            /* very rusted very heavy ball */
             d->very = 1;
         } else if (!strncmpi(d->bp, "thoroughly ", l = 11)) {
             d->very = 2;
@@ -4125,7 +4141,7 @@ readobjnam_preparse(struct _readobjnam_data *d)
                 || !strncmpi(d->bp, "gold detection", l = 14)
                 || !strncmpi(d->bp, "silver ring", l = 11)
                 || !strncmpi(d->bp, "gold ring", l = 9)
-                || !strncmpi(d->bp, "iron ball", l = 9)
+                || !strncmpi(d->bp, "heavy ball", l = 9)
                 || !strncmpi(d->bp, "platinum yendorian express card", l = 31)
                 || !strcmp(d->bp, "gold")) {
                 /* hack so that silver dragon scales/mail doesn't get
@@ -4226,7 +4242,7 @@ readobjnam_postparse1(struct _readobjnam_data *d)
      *  scrolls labeled "QWERTY"
      *  egg
      *  fortune cookies
-     *  very heavy iron ball named hoei
+     *  very heavy ball named hoei
      *  wand of wishing
      *  elven cloak
      */
@@ -5112,7 +5128,7 @@ readobjnam(char *bp, struct obj *no_wish)
     case SKELETON_KEY:
     case CHEST:
     case LARGE_BOX:
-    case HEAVY_IRON_BALL:
+    case HEAVY_BALL:
     case IRON_CHAIN:
         break;
     case STATUE: /* otmp->cobj already done in mksobj() */
@@ -5377,7 +5393,7 @@ readobjnam(char *bp, struct obj *no_wish)
         }
     }
     d.otmp->owt = weight(d.otmp);
-    if (d.very && d.otmp->otyp == HEAVY_IRON_BALL)
+    if (d.very && d.otmp->otyp == HEAVY_BALL)
         d.otmp->owt += IRON_BALL_W_INCR;
 
     return d.otmp;
