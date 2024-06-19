@@ -1491,6 +1491,7 @@ extern void newemin(struct monst *) NONNULLARG1;
 extern void free_emin(struct monst *) NONNULLARG1;
 extern int monster_census(boolean);
 extern int msummon(struct monst *);
+extern int summon_dtype(int, int, aligntyp);
 extern void summon_minion(aligntyp, boolean);
 extern int demon_talk(struct monst *) NONNULLARG1;
 extern long bribe(struct monst *) NONNULLARG1;
