@@ -1,65 +1,61 @@
--- NetHack sokoban soko3-2.lua	$NHDT-Date: 1652196036 2022/05/10 15:20:36 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.1 $
+-- NetHack sokoban soko3-2.lua	$NHDT-Date: 1652196036 2022/05/10 15:20:36 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.2 $
 --	Copyright (c) 1998-1999 by Kevin Hugo
 -- NetHack may be freely redistributed.  See license for details.
 --
 des.level_init({ style = "solidfill", fg = " " });
 
-des.level_flags("mazelevel", "noteleport", "premapped", "sokoban", "solidify");
+des.level_flags("mazelevel", "noteleport", "hardfloor", "premapped", "sokoban", "solidify");
 
 des.map([[
- ----          -----------
--|..|-------   |.........|
-|..........|   |.........|
-|..-----.-.|   |.........|
-|..|...|...|   |.........|
-|.........-|   |.........|
-|.......|..|   |.........|
-|.----..--.|   |.........|
-|........|.--  |.........|
-|.---.-.....------------+|
-|...|...-................|
-|.........----------------
-----|..|..|               
-    -------               
+-------- ------
+|.|....|-|....|
+|.|-..........|
+|.||....|.....|
+|.||....|.....|
+|.|-----|.-----
+|.|    |......|
+|.-----|......|
+|.............|
+|..|---|......|
+----   --------
 ]]);
-des.stair("down", 03,01)
-des.stair("up", 20,04)
-des.door("locked",24,09)
-des.region(selection.area(00,00,25,13), "lit")
-des.non_diggable(selection.area(00,00,25,13))
-des.non_passwall(selection.area(00,00,25,13))
+des.levregion({ region = {03,01,03,01}, type = "branch" })
+des.stair("up", 01,01)
+des.region(selection.area(00,00,14,10),"lit")
+des.non_diggable(selection.area(00,00,14,10))
+des.non_passwall(selection.area(00,00,14,10))
 
 -- Boulders
-des.object("boulder",02,03)
-des.object("boulder",08,03)
-des.object("boulder",09,04)
-des.object("boulder",02,05)
-des.object("boulder",04,05)
+des.object("boulder",05,02)
+des.object("boulder",06,02)
+des.object("boulder",06,03)
+des.object("boulder",07,03)
+--
 des.object("boulder",09,05)
-des.object("boulder",02,06)
-des.object("boulder",05,06)
-des.object("boulder",06,07)
-des.object("boulder",03,08)
+des.object("boulder",10,03)
+des.object("boulder",11,02)
+des.object("boulder",12,03)
+--
 des.object("boulder",07,08)
-des.object("boulder",05,09)
-des.object("boulder",10,09)
-des.object("boulder",07,10)
-des.object("boulder",10,10)
-des.object("boulder",03,11)
+des.object("boulder",08,08)
+des.object("boulder",09,08)
+des.object("boulder",10,08)
 
 -- Traps
-des.trap("hole",12,10)
-des.trap("hole",13,10)
-des.trap("hole",14,10)
-des.trap("hole",15,10)
-des.trap("hole",16,10)
-des.trap("hole",17,10)
-des.trap("hole",18,10)
-des.trap("hole",19,10)
-des.trap("hole",20,10)
-des.trap("hole",21,10)
-des.trap("hole",22,10)
-des.trap("hole",23,10)
+des.trap("pit",01,02)
+des.trap("pit",01,03)
+des.trap("pit",01,04)
+des.trap("pit",01,05)
+des.trap("pit",01,06)
+des.trap("pit",01,07)
+des.trap("pit",03,08)
+des.trap("pit",04,08)
+des.trap("pit",05,08)
+des.trap("pit",06,08)
+
+-- A little help
+des.object("scroll of earth",01,09)
+des.object("scroll of earth",02,09)
 
 -- Random objects
 des.object({ class = "%" });
@@ -68,4 +64,5 @@ des.object({ class = "%" });
 des.object({ class = "%" });
 des.object({ class = "=" });
 des.object({ class = "/" });
+
 
