@@ -207,17 +207,17 @@ dungeon = {
          {
             name = "soko1",
             base = 1,
-            nlevels = 2
+            nlevels = 12
          },
          {
             name = "soko2",
             base = 2,
-            nlevels = 5
+            nlevels = 34
          },
          {
             name = "soko3",
             base = 3,
-            nlevels = 2
+            nlevels = 18
          }
       }
    },
