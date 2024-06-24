@@ -1,7 +1,7 @@
 -- "Back At Ya"
 --MAZE: "soko1-11",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "Back At Ya"
+des.message("Back At Ya")
 --GEOMETRY: center, center
 --12345678901234567890123456789
 des.map([[

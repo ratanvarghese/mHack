@@ -1,7 +1,7 @@
 -- "Slot Machine"
 --MAZE:"soko2-12",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "Slot Machine"
+des.message("Slot Machine")
 --GEOMETRY: center, center
 --12345678901234567890123456789012345678901234567890
 des.map([[

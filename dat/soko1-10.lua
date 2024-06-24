@@ -1,7 +1,7 @@
 -- "Running Rings Around"
 --MAZE: "soko1-10",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "Running Rings Around"
+des.message("Running Rings Around")
 --GEOMETRY: center, center
 --123456789012345678
 des.map([[

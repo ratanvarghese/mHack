@@ -1,6 +1,6 @@
 --MAZE:"soko2-10",' '
 des.level_flags("noteleport", "solidify", "sokoban", "premapped")
---MESSAGE:"Shave and a Haircut"
+des.message("Shave and a Haircut")
 --GEOMETRY: center, center
 -- "J Franklin Mentzer <wryter@aol.com>"
 des.map([[

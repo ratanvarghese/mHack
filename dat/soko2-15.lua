@@ -1,7 +1,7 @@
 -- "Boulder Halls of Zim"
 --MAZE:"soko3-12",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "Boulder Halls of Zim"
+des.message("Boulder Halls of Zim")
 --GEOMETRY: center, center
 --12345678901234567890123456
 des.map([[

@@ -1,7 +1,7 @@
 -- "First Things First"
 --MAZE:"soko4-12",' '
 des.level_flags("noteleport", "hardfloor", "premapped", "sokoban", "solidify")
---MESSAGE: "First Things First"
+des.message("First Things First")
 --GEOMETRY: center, center
 --12345678901234
 des.map([[

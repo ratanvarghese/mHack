@@ -2,7 +2,7 @@
 --MAZE: "soko4-16",' '
 -- This level is designed to be the FIRST level in the Sokoban branch
 des.level_flags("noteleport", "hardfloor", "premapped", "sokoban", "solidify")
---MESSAGE: "One Weird Trick"
+des.message("One Weird Trick")
 --GEOMETRY: center, center
 --123456789012345678
 des.map([[

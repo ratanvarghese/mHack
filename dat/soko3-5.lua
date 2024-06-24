@@ -1,6 +1,6 @@
 --LEVEL:"soko4-5"
 des.level_flags("noteleport", "hardfloor", "mazelevel", "premapped", "sokoban", "solidify")
---MESSAGE:"False Flag"
+des.message("False Flag")
 des.level_init({ style = "solidfill", fg = " " });
 --GEOMETRY: center, center
 -- "Thinking Rabbit"

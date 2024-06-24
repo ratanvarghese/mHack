@@ -1,6 +1,6 @@
 --LEVEL:"soko3-3"
 des.level_flags("noteleport", "mazelevel", "premapped", "sokoban", "solidify")
---MESSAGE:"Old Man of the Mountain"
+des.message("Old Man of the Mountain")
 des.level_init({ style = "solidfill", fg = " " });
 --GEOMETRY: center, center
 -- "Thinking Rabbit" 

@@ -1,6 +1,6 @@
 --LEVEL:"soko1-5"
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE:"Dudley's Torment"
+des.message("Dudley's Torment")
 des.level_init({ style = "solidfill", fg = " " });
 --GEOMETRY: center, center
 -- Steve Melenchuk <smelenchuk@gmail.com>

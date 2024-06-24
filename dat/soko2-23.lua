@@ -1,6 +1,6 @@
 --LEVEL:"soko2-6"
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE:"Diligent Escape Plan"
+des.message("Diligent Escape Plan")
 des.level_init({ style = "solidfill", fg = " " });
 --GEOMETRY: center, center
 --12345678901234567890123456789012345678901234567890

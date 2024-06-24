@@ -1,7 +1,7 @@
 --LEVEL:"soko4-6"
 des.level_flags("noteleport", "hardfloor", "mazelevel", "premapped", "sokoban", "solidify")
 des.level_init({ style = "solidfill", fg = " " });
---MESSAGE:"One Wrong Step"
+des.message("One Wrong Step")
 --GEOMETRY: center, center
 -- "Joseph L Traub"
 des.map([[

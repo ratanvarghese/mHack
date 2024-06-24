@@ -1,6 +1,6 @@
 --MAZE:"soko4-9",' '
 des.level_flags("noteleport", "hardfloor", "solidify", "sokoban", "premapped")
---MESSAGE:"One More Time"
+des.message("One More Time")
 --GEOMETRY: center, center
 -- Steve Melenchuk <smelenchuk@gmail.com>
 des.map([[

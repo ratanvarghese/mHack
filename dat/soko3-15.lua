@@ -2,7 +2,7 @@
 --MAZE: "soko4-15",' '
 -- This level is designed to be the FIRST level in the Sokoban branch
 des.level_flags("noteleport", "hardfloor", "premapped", "sokoban", "solidify")
---MESSAGE: "Column B"
+des.message("Column B")
 --GEOMETRY: center, center
 --1234567890123
 des.map([[

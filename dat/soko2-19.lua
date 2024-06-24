@@ -2,7 +2,7 @@
 -- "You Only Need Six"
 --MAZE: "soko3-16",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "You Only Need Six"
+des.message("You Only Need Six")
 --GEOMETRY: center, center
 --         1         2
 --123456789012345678901234

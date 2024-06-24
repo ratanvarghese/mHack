@@ -1,7 +1,7 @@
 -- "Either Way, It's All Good"
 --MAZE: "soko2-14",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "Either Way, It's All Good"
+des.message("Either Way, It's All Good")
 --GEOMETRY: center, center
 --12345678901234567890123456789012345678901234567890
 des.map([[

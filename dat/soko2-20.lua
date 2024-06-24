@@ -1,7 +1,7 @@
 -- "Four Wings"
 --MAZE: "soko3-17",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "Four Wings"
+des.message("Four Wings")
 --GEOMETRY: center, center
 --1234567890123456789012345
 des.map([[

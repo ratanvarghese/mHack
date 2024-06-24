@@ -1,7 +1,7 @@
 -- "Count Carefully"
 --MAZE: "soko3-15",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "Count Carefully"
+des.message("Count Carefully")
 --GEOMETRY: center, center
 --12345678901234567
 des.map([[

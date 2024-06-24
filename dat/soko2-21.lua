@@ -1,6 +1,6 @@
 --LEVEL:"soko2-4"
 des.level_flags("noteleport", "mazelevel", "premapped", "sokoban", "solidify")
---MESSAGE:"Back Alley Cliche"
+des.message("Back Alley Cliche")
 des.level_init({ style = "solidfill", fg = " " });
 --GEOMETRY: center, center
 -- "Thinking Rabbit"

@@ -1,6 +1,6 @@
 --MAZE:"soko3-8",' '
 des.level_flags("noteleport", "solidify", "sokoban", "premapped")
---MESSAGE:"A Secret to Everybody"
+des.message("A Secret to Everybody")
 --GEOMETRY: center, center
 -- "Joseph L Traub" 
 des.map([[

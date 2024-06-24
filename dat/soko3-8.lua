@@ -1,6 +1,6 @@
 --MAZE:"soko4-8",' '
 des.level_flags("noteleport", "hardfloor", "solidify", "sokoban", "premapped")
---MESSAGE:"Mini Me"
+des.message("Mini Me")
 --GEOMETRY: center, center
 -- Steve Melenchuk <smelenchuk@gmail.com>
 des.map([[

@@ -2,7 +2,7 @@
 -- (Adapted from Slash'em.)
 --MAZE:"soko3-14",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "The Snake"
+des.message("The Snake")
 --GEOMETRY: center, center
 --123456789012345678901234567
 des.map([[

@@ -1,7 +1,7 @@
 -- "Collecting Marbles"
 --MAZE:"soko1-9",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "Collecting Marbles"
+des.message("Collecting Marbles")
 --GEOMETRY: center, center
 --12345678901234567890123456789012345678901234567890
 des.map([[

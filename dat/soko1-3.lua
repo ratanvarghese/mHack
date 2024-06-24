@@ -1,6 +1,6 @@
 --LEVEL:"soko1-3"
 des.level_flags("noteleport", "mazelevel", "premapped", "sokoban", "solidify")
---MESSAGE:"Just Keep Pushing"
+des.message("Just Keep Pushing")
 des.level_init({ style = "solidfill", fg = " " });
 --GEOMETRY: center, center
 -- "J Franklin Mentzer <wryter@aol.com>"

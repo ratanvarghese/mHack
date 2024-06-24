@@ -2,7 +2,7 @@
 --MAZE: "soko4-18",' '
 -- This level is designed to be the FIRST level in the Sokoban branch
 des.level_flags("noteleport", "hardfloor", "premapped", "sokoban", "solidify")
---MESSAGE: "A Hug and a Kiss"
+des.message("A Hug and a Kiss")
 --GEOMETRY: center, center
 --123456789012
 des.map([[

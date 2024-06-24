@@ -1,6 +1,6 @@
 --LEVEL:"soko3-6"
 des.level_flags("noteleport", "mazelevel", "premapped", "sokoban", "solidify")
---MESSAGE:"The Gauntlet"
+des.message("The Gauntlet")
 des.level_init({ style = "solidfill", fg = " " });
 --GEOMETRY: center, center
 -- "Joseph L Traub"

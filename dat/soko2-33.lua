@@ -1,7 +1,7 @@
 -- "Daedalus Delicatessen"
 --MAZE:"soko2-16",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "Daedalus Delicatessen"
+des.message("Daedalus Delicatessen")
 --GEOMETRY: center, center
 --12345678901234567890123456789012345
 des.map([[

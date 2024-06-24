@@ -1,7 +1,7 @@
 -- "Sneak Preview"
 --MAZE: "soko2-15",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "Sneak Preview"
+des.message("Sneak Preview")
 --GEOMETRY: center, center
 --12345678901234567890123456789012345678901234567890
 des.map([[

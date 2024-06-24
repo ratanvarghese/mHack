@@ -1,7 +1,7 @@
 -- "Easy Peasey"
 --MAZE:"soko4-11",' '
 des.level_flags("noteleport", "hardfloor", "premapped", "sokoban", "solidify")
---MESSAGE: "Easy Peasey"
+des.message("Easy Peasey")
 --GEOMETRY: center, center
 --123456789012345
 des.map([[

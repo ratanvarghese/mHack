@@ -1,7 +1,7 @@
 --LEVEL:"soko4-3"
 des.level_flags("noteleport", "hardfloor", "mazelevel", "premapped", "sokoban", "solidify")
 des.level_init({ style = "solidfill", fg = " " });
---MESSAGE:"Mirror Hall"
+des.message("Mirror Hall")
 --GEOMETRY: center, center
 -- "J Franklin Mentzer <wryter@aol.com>"
 des.map([[

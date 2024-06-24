@@ -1,6 +1,6 @@
 --MAZE:"soko2-9",' '
 des.level_flags("noteleport", "solidify", "sokoban", "premapped")
---MESSAGE:"Reading Rooms"
+des.message("Reading Rooms")
 --GEOMETRY: center, center
 -- "Thinking Rabbit"
 des.map([[

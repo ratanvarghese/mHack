@@ -1,7 +1,7 @@
 -- "Three-Room Monte"
 --MAZE: "soko4-14",' '
 des.level_flags("noteleport", "hardfloor", "premapped", "sokoban", "solidify")
---MESSAGE: "Three-Room Monte"
+des.message("Three-Room Monte")
 --GEOMETRY: center, center
 --12345678901234
 des.map([[

@@ -1,6 +1,6 @@
 --LEVEL:"soko4-4"
 des.level_flags("noteleport", "hardfloor", "mazelevel", "premapped", "sokoban", "solidify")
---MESSAGE:"We See You"
+des.message("We See You")
 des.level_init({ style = "solidfill", fg = " " });
 --GEOMETRY: center, center
 -- "Joseph L Traub"

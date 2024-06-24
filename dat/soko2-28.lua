@@ -1,7 +1,7 @@
 -- "Bring 'em on Down"
 --MAZE:"soko2-11",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "Bring 'em on Down"
+des.message("Bring 'em on Down")
 --GEOMETRY: center, center
 --12345678901234567890123456789012345678901234567890
 des.map([[

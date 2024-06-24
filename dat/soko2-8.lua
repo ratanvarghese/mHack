@@ -1,6 +1,6 @@
 --LEVEL:"soko3-5"
 des.level_flags("noteleport", "mazelevel", "premapped", "sokoban", "solidify")
---MESSAGE:"Room to Breathe"
+des.message("Room to Breathe")
 des.level_init({ style = "solidfill", fg = " " });
 --GEOMETRY: center, center
 -- "Joseph L Traub"

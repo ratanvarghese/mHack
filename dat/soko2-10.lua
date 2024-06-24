@@ -1,6 +1,6 @@
 --MAZE:"soko3-7",' '
 des.level_flags("noteleport", "solidify", "sokoban", "premapped")
---MESSAGE:"Thinking Rabbit"
+des.message("Thinking Rabbit")
 --GEOMETRY: center, center
 -- "Thinking Rabbit"
 des.map([[

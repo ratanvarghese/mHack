@@ -1,6 +1,6 @@
 --LEVEL:"soko3-4"
 des.level_flags("noteleport", "mazelevel", "premapped", "sokoban", "solidify")
---MESSAGE:"Roundabout"
+des.message("Roundabout")
 des.level_init({ style = "solidfill", fg = " " });
 --GEOMETRY: center, center
 -- "Thinking Rabbit" 

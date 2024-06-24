@@ -1,7 +1,7 @@
 -- "Two-Phase"
 --MAZE:"soko3-13",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "Two-Phase"
+des.message("Two-Phase")
 --GEOMETRY: center, center
 --1234567890123456789012345
 des.map([[

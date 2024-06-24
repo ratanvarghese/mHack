@@ -1,7 +1,7 @@
 -- "Through the Cracks"
 --MAZE:"soko2-13",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "Through the Cracks"
+des.message("Through the Cracks")
 --GEOMETRY: center, center
 --12345678901234567890123456789012345678901234567890
 des.map([[

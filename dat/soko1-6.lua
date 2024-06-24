@@ -1,6 +1,6 @@
 --LEVEL:"soko1-6"
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE:"Plinketto"
+des.message("Plinketto")
 des.level_init({ style = "solidfill", fg = " " });
 --GEOMETRY: center, center
 -- Steve Melenchuk <smelenchuk@gmail.com>

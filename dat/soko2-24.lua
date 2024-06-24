@@ -1,6 +1,6 @@
 --MAZE:"soko2-7",' '
 des.level_flags("noteleport", "solidify", "sokoban", "premapped")
---MESSAGE:"Corner Pocket"
+des.message("Corner Pocket")
 --GEOMETRY: center, center
 -- "Thinking Rabbit"
 des.map([[

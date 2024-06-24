@@ -1,6 +1,6 @@
 --MAZE:"soko3-10",' '
 des.level_flags("noteleport", "solidify", "sokoban", "premapped")
---MESSAGE:"Christmas Chimney"
+des.message("Christmas Chimney")
 --GEOMETRY: center, center
 -- Steve Melenchuk <smelenchuk@gmail.com>
 des.map([[

@@ -1,7 +1,7 @@
 -- "Picking out the Seeds"
 --MAZE: "soko4-13",' '
 des.level_flags("noteleport", "hardfloor", "premapped", "sokoban", "solidify")
---MESSAGE: "Picking out the Seeds"
+des.message("Picking out the Seeds")
 --GEOMETRY: center, center
 --12345678901234
 des.map([[

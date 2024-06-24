@@ -1,6 +1,6 @@
 --MAZE:"soko2-8",' '
 des.level_flags("noteleport", "solidify", "sokoban", "premapped")
---MESSAGE:"No Way Out"
+des.message("No Way Out")
 --GEOMETRY: center, center
 -- "Joseph L Traub"
 des.map([[

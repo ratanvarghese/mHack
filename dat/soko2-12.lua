@@ -1,6 +1,6 @@
 --MAZE:"soko3-9",' '
 des.level_flags("noteleport", "solidify", "sokoban", "premapped")
---MESSAGE:"Escape Goat"
+des.message("Escape Goat")
 --GEOMETRY: center, center
 -- Steve Melenchuk <smelenchuk@gmail.com>
 des.map([[

@@ -1,7 +1,7 @@
 -- "Ringing Endorsement"
 --MAZE:"soko1-7",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "Ringing Endorsement"
+des.message("Ringing Endorsement")
 --GEOMETRY: center, center
 --12345678901234567890123456789012345678901234567890
 des.map([[

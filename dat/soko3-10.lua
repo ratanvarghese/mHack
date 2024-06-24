@@ -1,7 +1,7 @@
 -- "Boomerang Boulders"
 --MAZE:"soko4-10",' '
 des.level_flags("noteleport", "hardfloor", "premapped", "sokoban", "solidify")
---MESSAGE: "Boomerang Boulders"
+des.message("Boomerang Boulders")
 --GEOMETRY: center, center
 --1234567890123456
 des.map([[

@@ -2,7 +2,7 @@
 -- Map created by karadoc
 --MAZE: "soko2-17",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "Stacked Dozen"
+des.message("Stacked Dozen")
 --GEOMETRY: center, center
 --123456789012345678901234
 des.map([[

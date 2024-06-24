@@ -1,7 +1,7 @@
 -- "The Dragon of Bactria"
 --MAZE: "soko1-12",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "The Dragon of Bactria"
+des.message("The Dragon of Bactria")
 --GEOMETRY: center, center
 --123456789012345678901234567890
 des.map([[

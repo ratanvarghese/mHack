@@ -1,6 +1,6 @@
 --MAZE:"soko4-7",' '
 des.level_flags("noteleport", "hardfloor", "solidify", "sokoban", "premapped")
---MESSAGE:"Open the Door"
+des.message("Open the Door")
 --GEOMETRY: center, center
 -- "Joseph L Traub"
 des.map([[

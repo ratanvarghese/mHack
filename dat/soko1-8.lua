@@ -1,7 +1,7 @@
 -- "Open at the Top"
 --MAZE:"soko1-8",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "Open at the Top"
+des.message("Open at the Top")
 --GEOMETRY: center, center
 --12345678901234567890123456789012345678901234567890
 des.map([[

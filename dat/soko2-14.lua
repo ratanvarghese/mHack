@@ -1,7 +1,7 @@
 -- "Fly on the Wall"
 --MAZE:"soko3-11",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE: "Fly on the Wall"
+des.message("Fly on the Wall")
 --GEOMETRY: center, center
 --12345678901234567890123456
 des.map([[

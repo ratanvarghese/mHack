@@ -1,6 +1,6 @@
 --LEVEL:"soko2-5"
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
---MESSAGE:"Snaggletooth"
+des.message("Snaggletooth")
 des.level_init({ style = "solidfill", fg = " " });
 --GEOMETRY: center, center
 -- Steve Melenchuk <smelenchuk@gmail.com>

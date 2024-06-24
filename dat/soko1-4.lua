@@ -1,6 +1,6 @@
 --LEVEL:"soko1-4"
 des.level_flags("noteleport", "mazelevel", "premapped", "sokoban", "solidify")
---MESSAGE:"Work For It"
+des.message("Work For It")
 des.level_init({ style = "solidfill", fg = " " });
 --GEOMETRY: center, center
 -- "J Franklin Mentzer <wryter@aol.com>"
