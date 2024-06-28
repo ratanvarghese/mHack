@@ -2378,6 +2378,9 @@ place_object(struct obj *otmp, coordxy x, coordxy y)
     fobj = otmp;
     if (otmp->timed)
         obj_timer_checks(otmp, x, y, 0);
+    /* for objects initially created in water */
+    if (is_pool(x, y) || IS_PUDDLE(levl[x][y].typ))
+        water_damage(otmp, NULL, FALSE);
 }
 
 /* tear down the object pile at <x,y> and create it again, so that any

@@ -1674,6 +1674,14 @@ trapeffect_rust_trap(
         return trapkilled ? Trap_Killed_Mon : mtmp->mtrapped
             ? Trap_Caught_Mon : Trap_Effect_Finished;
     }
+
+    if (!rn2(4)) {
+        del_engr_at(trap->tx, trap->ty);
+        levl[trap->tx][trap->ty].typ = PUDDLE;
+        water_damage_chain(gl.level.objects[trap->tx][trap->ty], FALSE);
+        newsym(trap->tx, trap->ty);
+    }
+
     return Trap_Effect_Finished;
 }
 
@@ -1694,7 +1702,32 @@ trapeffect_fire_trap(
         struct permonst *mptr = mtmp->data;
         int orig_dmg = d(2, 4);
 
-        if (in_sight)
+        if (IS_PUDDLE(levl[mtmp->mx][mtmp->my].typ)) {
+            if (in_sight) {
+                pline("A cascade of steamy bubbles erupts from the %s under %s!",
+                    surface(mtmp->mx,mtmp->my), mon_nam(mtmp));
+            }
+            else if (see_it) {
+                You("see a cascade of steamy bubbles erupt from the %s!",
+                    surface(mtmp->mx,mtmp->my));
+            }
+            if(rn2(2)) {
+                if (in_sight)
+                    pline_The("water evaporates!");
+                levl[mtmp->mx][mtmp->my].typ = ROOM;
+            }
+            if (resists_fire(mtmp)) {
+                if (in_sight) {
+                    shieldeff(mtmp->mx,mtmp->my);
+                    pline("%s is uninjured.", Monnam(mtmp));
+                }
+            } else if (thitm(0, mtmp, (struct obj *)0, rnd(3), FALSE)) {
+                trapkilled = TRUE;
+            }
+            if (see_it)
+                seetrap(trap);
+        }
+        else if (in_sight)
             pline_mon(mtmp,
                  "A %s erupts from the %s under %s!", tower_of_flame,
                   surface(mtmp->mx, mtmp->my), mon_nam(mtmp));
@@ -4118,13 +4151,18 @@ dofiretrap(
      * to be done upon its contents.
      */
 
-    if ((box && !carried(box)) ? is_pool(box->ox, box->oy) : Underwater) {
+    if ((box && !carried(box)) ? is_pool(box->ox, box->oy) :
+            (Underwater || IS_PUDDLE(levl[u.ux][u.uy].typ))) {
         pline("A cascade of steamy bubbles erupts from %s!",
               the(box ? xname(box) : surface(u.ux, u.uy)));
         if (Fire_resistance)
             You("are uninjured.");
         else
             losehp(rnd(3), "boiling water", KILLED_BY);
+        if (IS_PUDDLE(levl[u.ux][u.uy].typ) && rn2(2)) {
+            pline_The("water evaporates!");
+            levl[u.ux][u.uy].typ = ROOM;
+        }
         return;
     }
     pline("A %s %s from %s!", tower_of_flame, box ? "bursts" : "erupts",

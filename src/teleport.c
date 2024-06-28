@@ -140,7 +140,8 @@ goodpos(
                         || (!Is_waterlevel(&u.uz)
                             && !is_waterwall(x, y)
                             && m_in_air(mtmp)));
-        } else if (mdat->mlet == S_EEL && rn2(13) && !ignorewater) {
+        } else if (mdat->mlet == S_EEL && (!IS_PUDDLE(levl[x][y].typ) ||
+            bigmonst(mdat)) && !ignorewater) {
             return FALSE;
         } else if (is_lava(x, y) && !ignorelava) {
             /* 3.6.3: floating eye can levitate over lava but it avoids

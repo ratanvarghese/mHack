@@ -3307,6 +3307,10 @@ zap_updown(struct obj *obj) /* wand or spell, nonnull */
             if (!(e && e->engr_type == ENGRAVE)) {
                 if (is_pool(u.ux, u.uy) || is_ice(u.ux, u.uy))
                     pline1(nothing_happens);
+                else if (IS_PUDDLE(levl[u.ux][u.uy].typ)) {
+                    pline("The water at your %s turns slightly %s.",
+                        makeplural(body_part(FOOT)), hcolor(NH_RED));
+                }
                 else
                     pline("Blood %ss %s your %s.",
                           is_lava(u.ux, u.uy) ? "boil" : "pool",
@@ -4971,20 +4975,23 @@ melt_ice(coordxy x, coordxy y, const char *msg)
     if (lev->typ == DRAWBRIDGE_UP || lev->typ == DRAWBRIDGE_DOWN) {
         lev->drawbridgemask &= ~DB_ICE; /* revert to DB_MOAT */
     } else { /* lev->typ == ICE */
-        lev->typ = (lev->icedpool == ICED_POOL ? POOL : MOAT);
+        lev->typ = (lev->icedpool == ICED_POOL ? POOL :
+                    (lev->icedpool == ICED_PUDDLE ? PUDDLE : MOAT));
         lev->icedpool = 0;
     }
     spot_stop_timers(x, y, MELT_ICE_AWAY); /* no more ice to melt away */
     if (t_at(x, y))
         trap_ice_effects(x, y, TRUE); /* TRUE because ice_is_melting */
     obj_ice_effects(x, y, FALSE);
-    unearth_objs(x, y);
+    if (lev->typ != PUDDLE) {
+        unearth_objs(x, y);
+    }
     if (Underwater)
         vision_recalc(1);
     newsym(x, y);
     if (cansee(x, y) || u_at(x, y))
         Norep("%s", msg);
-    if ((otmp = sobj_at(BOULDER, x, y)) != 0) {
+    if (lev->typ != PUDDLE && ((otmp = sobj_at(BOULDER, x, y)) != 0)) {
         if (cansee(x, y))
             pline("%s settles...", An(xname(otmp)));
         do {
@@ -5155,11 +5162,20 @@ zap_over_floor(
                 pline("Steam billows from the fountain.");
             rangemod -= 1;
             dryup(x, y, type > 0);
+        } else if (IS_PUDDLE(lev->typ)) {
+            rangemod -= 3;
+            lev->typ = ROOM;
+            if (cansee(x,y)) {
+                pline("The water evaporates.");
+            }
+            else {
+                You_hear("hissing gas.");
+            }
         }
         break; /* ZT_FIRE */
 
     case ZT_COLD:
-        if (is_pool(x, y) || is_lava(x, y) || lavawall) {
+        if (is_pool(x, y) || is_lava(x, y) || IS_PUDDLE(lev->typ) || lavawall) {
             boolean lava = (is_lava(x, y) || lavawall),
                     moat = is_moat(x, y);
             int chance = max(2, 5 + gl.level.flags.temperature * 10);
@@ -5184,7 +5200,8 @@ zap_over_floor(
                 } else {
                     lev->icedpool = lava ? 0
                                          : (lev->typ == POOL) ? ICED_POOL
-                                                              : ICED_MOAT;
+                                         : ((lev->typ == PUDDLE) ? ICED_PUDDLE
+                                                              : ICED_MOAT);
                     if (lavawall) {
                         if ((isok(x, y-1) && IS_WALL(levl[x][y-1].typ))
                             || (isok(x, y+1) && IS_WALL(levl[x][y+1].typ)))
@@ -5197,7 +5214,9 @@ zap_over_floor(
                         lev->typ = lava ? ROOM : ICE;
                     }
                 }
-                bury_objs(x, y);
+                if(lev->icedpool != ICED_PUDDLE) {
+                    bury_objs(x, y);
+                }
                 if (!lava) {
                     Soundeffect(se_soft_crackling, 30);
                 }

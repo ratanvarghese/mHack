@@ -262,7 +262,7 @@ flooreffects(struct obj *obj, coordxy x, coordxy y, const char *verb)
         res = TRUE;
     } else if (is_lava(x, y)) {
         res = lava_damage(obj, x, y);
-    } else if (is_pool(x, y)) {
+    } else if (is_pool(x, y) || (isok(x,y) && IS_PUDDLE(levl[x][y].typ))) {
         /* Reasonably bulky objects (arbitrary) splash when dropped.
          * If you're floating above the water even small things make
          * noise.  Stuff dropped near fountains always misses */
@@ -274,7 +274,7 @@ flooreffects(struct obj *obj, coordxy x, coordxy y, const char *verb)
                     pline("Plop!");
                 }
             }
-            map_background(x, y, 0);
+            /*map_background(x, y, 0);*/ /* can't tell what kind of water it is */
             newsym(x, y);
         }
         res = water_damage(obj, NULL, FALSE) == ER_DESTROYED;

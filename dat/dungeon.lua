@@ -70,7 +70,7 @@ dungeon = {
             base = 10,
             range = 3,
             chance = 40,
-            nlevels = 11
+            nlevels = 12
          },
          {
             name = "medusa",
@@ -162,7 +162,7 @@ dungeon = {
             bonetag = "T",
             base = 3,
             range = 2,
-            nlevels = 9,
+            nlevels = 10,
             flags = "town"
          },
          {

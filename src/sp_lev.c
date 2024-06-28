@@ -1275,7 +1275,7 @@ is_ok_location(coordxy x, coordxy y, getloc_flags_t humidity)
         if (!bould || (bould && (humidity & SOLID)))
             return TRUE;
     }
-    if ((humidity & WET) && is_pool(x, y))
+    if ((humidity & WET) && (is_pool(x, y) || IS_PUDDLE(typ)))
         return TRUE;
     if ((humidity & HOT) && is_lava(x, y))
         return TRUE;

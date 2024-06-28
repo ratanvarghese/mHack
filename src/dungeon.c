@@ -1739,6 +1739,8 @@ surface(coordxy x, coordxy y)
         return "headstone";
     else if (IS_FOUNTAIN(levtyp))
         return "fountain";
+    else if (IS_PUDDLE(levtyp))
+        return "shallow water";
     else if (On_stairs(x, y))
         return "stairs";
     else if (IS_WALL(levtyp) || levtyp == SDOOR)

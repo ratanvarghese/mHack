@@ -550,6 +550,9 @@ waterbody_name(coordxy x, coordxy y)
     } else if (ltyp == LAVAWALL) {
         Snprintf(pooltype, sizeof pooltype, "wall of %s", hliquid("lava"));
         return pooltype;
+    } else if (ltyp == PUDDLE) {
+        Snprintf(pooltype, sizeof pooltype, "shallow pool of %s", hliquid("water"));
+        return pooltype;
     }
     /* default; should be unreachable */
     return "water"; /* don't hallucinate this as some other liquid */
@@ -714,6 +717,7 @@ lookat(coordxy x, coordxy y, char *buf, char *monbuf)
             break;
         case S_pool:
         case S_water:
+        case S_puddle:
         case S_lava:
         case S_ice: /* for hallucination; otherwise defsyms[] would be fine */
             Strcpy(buf, waterbody_name(x, y));
@@ -1406,7 +1410,8 @@ do_screen_description(
             article = strstri(x_str, " of a room") ? 2
                       : !(alt_i == S_stone
                           || strcmp(x_str, "air") == 0
-                          || strcmp(x_str, "land") == 0);
+                          || strcmp(x_str, "land") == 0
+                          || strcmp(x_str, "shallow water") == 0);
 
             found = add_cmap_descr(found, alt_i, glyph, article,
                                    cc, x_str, prefix,

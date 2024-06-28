@@ -579,8 +579,8 @@ dodrink(void)
             }
             ++drink_ok_extra;
         }
-        /* Or are you surrounded by water? */
-        if (Underwater && !u.uswallow) {
+        /* Or a puddle? Or are you surrounded by water? */
+        if (IS_PUDDLE(levl[u.ux][u.uy].typ) || (Underwater && !u.uswallow)) {
             if (y_n("Drink the water around you?") == 'y') {
                 pline("Do you know what lives in this water?");
                 return ECMD_TIME;
@@ -2268,6 +2268,7 @@ dodip(void)
     uchar here = levl[u.ux][u.uy].typ;
     boolean is_hands, at_pool = is_pool(u.ux, u.uy),
             at_fountain = IS_FOUNTAIN(here), at_sink = IS_SINK(here),
+            at_puddle = IS_PUDDLE(here),
             at_here = (!iflags.menu_requested
                        && (at_pool || at_fountain || at_sink));
 
@@ -2328,7 +2329,7 @@ dodip(void)
                 return ECMD_TIME;
             }
             ++drink_ok_extra;
-        } else if (at_pool) {
+        } else if (at_pool || at_puddle) {
             const char *pooltype = waterbody_name(u.ux, u.uy);
 
             Snprintf(qbuf, sizeof(qbuf), "%s%s into the %s?", Dip_,
