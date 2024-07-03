@@ -36,7 +36,9 @@ des.map({ halign = "center", valign = "bottom", map = [[
 local stones = { {0,18},{0,12},{2,18},{12,14},{22,14},{16,16},{72,18},{52,14},{44,14} }
 shuffle(stones)
 
-des.region(selection.area(0,0,75,19),"unlit")
+des.region(selection.area(0,0,75,19), "unlit")
+des.region(selection.area(61,2,63,5), "lit")
+des.region(selection.area(66,1,75,9), "lit")
 
 des.stair("up", 1,9)
 
