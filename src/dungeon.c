@@ -1995,9 +1995,9 @@ level_difficulty(void)
     xint16 res;
 
     if (In_endgame(&u.uz)) {
-        res = depth(&sanctum_level) + u.ulevel / 2;
+        res = ((depth(&sanctum_level) * 3)/2) + u.ulevel / 2;
     } else if (u.uhave.amulet) {
-        res = deepest_lev_reached(FALSE);
+        res = (deepest_lev_reached(FALSE) * 3)/2;
     } else {
         res = depth(&u.uz);
         if(In_hell(&u.uz)) {
