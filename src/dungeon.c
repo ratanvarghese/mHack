@@ -2000,6 +2000,9 @@ level_difficulty(void)
         res = deepest_lev_reached(FALSE);
     } else {
         res = depth(&u.uz);
+        if(In_hell(&u.uz)) {
+            res = ((res * 3)/2);
+        }
         /* depth() is the number of elevation units (levels) below
            the theoretical surface; in a builds-up branch, that value
            ends up making the harder to reach levels be treated as if
