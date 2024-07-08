@@ -82,7 +82,7 @@ dungeon = {
          {
             name = "castle",
             base = -1,
-            nlevels = 3
+            nlevels = 6
          }
       }
    },
