@@ -5,6 +5,10 @@
 -- NetHack may be freely redistributed.  See license for details.
 
 -- Grund has left this world, but his memory lives on
+des.level_init({ style="mazegrid", bg ="-" });
+
+des.level_flags("mazelevel", "noteleport", "noflipy")
+
 --[[
 #000000000111111111122222222223333333333444444444455555555556666666666777777
 #123456789012345678901234567890123456789012345678901234567890123456789012345
