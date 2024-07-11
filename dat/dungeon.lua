@@ -116,7 +116,8 @@ dungeon = {
             name = "orcus",
             bonetag = "O",
             base = 2,
-            range = 2
+            range = 2,
+            nlevels = 2
          },
          {
             name = "wizard1",
