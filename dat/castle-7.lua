@@ -270,6 +270,12 @@ des.monster('soldier', 54, 09)
 des.monster('soldier', 54, 11)
 des.monster('lieutenant', 54, 10)
 
+-- Hell hounds
+des.monster('hell hound',52,05)
+des.monster('hell hound',52,15)
+des.monster('hell hound',52,07)
+des.monster('hell hound',52,13)
+
 -- Caves
 des.monster('uruk-hai', 34, 02)
 des.monster('uruk-hai', 34, 03)
