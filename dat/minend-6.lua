@@ -54,7 +54,7 @@ des.monster("succubus")
 
 
 -- Treasure
-des.object("luckstone")
+des.object({ id="luckstone", buc="not-cursed", achievement=1 })
 des.object("loadstone")
 des.object("flint")
 des.object("flint")

@@ -51,7 +51,7 @@ des.stair("up", 48,12)
 -- -0-des.non_passwall(selection.area(0,0,74,17))
 -- Niches
 -- Note: stones[3] empty
-des.object("luckstone", stones[1])
+des.object({ id="luckstone", coord=stones[1], buc="not-cursed", achievement=1 })
 des.object("loadstone", stones[2])
 -- Traps
 des.trap("teleport",05,04)
