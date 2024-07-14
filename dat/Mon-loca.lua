@@ -62,13 +62,16 @@ des.door("closed", 13,08)
 des.door("closed", 13,11)
 des.door("locked", 21,11)
 des.door("locked", 54,09)
-des.door("closed", 62,06)
 des.door("closed", 62,09)
+des.door("closed", 62,12)
 des.door("closed", 64,04)
 
 -- Fixed Objects
 des.object({ coord = up_places[2], id = "scroll of teleportation", buc = "blessed" })
+des.engraving({ coord = up_places[2], type="burn", text="Elbereth" })
 des.object({ coord = down_places[2], id = "scroll of teleportation", buc = "blessed" })
+des.engraving({ coord = down_places[2], type="burn", text="Elbereth" })
+des.object({ id = "scroll of teleportation", buc = "blessed" })
 des.object({ id = "scroll of teleportation", buc = "blessed" })
 des.object({ id = "scroll of teleportation", buc = "blessed" })
 -- since vegetarian monks shouldn't eat giant corpses, give a chance for
@@ -127,14 +130,13 @@ local the_way = {
     "High and low depend on each other",
     "Where the room isn't, there's room for you",
 }
-shuffle(the_way)
-local text_locs_west = selection.area(04,03,22,07)
-local text_locs_east = selection.area(53,13,71,17)
-des.engraving({ coord = text_locs_west:rndcoord(1), type="engrave", text = the_way[1] })
-des.engraving({ coord = text_locs_west:rndcoord(1), type="engrave", text = the_way[2] })
-des.engraving({ coord = text_locs_west:rndcoord(1), type="engrave", text = the_way[3] })
-des.engraving({ coord = text_locs_west:rndcoord(1), type="engrave", text = the_way[4] })
-des.engraving({ coord = text_locs_east:rndcoord(1), type="engrave", text = the_way[5] })
-des.engraving({ coord = text_locs_east:rndcoord(1), type="engrave", text = the_way[6] })
-des.engraving({ coord = text_locs_east:rndcoord(1), type="engrave", text = the_way[7] })
-des.engraving({ coord = text_locs_east:rndcoord(1), type="engrave", text = the_way[8] })
+local text_locs = { {04,03}, {04,07}, {22,03}, {22,07}, {53,13}, {53,17}, {71,13}, {71,17} };
+shuffle(text_locs)
+des.engraving({ coord = text_locs[1], type="engrave", degrade = false, text = the_way[1] })
+des.engraving({ coord = text_locs[2], type="engrave", degrade = false, text = the_way[2] })
+des.engraving({ coord = text_locs[3], type="engrave", degrade = false, text = the_way[3] })
+des.engraving({ coord = text_locs[4], type="engrave", degrade = false, text = the_way[4] })
+des.engraving({ coord = text_locs[5], type="engrave", degrade = false, text = the_way[5] })
+des.engraving({ coord = text_locs[6], type="engrave", degrade = false, text = the_way[6] })
+des.engraving({ coord = text_locs[7], type="engrave", degrade = false, text = the_way[7] })
+des.engraving({ coord = text_locs[8], type="engrave", degrade = false, text = the_way[8] })
