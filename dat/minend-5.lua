@@ -93,6 +93,32 @@ des.object({ id = "chest", trapped = 0, locked = 1, x = 19, y = 06 ,
                  des.object(table.remove(tool_list, d(#tool_list)))
             end
 })
+
+-- These sewers are gross
+des.object({ id = "corpse", montype = "baby purple worm" })
+des.object({ id = "corpse", montype = "baby long worm" })
+des.object({ id = "corpse", montype = "giant rat" })
+des.object({ id = "corpse", montype = "sewer rat" })
+des.object({ id = "corpse", montype = "shark" })
+des.object({ id = "corpse", montype = "piranha" })
+des.object({ id = "corpse", montype = "giant eel" })
+des.object({ id = "corpse", montype = "giant eel" })
+des.object({ id = "corpse", montype = "electric eel" })
+des.object({ id = "corpse", montype = "electric eel" })
+des.object({ id = "corpse", montype = "electric eel" })
+des.object({ id = "corpse", montype = "electric eel" })
+des.object("kelp frond")
+des.object("kelp frond")
+des.object("kelp frond")
+des.object("kelp frond")
+-- RIP
+des.object({ id = "corpse", montype = "dwarf" })
+des.object({ id = "corpse", montype = "dwarf" })
+des.object({ id = "corpse", montype = "gnome" })
+des.object({ id = "corpse", montype = "gnome" })
+-- Danger!
+des.object({ id = "corpse", montype = "water troll", coord = {51, 07} })
+
 des.object("/")
 des.object("/")
 des.object("=")
@@ -108,6 +134,7 @@ des.object("*")
 des.object("*")
 des.object("*")
 des.object("*")
+
 
 -- Monsters
 des.monster({ id = "wererat", coord = {60, 07}, peaceful=0, asleep=1, inventory = function()
