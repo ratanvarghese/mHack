@@ -39,6 +39,7 @@ des.region({ region = {1,4,7,5}, lit=0, filled=1, type="cocknest" })
 des.region({ region = {1,15,7,16}, lit=0, filled=1, type="cocknest" })
 
 des.stair("up", 13, 10)
+des.feature("fountain", 32, 10)
 
 des.door("random", 05,06)
 des.door("random", 05,14)
