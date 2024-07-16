@@ -34,6 +34,8 @@ des.map([[
 des.region(selection.area(00,00,75,20), "unlit");
 -- when falling down on this level, always end up in the maze, and never the south
 des.teleport_region({ region = {01,05,74,15}, exclude = {01,16,74,20}, dir = "down" });
+-- stairs to Vlad may appear
+des.levregion({ region={01,05,74,15}, region_islev=1, exclude={01,16,74,20}, exclude_islev=1, type="branch" });
 des.mazewalk({ x=30, y=2, dir="south" });
 -- Stairs up, in the maze, away from the stairs down
 des.levregion({ region = {01,05,35,15}, exclude = {01,16,74,20}, type="stair-up"});
