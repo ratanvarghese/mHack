@@ -73,11 +73,20 @@ des.object("potion of booze")
 des.object("potion of booze")
 des.object("potion of booze")
 -- It's a crazy party, don't tell the Kops...
-des.object({ id = "corpse", montype = "yellow mold" })
-des.object({ id = "corpse", montype = "yellow mold" })
-des.object({ id = "corpse", montype = "yellow mold" })
-des.object({ id = "corpse", montype = "violet fungus" })
-des.object({ id = "corpse", montype = "violet fungus" })
+des.object({ id = "ice box", trapped = 0,
+             contents = function()
+                des.object("potion of hallucination")
+                des.object("potion of booze")
+                des.object("potion of booze")
+                des.object("potion of booze")
+                des.object({ id = "corpse", montype = "yellow mold" })
+                des.object({ id = "corpse", montype = "yellow mold" })
+                des.object({ id = "corpse", montype = "yellow mold" })
+                des.object({ id = "corpse", montype = "violet fungus" })
+                des.object({ id = "corpse", montype = "violet fungus" })
+             end
+});
+
 des.object("!")
 des.object("!")
 des.object("!")

@@ -2284,6 +2284,9 @@ create_object(object *o, struct mkroom *croom)
 
             remove_object(otmp);
             if (cobj) {
+                if(cobj->otyp == ICE_BOX) {
+                    freeze_object(otmp);
+                }
                 otmp = add_to_container(cobj, otmp);
                 cobj->owt = weight(cobj);
             } else {

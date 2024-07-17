@@ -3132,6 +3132,7 @@ extern void burn_object(union any *, long) NONNULLARG1;
 extern void begin_burn(struct obj *, boolean) NONNULLARG1;
 extern void end_burn(struct obj *, boolean) NONNULLARG1;
 extern void do_storms(void);
+extern void freeze_object(struct obj *) NONNULLARG1;
 extern boolean start_timer(long, short, short, union any *) NONNULLARG4;
 extern long stop_timer(short, union any *) NONNULLARG2;
 extern long peek_timer(short, union any *) NONNULLARG2;
