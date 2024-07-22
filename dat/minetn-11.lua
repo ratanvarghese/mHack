@@ -35,17 +35,17 @@ des.room({ type = "ordinary", lit=1,
                             des.door({ state="open", wall="north" })
                          end
               });
-              des.room({ type = "scroll shop", chance=20, lit=1, x=9,y=2, w=6,h=4,
+              des.room({ type = "scroll shop", chance=15, lit=1, x=9,y=2, w=6,h=4,
                          contents = function()
                             des.door({ state="open", wall="south" })
                          end
               });
-              des.room({ type = "potion shop", chance=30, lit=1, x=9,y=9, w=6,h=4,
+              des.room({ type = "tool shop", chance=30, lit=1, x=9,y=9, w=6,h=4,
                          contents = function()
                             des.door({ state="open", wall="north" })
                          end
               });
-              des.room({ type = "ring shop", chance=12, lit=1, x=16,y=2, w=4,h=3,
+              des.room({ type = monkfoodshop(), chance=15, lit=1, x=16,y=2, w=4,h=3,
                          contents = function()
                             des.door({ state="open", wall="south" })
                          end
@@ -55,27 +55,27 @@ des.room({ type = "ordinary", lit=1,
                             des.door({ state="open", wall="south" })
                          end
               });
-              des.room({ type = "book shop", chance=12, lit=1, x=16,y=10, w=4,h=3,
+              des.room({ type = "book shop", chance=10, lit=1, x=16,y=10, w=4,h=3,
                          contents = function()
                             des.door({ state="open", wall="east" })
                          end
               });
-              des.room({ type = "shop", chance=20, lit=1, x=23,y=9, w=10,h=4,
+              des.room({ type = monkfoodshop(), chance=25, lit=1, x=23,y=9, w=10,h=4,
                          contents = function()
                             des.door({ state="open", wall="north" })
                          end
               });
-              des.room({ type = "wand shop", chance=17, lit=1, x=33,y=2, w=3,h=3,
+              des.room({ type = "wand shop", chance=10, lit=1, x=33,y=2, w=3,h=3,
                          contents = function()
                             des.door({ state="open", wall="west" })
                          end
               });
-              des.room({ type = "tool shop", chance=20, lit=1, x=39,y=2, w=7,h=4,
+              des.room({ type = "tool shop", chance=30, lit=1, x=39,y=2, w=7,h=4,
                          contents = function()
                             des.door({ state="open", wall="south" })
                          end
               });
-              des.room({ type = "tool shop", chance=22, lit=1, x=38,y=10, w=7,h=3,
+              des.room({ type = "potion shop", chance=22, lit=1, x=38,y=10, w=7,h=3,
                          contents = function()
                             des.door({ state="open", wall="north" })
                          end
