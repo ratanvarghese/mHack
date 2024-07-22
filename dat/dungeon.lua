@@ -76,7 +76,7 @@ dungeon = {
             name = "medusa",
             base = -3,
             range = 2,
-            nlevels = 4,
+            nlevels = 6,
             alignment = "chaotic"
          },
          {
