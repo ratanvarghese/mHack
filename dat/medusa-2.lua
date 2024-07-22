@@ -52,7 +52,7 @@ des.levregion({ type="branch", region = {01,00,79,20}, exclude = {59,01,73,17} }
 des.non_diggable(selection.area(01,02,06,17))
 des.non_diggable(selection.area(60,02,73,17))
 -- Objects
-des.object({ id = "statue", x=68,y=10,buc="uncursed",
+des.object({ id = "statue", x=68,y=10,buc="uncursed", material="stone",
                       montype="knight", historic=1, male=1,name="Perseus",
                       contents = function()
                          if percent(25) then
@@ -69,14 +69,14 @@ des.object({ id = "statue", x=68,y=10,buc="uncursed",
                          end
                       end
 });
-des.object({ id = "statue", x=64, y=08, contents=0 })
-des.object({ id = "statue", x=65, y=08, contents=0 })
-des.object({ id = "statue", x=64, y=09, contents=0 })
-des.object({ id = "statue", x=65, y=09, contents=0 })
-des.object({ id = "statue", x=64, y=10, contents=0 })
-des.object({ id = "statue", x=65, y=10, contents=0 })
-des.object({ id = "statue", x=64, y=11, contents=0 })
-des.object({ id = "statue", x=65, y=11, contents=0 })
+des.object({ id = "statue", x=64, y=08, material="stone", contents=0 })
+des.object({ id = "statue", x=65, y=08, material="stone", contents=0 })
+des.object({ id = "statue", x=64, y=09, material="stone", contents=0 })
+des.object({ id = "statue", x=65, y=09, material="stone", contents=0 })
+des.object({ id = "statue", x=64, y=10, material="stone", contents=0 })
+des.object({ id = "statue", x=65, y=10, material="stone", contents=0 })
+des.object({ id = "statue", x=64, y=11, material="stone", contents=0 })
+des.object({ id = "statue", x=65, y=11, material="stone", contents=0 })
 des.object("boulder",04,04)
 des.object("/",52,09)
 des.object("boulder",52,09)

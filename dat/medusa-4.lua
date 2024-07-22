@@ -81,7 +81,7 @@ des.non_diggable(selection.area(01,01,22,14));
 des.object("crystal ball", 07,08)
 --
 -- same spot as Medusa plus downstairs
-des.object({ id="statue", coord=medloc, buc="uncursed",
+des.object({ id="statue", coord=medloc, buc="uncursed", material="stone",
                       montype="knight", historic=1, male=1,name="Perseus",
                       contents = function()
                          if percent(75) then
@@ -101,13 +101,13 @@ des.object({ id="statue", coord=medloc, buc="uncursed",
 --
 -- first random statue is in one of the designated stair rooms but not the
 -- one with Medusa plus downstairs
-des.object({ id = "statue", coord=altloc, contents=0 })
-des.object({ id = "statue", contents=0 })
-des.object({ id = "statue", contents=0 })
-des.object({ id = "statue", contents=0 })
-des.object({ id = "statue", contents=0 })
-des.object({ id = "statue", contents=0 })
-des.object({ id = "statue", contents=0 })
+des.object({ id = "statue", coord=altloc, material="stone", contents=0 })
+des.object({ id = "statue", material="stone", contents=0 })
+des.object({ id = "statue", material="stone", contents=0 })
+des.object({ id = "statue", material="stone", contents=0 })
+des.object({ id = "statue", material="stone", contents=0 })
+des.object({ id = "statue", material="stone", contents=0 })
+des.object({ id = "statue", material="stone", contents=0 })
 for i=1,8 do
    des.object()
 end

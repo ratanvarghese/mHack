@@ -57,7 +57,7 @@ des.levregion({ region = {01,00,79,20}, exclude = {30,06,46,13}, type = "branch"
 -- Non diggable walls
 des.non_diggable(selection.area(30,06,46,13))
 -- Objects
-des.object({ id = "statue", x=36,y=10, buc="uncursed",
+des.object({ id = "statue", x=36,y=10, buc="uncursed", material="stone",
              montype="knight", historic=1, male = 1, name="Perseus",
              contents = function()
                 if percent(75) then
@@ -76,13 +76,13 @@ des.object({ id = "statue", x=36,y=10, buc="uncursed",
 });
 
 -- Specifying explicit contents forces them to be empty.
-des.object({ id = "statue", contents = 0 })
-des.object({ id = "statue", contents = 0 })
-des.object({ id = "statue", contents = 0 })
-des.object({ id = "statue", contents = 0 })
-des.object({ id = "statue", contents = 0 })
-des.object({ id = "statue", contents = 0 })
-des.object({ id = "statue", contents = 0 })
+des.object({ id = "statue", material="stone", contents = 0 })
+des.object({ id = "statue", material="stone", contents = 0 })
+des.object({ id = "statue", material="stone", contents = 0 })
+des.object({ id = "statue", material="stone", contents = 0 })
+des.object({ id = "statue", material="stone", contents = 0 })
+des.object({ id = "statue", material="stone", contents = 0 })
+des.object({ id = "statue", material="stone", contents = 0 })
 des.object()
 des.object()
 des.object()

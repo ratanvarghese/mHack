@@ -60,7 +60,7 @@ des.door("locked",37,09)
 des.door("locked",46,07)
 des.door("locked",55,05)
 
-des.object({ id="statue", coord={40,08}, buc="uncursed",
+des.object({ id="statue", coord={40,08}, buc="uncursed", material="stone",
                       montype="knight", historic=1, male=1,name="Perseus",
                       contents = function()
                          if percent(75) then
@@ -78,13 +78,13 @@ des.object({ id="statue", coord={40,08}, buc="uncursed",
                       end
 });
 
-des.object({ id = "statue", contents=0 })
-des.object({ id = "statue", contents=0 })
-des.object({ id = "statue", contents=0 })
-des.object({ id = "statue", contents=0 })
-des.object({ id = "statue", contents=0 })
-des.object({ id = "statue", contents=0 })
-des.object({ id = "statue", contents=0 })
+des.object({ id = "statue", material="stone", contents=0 })
+des.object({ id = "statue", material="stone", contents=0 })
+des.object({ id = "statue", material="stone", contents=0 })
+des.object({ id = "statue", material="stone", contents=0 })
+des.object({ id = "statue", material="stone", contents=0 })
+des.object({ id = "statue", material="stone", contents=0 })
+des.object({ id = "statue", material="stone", contents=0 })
 for i=1,8 do
    des.object()
 end
