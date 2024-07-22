@@ -164,7 +164,7 @@ dungeon = {
             bonetag = "T",
             base = 3,
             range = 2,
-            nlevels = 10,
+            nlevels = 11,
             flags = "town"
          },
          {
