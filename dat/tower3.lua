@@ -21,10 +21,10 @@ des.map([[
 ......................................w}}}}}}}}}}}ww}}}}}}}}}}}}}}}}}}}}}}}}0
 ......................................www}}}}}}}}}www}}-------------------}}1
 ........................................ww}}}}}}}}}ww}}|.................|w}2
-..............}}}}}......................wwwww}}}}}w}}w|.T.---.---.---.T.|w}3
-.............}}}}}}}.........................ww}}}}ww}}|...|.|.|.|.|.|...|}}4
-.............}}}}}}}..........................w}}}}www}|.---S---S---S---.|}w5
-..............}}}}}...........................ww}}}}w}}|.|.S.........S.|.|}w6
+..............wwwww......................wwwww}}}}}w}}w|.T.---.---.---.T.|w}3
+.............wwwwwww.........................ww}}}}ww}}|...|.|.|.|.|.|...|}}4
+.............wwwwwww..........................w}}}}www}|.---S---S---S---.|}w5
+..............wwwww...........................ww}}}}w}}|.|.S.........S.|.|}w6
 ...............................................ww}}}}}}|.---.........---.|}w7
 ................................................w}}}}}w|...+.........+...|}w8
 ...............................................ww}}}}w}|.---.........---.|}w9
@@ -47,7 +47,7 @@ des.levregion({ type="branch", region={01,01,18,25} })
 des.ladder("up", 64,08)
 
 -- Dark forest
-local dark_forest = selection.area(00,00, 40,19)
+local dark_forest = selection.area(00,00, 38,19)
 local forest_folk = {
   "succubus", "incubus", "water nymph", "wood nymph", "mountain nymph", "vampire",
   "werewolf", "werejackal", "wererat", "Woodland-elf", "Green-elf", "Grey-elf",
@@ -82,12 +82,6 @@ des.monster({ id = forest_folk[7], peaceful = 0, coord = dark_forest:rndcoord(1)
 des.monster({ id = forest_folk[8], peaceful = 0, coord = dark_forest:rndcoord(1) })
 des.monster({ id = forest_folk[9], peaceful = 0, coord = dark_forest:rndcoord(1) })
 des.monster({ id = forest_folk[10], peaceful = 0, coord = dark_forest:rndcoord(1) })
-des.monster({ id = forest_folk[11], peaceful = 0, coord =  dark_forest:rndcoord(1) })
-des.monster({ id = forest_folk[12], peaceful = 0, coord =  dark_forest:rndcoord(1) })
-des.monster({ id = forest_folk[13], peaceful = 0, coord =  dark_forest:rndcoord(1) })
-des.monster({ id = forest_folk[14], peaceful = 0, coord =  dark_forest:rndcoord(1) })
-des.monster({ id = forest_folk[15], peaceful = 0, coord =  dark_forest:rndcoord(1) })
-des.monster({ id = forest_folk[16], peaceful = 0, coord =  dark_forest:rndcoord(1) })
 des.monster({ id = forest_fauna[1], peaceful = 0, coord =  dark_forest:rndcoord(1) })
 des.monster({ id = forest_fauna[1], peaceful = 0, coord =  dark_forest:rndcoord(1) })
 des.monster({ id = forest_fauna[1], peaceful = 0, coord =  dark_forest:rndcoord(1) })
@@ -100,12 +94,6 @@ des.monster({ id = forest_fauna[3], peaceful = 0, coord =  dark_forest:rndcoord(
 des.monster({ id = forest_fauna[4], peaceful = 0, coord =  dark_forest:rndcoord(1) })
 des.monster({ id = forest_fauna[5], peaceful = 0, coord =  dark_forest:rndcoord(1) })
 des.monster({ id = forest_fauna[6], peaceful = 0, coord =  dark_forest:rndcoord(1) })
-des.monster({ id = forest_fauna[7], peaceful = 0, coord =  dark_forest:rndcoord(1) })
-des.monster({ id = forest_fauna[8], peaceful = 0, coord =  dark_forest:rndcoord(1) })
-des.monster({ id = forest_fauna[9], peaceful = 0, coord =  dark_forest:rndcoord(1) })
-des.monster({ id = forest_fauna[10], peaceful = 0, coord = dark_forest:rndcoord(1) })
-des.monster({ id = forest_fauna[11], peaceful = 0, coord = dark_forest:rndcoord(1) })
-des.monster({ id = forest_fauna[12], peaceful = 0, coord = dark_forest:rndcoord(1) })
 
 des.object(dark_forest:rndcoord(1))
 des.object(dark_forest:rndcoord(1))
@@ -157,14 +145,14 @@ des.door("locked",64,15)
 des.monster("D", 68, 08)
 des.monster("V", 67, 07)
 des.monster("V", 67, 09)
-des.monster("V", tower_base:rndcoord(1))
-des.monster("V", tower_base:rndcoord(1))
-des.monster("V", tower_base:rndcoord(1))
-des.monster("V", tower_base:rndcoord(1))
-des.monster("elf-noble", tower_base:rndcoord(1))
-des.monster("elf-noble", tower_base:rndcoord(1))
-des.monster("elven monarch", tower_base:rndcoord(1))
-des.monster("elven monarch", tower_base:rndcoord(1))
+des.monster("V", 56, 02)
+des.monster("V", 72, 02)
+des.monster("V", 56, 14)
+des.monster("V", 72, 14)
+des.monster("elf-noble", 56, 08)
+des.monster("elf-noble", 72, 08)
+des.monster("elven monarch", 64, 02)
+des.monster("elven monarch", 64, 14)
 
 des.object("lock pick",place[1])
 des.trap({ coord = place[1] })
