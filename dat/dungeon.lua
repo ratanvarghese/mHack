@@ -248,15 +248,18 @@ dungeon = {
       levels = {
          {
             name = "tower1",
-            base = 1
+            base = 1,
+            nlevels = 2
          },
          {
             name = "tower2",
-            base = 2
+            base = 2,
+            nlevels = 3
          },
          {
             name = "tower3",
-            base = 3
+            base = 3,
+            nlevels = 3
          },
       }
    },
