@@ -45,9 +45,6 @@ des.map([[
 des.region({ region={02,07,10,12}, lit=1, type="temple", filled=2 })
 des.altar({ x=04, y=09, align="noalign", type="sanctum" })
 
--- Invisible barrier separating the left & right halves of the level
-des.non_passwall(selection.area(27,00,34,00))
-
 --[[
 -- Random Places for Cthulhu to be with the Amulet
 local random_places = {{04,09},{04,10},{03,02},{03,17},{34,02},{44,17},{16,02},{16,17}}
@@ -267,6 +264,15 @@ des.trap("fire",15,13)
 des.trap("magic",16,13)
 des.trap("fire",17,13)
 des.monster({ id = "kraken", coord = {09,10}, asleep = 1, peaceful = 0 })
+des.monster({ id = "master mind flayer", coord = {01,08}, asleep = 1, peaceful = 0 })
+des.monster({ id = "master mind flayer", coord = {01,09}, asleep = 1, peaceful = 0 })
+des.monster({ id = "master mind flayer", coord = {01,10}, asleep = 1, peaceful = 0 })
+des.monster({ id = "master mind flayer", coord = {01,11}, asleep = 1, peaceful = 0 })
+des.monster({ id = "master mind flayer", coord = {08,08}, asleep = 1, peaceful = 0 })
+des.monster({ id = "master mind flayer", coord = {08,09}, asleep = 1, peaceful = 0 })
+des.monster({ id = "master mind flayer", coord = {08,10}, asleep = 1, peaceful = 0 })
+des.monster({ id = "master mind flayer", coord = {08,11}, asleep = 1, peaceful = 0 })
+
 --des.monster({ class = 'B', coord = {05,07}, asleep = 1, peaceful = 0 })
 --des.monster({ class = 'B', coord = {05,10}, asleep = 1, peaceful = 0 })
 des.monster({ class = 'B', coord = {08,14}, asleep = 1, peaceful = 0 })
