@@ -10,13 +10,13 @@ des.level_flags("mazelevel", "shortsighted")
 des.map([[
 ----------------------------------------------------------------------------0
 ||||      |||| |||.| #+.|      ---------------      |.|                    |1
-||.|-     |..| |...| #---  ----.............----    -+- -------------------|2
-||...|-- |....|.....|##  ----...................---- ###S.................-|3
-||.....||.....|.....| # --............/............--  #--...............--|4
-| |.....|.....|S|..|  # |...........................|  # --.............-- |5
-| |.....||......|.||| ##|...........................|  #  --...........--  |6
-| |......|S|....|.|.|  #S...........................S###   --.........--   |7
-||.........|....|....| #|......----.......----......|#-+------.......--    |8
+||.|-     |..| |...| #---   ----....BBBBB....----   -+- -------------------|2
+||...|-- |....|.....|##  ----B......B...B......B---- ###S.................-|3
+||.....||.....|.....| # --...B......B.\.B......B...--  #--...............--|4
+| |.....|.....|S|..|  # |....B......B...B......B....|  # --.............-- |5
+| |.....||......|.||| ##|....BB.....BBBBB.....BB....|  #  --...........--  |6
+| |......|S|....|.|.|  #S.....BB.............BB.....S###   --.........--   |7
+||.........|....|....| #|......----BBBBBBB----......|#-+------.......--    |8
 ||.........|....||....|#|.....-----.......-----.....|#|....| --.....--     |9
 ||.........|....||....|#--.....---.........---.....--#|....|  --...--      |0
 ||.........|....|.....|# --..........|.|..........-- #|....| --.....--     |1
@@ -54,8 +54,7 @@ des.door("random", 53,02)
 des.door("random", 55,18)
 
 des.altar({ x=38,y=18,align="noalign",type="sanctum" })
-des.region({ region={25,05,29,09},lit=0,type="morgue",filled=1 })
-des.region({ region={47,05,51,09},lit=0,type="morgue",filled=1 })
+des.region({ region={32,02,33,03},lit=0,type="morgue",irregular=1,filled=1 })
 des.region({ region={59,03,71,05},lit=0,type="morgue",filled=1 })
 des.region({ region={50,16,53,19},lit=1,type="shop",filled=1 })
 des.region({ region={55,09,58,12},lit=1,type="shop",filled=1 })
@@ -87,6 +86,22 @@ des.object("corpse", corpselocs:rndcoord(1))
 des.object("corpse", corpselocs:rndcoord(1))
 des.object("corpse", corpselocs:rndcoord(1))
 des.object("corpse", corpselocs:rndcoord(1))
+des.object({ id = "corpse", montype="gray dragon", coord=corpselocs:rndcoord(1) })
+des.object({ id = "corpse", montype="silver dragon", coord=corpselocs:rndcoord(1) })
+des.object({ id = "corpse", montype="red dragon", coord=corpselocs:rndcoord(1) })
+des.object({ id = "corpse", montype="white dragon", coord=corpselocs:rndcoord(1) })
+des.object({ id = "corpse", montype="orange dragon", coord=corpselocs:rndcoord(1) })
+des.object({ id = "corpse", montype="black dragon", coord=corpselocs:rndcoord(1) })
+des.object({ id = "corpse", montype="blue dragon", coord=corpselocs:rndcoord(1) })
+des.object({ id = "corpse", montype="green dragon", coord=corpselocs:rndcoord(1) })
+des.object({ id = "corpse", montype="yellow dragon", coord=corpselocs:rndcoord(1) })
+des.object({ id = "corpse", montype="stalker", coord=corpselocs:rndcoord(1) })
+des.object({ id = "corpse", montype="stalker", coord=corpselocs:rndcoord(1) })
+des.object({ id = "corpse", montype="tengu", coord=corpselocs:rndcoord(1) })
+des.object({ id = "corpse", montype="tengu", coord=corpselocs:rndcoord(1) })
+des.object({ id = "corpse", montype="quantum mechanic", coord=corpselocs:rndcoord(1) })
+des.object({ id = "corpse", montype="quantum mechanic", coord=corpselocs:rndcoord(1) })
+
 
 -- Loot
 des.object()
@@ -119,6 +134,10 @@ des.monster("skeleton")
 des.monster("skeleton")
 des.monster("skeleton")
 des.monster("skeleton")
+des.monster("skeleton")
+des.monster("skeleton")
+des.monster("shade")
+des.monster("shade")
 des.monster("shade")
 des.monster("shade")
 des.monster("shade")
@@ -130,13 +149,9 @@ des.monster("ettin zombie")
 des.monster("ettin zombie")
 des.monster("ettin zombie")
 des.monster("human zombie")
-des.monster("human zombie")
-des.monster("human zombie")
 des.monster("vampire")
 des.monster("vampire")
 des.monster("vampire")
-des.monster("vampire lord")
-des.monster("vampire lord")
 
 -- A few more for the party
 des.monster()
@@ -144,3 +159,9 @@ des.monster()
 des.monster()
 des.monster()
 des.monster()
+
+-- Time is running out
+des.monster("gelatinous cube")
+des.monster("gelatinous cube")
+des.monster("gelatinous cube")
+des.monster("gelatinous cube")
