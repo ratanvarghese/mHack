@@ -31,12 +31,12 @@ des.map([[
 ----------------------------------------------------------------------------0
 ]]);
 
-local stones = { {1,1}, {1,19}, {39,08}, {39,12}, {53,06}, {53,14}, {71,3}, {71,17} }
+local stones = { {5,5}, {5,15}, {39,08}, {39,12}, {53,06}, {53,14}, {71,3}, {71,17} }
 shuffle(stones)
 
 des.region(selection.area(0,0,75,19), "unlit")
-des.region({ region = {1,4,7,5}, lit=0, filled=1, type="cocknest" })
-des.region({ region = {1,15,7,16}, lit=0, filled=1, type="cocknest" })
+des.region({ region = {1,4,7,5}, lit=0, filled=1, type="cocknest", irregular=1 })
+des.region({ region = {1,15,7,16}, lit=0, filled=1, type="cocknest", irregular=1 })
 
 des.stair("up", 13, 10)
 des.feature("fountain", 32, 10)
@@ -73,13 +73,19 @@ des.monster("c")
 des.monster("c")
 des.monster("c")
 des.monster("c")
+des.monster("c")
+des.monster("c")
+des.monster("c")
+des.monster("c")
+des.monster("c")
+des.monster("c")
+des.monster("c")
+des.monster("c")
 des.monster("gargoyle")
 des.monster("gargoyle")
 des.monster("gargoyle")
 des.monster("gargoyle")
 des.monster("gremlin")
-des.monster("gremlin")
-des.monster("winged gargoyle")
 des.monster("winged gargoyle")
 des.monster("gas spore")
 des.monster("gas spore")
@@ -103,6 +109,35 @@ des.object(table.remove(tool_list, d(#tool_list)))
 des.object(table.remove(tool_list, d(#tool_list)))
 des.object(table.remove(tool_list, d(#tool_list)))
 des.object(table.remove(tool_list, d(#tool_list)))
+des.object("chest")
+des.object("chest")
+des.object("chest")
+des.object({ id = "chest", trapped = 0, locked = 1,
+             contents = function()
+                local species_list = {
+                    "cockatrice", "cockatrice", "cockatrice",
+                    "pyrolisk", "pyrolisk", "pyrolisk",
+                    "scorpion", "centipede",
+                    "cobra", "python",
+                    "black naga", "winged gargoyle", "long worm",
+                    "purple worm", "crocodile", "soldier ant",
+                    "electric eel", "red dragon"
+                }
+                shuffle(species_list)
+                des.object({ id = "egg", montype = species_list[1], quantity = 1 })
+                des.object({ id = "egg", montype = species_list[1], quantity = 1 })
+                des.object({ id = "egg", montype = species_list[1], quantity = 1 })
+                des.object({ id = "egg", montype = species_list[2], quantity = 1 })
+                des.object({ id = "egg", montype = species_list[2], quantity = 1 })
+                des.object({ id = "egg", montype = species_list[2], quantity = 1 })
+                des.object({ id = "egg", montype = species_list[3], quantity = 1 })
+                des.object({ id = "egg", montype = species_list[3], quantity = 1 })
+                des.object({ id = "egg", montype = species_list[3], quantity = 1 })
+                des.object({ id = "egg", montype = species_list[4], quantity = 1 })
+                des.object({ id = "egg", montype = species_list[5], quantity = 1 })
+                des.object({ id = "egg", montype = species_list[6], quantity = 1 })
+             end
+})
 des.object("statue")
 des.object("statue")
 des.object("statue")
