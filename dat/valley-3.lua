@@ -36,8 +36,6 @@ des.region({ region={66,14,74,18},lit=1,type="temple",filled=2 })
 des.region({ region={17,10,22,12},lit=0,type="morgue",filled=1,irregular=1 })
 des.region({ region={33,05,35,06},lit=0,type="morgue",filled=1,irregular=1 })
 des.region({ region={69,01,74,03},lit=0,type="morgue",filled=1,irregular=1 })
--- Barracks
-des.region({ region={06,06,12,08},lit=1,type="barracks",filled=1 })
 -- Pseudo-swamp
 des.replace_terrain({ region={40,03,60,09}, fromterrain="P", toterrain="w", chance="10" })
 des.replace_terrain({ region={40,03,60,09}, fromterrain="P", toterrain=".", chance="5" })
@@ -148,6 +146,84 @@ des.trap("anti magic")
 des.trap("magic")
 des.trap("magic")
 
+-- Pseudo-barracks
+for bar_x=06,12 do
+	for bar_y=06,08 do
+		local bar_m_i = nh.rn2(9) + 1
+		if bar_m_i < 6 then
+			des.monster({ id = "barrow wight", coord = {bar_x, bar_y}, asleep=1, inventory = function()
+					des.object({ id = "spetum", material="copper" })
+					if nh.rn2(2) == 0 then
+						des.object({ id = "short sword", material="copper" })
+					else
+						des.object({ id = "spear", material="copper" })
+					end
+					if nh.rn2(4) ~= 0 then
+						des.object({ id = "knife", material="copper" })
+					end
+					des.object({ id = "dented pot", material="copper" })
+					des.object({ id = "ring mail", material="copper" })
+					des.object("plain cloak")
+					des.object("small shield")
+					des.object("low boots")
+					des.object("c-ration")
+				end
+			})
+		elseif bar_m_i == 6 or bar_m_i == 7 then
+			des.monster({ id = "vampire", coord = {bar_x, bar_y}, waiting=1, inventory = function()
+					if nh.rn2(2) == 0 then
+						des.object({ id = "flail", material="iron" })
+					else
+						des.object({ id = "mace", material="iron" })
+					end
+					if nh.rn2(4) ~= 0 then
+						des.object({ id = "knife", material="iron" })
+					end
+					des.object({ id = "helmet", material="iron" })
+					des.object({ id = "splint mail", material="iron" })
+					des.object("small shield")
+					des.object("low boots")
+					des.object("c-ration")
+				end
+			})
+		elseif bar_m_i == 8 then
+			des.monster({ id = "vampire leader", coord = {bar_x, bar_y}, waiting=1, inventory = function()
+					if nh.rn2(2) == 0 then
+						des.object({ id = "broadsword", material="iron" })
+					else
+						des.object({ id = "long sword", material="iron" })
+					end
+					if nh.rn2(4) ~= 0 then
+						des.object({ id = "knife", material="iron" })
+					end
+					des.object({ id = "helmet", material="iron" })
+					des.object({ id = "splint mail", material="iron" })
+					des.object({ id = "large shield", material="iron" })
+					des.object("high boots")
+					des.object("k-ration")
+				end
+			})
+		elseif bar_m_i == 9 then
+			des.monster({ id = "vampire leader", coord = {bar_x, bar_y}, waiting=1, inventory = function()
+					if nh.rn2(2) == 0 then
+						des.object({ id = "saber", material="adamantine" })
+					else
+						des.object({ id = "long sword", material="adamantine" })
+					end
+					if nh.rn2(4) ~= 0 then
+						des.object({ id = "knife", material="adamantine" })
+					end
+					des.object({ id = "helmet", material="adamantine" })
+					des.object({ id = "plate mail", material="adamantine" })
+					des.object({ id = "large shield", material="adamantine" })
+					des.object("opera cloak")
+					des.object("high boots")
+					des.object("k-ration")
+				end
+			})
+		end
+	end
+end
 -- Some pool monsters
 des.monster("vampire", 40,03)
 des.monster("vampire", 45,03)
@@ -187,9 +263,9 @@ des.monster("vampire bat")
 -- And a lich for good measure.
 des.monster("L")
 -- Some undead nasties for good measure
-des.monster("V")
-des.monster("V")
-des.monster("V")
+des.monster("W")
+des.monster("W")
+des.monster("W")
 des.monster("Z")
 des.monster("Z")
 des.monster("Z")
