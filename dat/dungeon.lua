@@ -89,7 +89,7 @@ dungeon = {
    {
       name = "Gehennom",
       bonetag = "G",
-      base = 11,
+      base = 10,
       range = 2,
       flags = { "mazelike", "hellish" },
       lvlfill = "hellfill",
@@ -97,7 +97,7 @@ dungeon = {
       branches = {
          {
             name = "Vlad's Tower",
-            base = 6,
+            base = 2,
             range = 5,
             direction = "up"
          }
@@ -141,14 +141,7 @@ dungeon = {
          {
             name = "fakewiz1",
             bonetag = "F",
-            base = -4,
-            range = 2
-         },
-         {
-            name = "fakewiz2",
-            bonetag = "G",
-            base = -4,
-            range = 2
+            base = -3,
          },
       }
    },
