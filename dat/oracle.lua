@@ -106,7 +106,96 @@ local content_shark = function()
     des.monster()
 end
 
-local content_list = {content_classic,content_elemental,content_shark}
+-- I hope you like woodchucks
+local content_woodchuck = function()
+    -- Make a square ring of trees around the Oracle, 2 spaces out
+    local ring = selection.new()
+    ring = selection.rect(3,2,7,6)
+    -- Remove all pools orthogonal to the Oracle so she is reachable
+    notpool = { {5,2},{3,4},{7,4},{5,6} }
+    ring:set(notpool[1][1], notpool[1][2], 0)
+    ring:set(notpool[2][1], notpool[2][2], 0)
+    ring:set(notpool[3][1], notpool[3][2], 0)
+    ring:set(notpool[4][1], notpool[4][2], 0)
+    des.terrain({ selection=ring, typ="T", lit=1 })
+
+    -- The 4 fountains are on the outside corners
+    des.feature("fountain", 2,1)
+    des.feature("fountain", 8,1)
+    des.feature("fountain", 2,7)
+    des.feature("fountain", 8,7)
+
+    -- statues of woodchucks and wood golems
+    des.object({ id = "statue", x = 0, y = 0, montype = "woodchuck", historic = true });
+    des.object({ id = "statue", x = 0, y = 8, montype = "woodchuck", historic = true });
+    des.object({ id = "statue", x =10, y = 0, montype = "woodchuck", historic = true });
+    des.object({ id = "statue", x =10, y = 8, montype = "woodchuck", historic = true });
+    des.object({ id = "statue", x = 5, y = 1, montype = "woodchuck", historic = true });
+    des.object({ id = "statue", x = 5, y = 7, montype = "woodchuck", historic = true });
+    des.object({ id = "statue", x = 2, y = 4, montype = "woodchuck", historic = true });
+    des.object({ id = "statue", x = 8, y = 4, montype = "woodchuck", historic = true });
+
+    des.monster("Oracle", 5, 4)
+
+    des.monster('woodchuck')
+    des.monster()
+end
+
+-- Reading entrails
+local content_quadruped  = function()
+    des.object({ id = "statue", x = 0, y = 0, montype = "q", historic = true });
+    des.object({ id = "statue", x = 0, y = 8, montype = "q", historic = true });
+    des.object({ id = "statue", x =10, y = 0, montype = "q", historic = true });
+    des.object({ id = "statue", x =10, y = 8, montype = "q", historic = true });
+    des.object({ id = "statue", x = 5, y = 1, montype = "q", historic = true });
+    des.object({ id = "statue", x = 5, y = 7, montype = "q", historic = true });
+    des.object({ id = "statue", x = 2, y = 4, montype = "q", historic = true });
+    des.object({ id = "statue", x = 8, y = 4, montype = "q", historic = true });
+
+    des.room({ type = "delphi", lit = 1, x=4,y=3, w=3,h=3, contents = function()
+                des.feature("fountain", 0, 1);
+                des.feature("fountain", 1, 0);
+                des.feature("fountain", 1, 2);
+                des.feature("fountain", 2, 1);
+                des.object({ id = "corpse", x = 0, y = 0, montype = "q" })
+                des.object({ id = "corpse", x = 0, y = 2, montype = "q" })
+                des.object({ id = "corpse", x = 2, y = 0, montype = "q" })
+                des.object({ id = "corpse", x = 2, y = 2, montype = "q" })
+                des.monster("Oracle", 1, 1);
+                des.door({ state="nodoor", wall="all" });
+             end
+    });
+
+    des.monster('rothe');
+    des.monster();
+end
+
+-- From myths ancient and modern
+local content_seers = function()
+    local diamond = { {5,1}, {5,7}, {2,4}, {8,4} }
+    des.terrain(selection.line(5,1, 2,4), '}')
+    des.terrain(selection.line(5,1, 8,4), '}')
+    des.terrain(selection.line(2,4, 5,7), '}')
+    des.terrain(selection.line(8,4, 5,7), '}')
+
+    des.feature("fountain", 2,1)
+    des.feature("fountain", 8,1)
+    des.feature("fountain", 2,7)
+    des.feature("fountain", 8,7)
+
+    des.object({ id = "statue", x = 0, y = 0, montype = "high priest", name="Meshe", historic = true });
+    des.object({ id = "statue", x = 0, y = 8, montype = "high priest", name="Seldon", historic = true });
+    des.object({ id = "statue", x =10, y = 0, montype = "knight", name="Atreides", historic = true });
+    des.object({ id = "statue", x =10, y = 8, montype = "high priest", name="Tiresias", historic = true });
+
+    des.monster("Oracle", 5, 4)
+
+    des.monster();
+    des.monster();
+end
+
+local content_list = { content_classic, content_elemental, content_shark,
+    content_woodchuck, content_quadruped, content_seers }
 shuffle(content_list)
 
 des.room({ type = "ordinary", lit=1, x=3,y=3, xalign="center",yalign="center", w=11,h=9,
