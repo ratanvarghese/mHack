@@ -172,7 +172,6 @@ end
 
 -- From myths ancient and modern
 local content_seers = function()
-    local diamond = { {5,1}, {5,7}, {2,4}, {8,4} }
     des.terrain(selection.line(5,1, 2,4), '}')
     des.terrain(selection.line(5,1, 8,4), '}')
     des.terrain(selection.line(2,4, 5,7), '}')
