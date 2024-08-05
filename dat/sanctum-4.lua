@@ -10,17 +10,17 @@ des.map([[
 |                                                                          |2
 |           ---------------                     ---------------            |3
 |           |...S.....S...|   ---------------   |...S.....S...|            |4
-|           |.---.....---.|   |......L......|   |.---.....---.|            |5
-|           |.|.........|.|   |.....L L.....|   |.|...---...|.|            |6
-|           |S-.........-S|   |...LLL LLL...|   |S-.........-S|            |7
-|           |...LLLLLLL...|   |.LLLL   LLLL.|   |...-------...|            |8
-|           |...L.....L...|---|LLLL     LLLL|---|.|.|.....|.|.|            |9
-|           |...L.....L...+...+LLLL     LLLL+...+.|.|.....+.|.|            |0
-|           |...L.....L...|---|LLLL     LLLL|---|.|.|.....|.|.|            |1
-|           |...LLLLLLL...|   |.LLLL   LLLL.|   |...-------...|            |2
-|           |S-.........-S|   |...LLL LLL...|   |S-.........-S|            |3
-|           |.|.........|.|   |.....L L.....|   |.|...---...|.|            |4
-|           |.---.....---.|   |......L......|   |.---.....---.|            |5
+|           |.---.....---.|   |....LLLLL....|   |.---.....---.|            |5
+|           |.|.........|.|   |..LLLLLLLLL..|   |.|...---...|.|            |6
+|           |S-.........-S|   |.LLLLLLLLLLL.|   |S-.........-S|            |7
+|           |...LLLLLLL...|   |.LLLL...LLLL.|   |...-------...|            |8
+|           |...L.....L...|---|LLLL.. ..LLLL|---|.|.|.....|.|.|            |9
+|           |...L.....L...+...+LLLL.   .LLLL+...+.|.|.....+.|.|            |0
+|           |...L.....L...|---|LLLL.. ..LLLL|---|.|.|.....|.|.|            |1
+|           |...LLLLLLL...|   |.LLLL...LLLL.|   |...-------...|            |2
+|           |S-.........-S|   |.LLLLLLLLLLL.|   |S-.........-S|            |3
+|           |.|.........|.|   |..LLLLLLLLL..|   |.|...---...|.|            |4
+|           |.---.....---.|   |....LLLLL....|   |.---.....---.|            |5
 |           |...S.....S...|   ---------------   |...S.....S...|            |6
 |           ---------------                     ---------------            |7
 |                                                                          |8
@@ -114,14 +114,14 @@ des.monster({ id = "aligned cleric", x=25,y=10,align="noalign",peaceful=0 })
 des.monster({ id = "aligned cleric", x=28,y=10,align="noalign",peaceful=0 })
 
 -- A few nasties
-des.monster({ class = "L",x=32,y=06,peaceful=0 })
-des.monster({ class = "L",x=32,y=14,peaceful=0 })
-des.monster({ class = "L",x=42,y=06,peaceful=0 })
-des.monster({ class = "L",x=42,y=14,peaceful=0 })
-des.monster({ class = "V",x=33,y=07,peaceful=0 })
-des.monster({ class = "V",x=33,y=13,peaceful=0 })
-des.monster({ class = "V",x=41,y=07,peaceful=0 })
-des.monster({ class = "V",x=41,y=13,peaceful=0 })
+des.monster({ class = "L",x=32,y=05,peaceful=0 })
+des.monster({ class = "L",x=32,y=15,peaceful=0 })
+des.monster({ class = "L",x=42,y=05,peaceful=0 })
+des.monster({ class = "L",x=42,y=15,peaceful=0 })
+des.monster({ class = "V",x=31,y=06,peaceful=0 })
+des.monster({ class = "V",x=31,y=14,peaceful=0 })
+des.monster({ class = "V",x=43,y=06,peaceful=0 })
+des.monster({ class = "V",x=43,y=14,peaceful=0 })
 des.monster({ id = "horned devil",x=17,y=09,peaceful=0 })
 des.monster({ id = "barbed devil",x=17,y=11,peaceful=0 })
 des.monster({ id = "marilith",x=21,y=09,peaceful=0 })
