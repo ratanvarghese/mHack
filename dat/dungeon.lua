@@ -167,7 +167,7 @@ dungeon = {
 --          3.7.0: minend changed to no-bones to simplify achievement tracking
 --          bonetag = "E"
             base = -1,
-            nlevels = 7
+            nlevels = 8
          },
       }
    },
