@@ -160,6 +160,7 @@ int lspo_teleport_region(lua_State *);
 int lspo_gas_cloud(lua_State *);
 int lspo_terrain(lua_State *);
 int lspo_trap(lua_State *);
+int lspo_ugname(lua_State *);
 int lspo_wall_property(lua_State *);
 int lspo_wallify(lua_State *);
 
@@ -1275,7 +1276,7 @@ is_ok_location(coordxy x, coordxy y, getloc_flags_t humidity)
         if (!bould || (bould && (humidity & SOLID)))
             return TRUE;
     }
-    if ((humidity & WET) && is_pool(x, y))
+    if ((humidity & WET) && (is_pool(x, y) || IS_PUDDLE(typ)))
         return TRUE;
     if ((humidity & HOT) && is_lava(x, y))
         return TRUE;
@@ -2283,6 +2284,9 @@ create_object(object *o, struct mkroom *croom)
 
             remove_object(otmp);
             if (cobj) {
+                if(cobj->otyp == ICE_BOX) {
+                    freeze_object(otmp);
+                }
                 otmp = add_to_container(cobj, otmp);
                 cobj->owt = weight(cobj);
             } else {
@@ -5916,6 +5920,14 @@ lspo_wallify(lua_State *L)
     return 0;
 }
 
+int
+lspo_ugname(lua_State *L)
+{
+    lua_pushstring(L, u_gname());
+    return 1;
+}
+
+
 /* reset_level is only needed for testing purposes */
 int
 lspo_reset_level(lua_State *L)
@@ -6334,6 +6346,7 @@ static const struct luaL_Reg nhl_functions[] = {
     { "reset_level", lspo_reset_level },
     { "finalize_level", lspo_finalize_level },
     { "gas_cloud", lspo_gas_cloud },
+    { "ugname", lspo_ugname },
     /* TODO: { "branch", lspo_branch }, */
     /* TODO: { "portal", lspo_portal }, */
     { NULL, NULL }

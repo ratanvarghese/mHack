@@ -2817,7 +2817,7 @@ use_trap(struct obj *otmp)
         what = "underwater";
     else if (Levitation)
         what = "while levitating";
-    else if (is_pool(u.ux, u.uy))
+    else if (is_pool(u.ux, u.uy) || IS_PUDDLE(levl[u.ux][u.uy].typ))
         what = "in water";
     else if (is_lava(u.ux, u.uy))
         what = "in lava";

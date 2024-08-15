@@ -1,3 +1,5 @@
+-- Written for mHack by Ratan Varghese
+
 des.level_init({ style = "solidfill", fg = " " });
 des.level_flags("mazelevel", "noteleport", "hardfloor")
 des.map([[

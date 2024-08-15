@@ -340,15 +340,7 @@ mkbox_cnts(struct obj *box)
     for (n = rn2(n + 1); n > 0; n--) {
         if (box->otyp == ICE_BOX) {
             otmp = mksobj(CORPSE, TRUE, FALSE);
-            /* Note: setting age to 0 is correct.  Age has a different
-             * from usual meaning for objects stored in ice boxes. -KAA
-             */
-            otmp->age = 0L;
-            if (otmp->timed) {
-                (void) stop_timer(ROT_CORPSE, obj_to_any(otmp));
-                (void) stop_timer(REVIVE_MON, obj_to_any(otmp));
-                (void) stop_timer(SHRINK_GLOB, obj_to_any(otmp));
-            }
+            freeze_object(otmp);
         } else {
             int tprob;
             const struct icp *iprobs = boxiprobs;
@@ -2378,6 +2370,9 @@ place_object(struct obj *otmp, coordxy x, coordxy y)
     fobj = otmp;
     if (otmp->timed)
         obj_timer_checks(otmp, x, y, 0);
+    /* for objects initially created in water */
+    if (is_pool(x, y) || IS_PUDDLE(levl[x][y].typ))
+        water_damage(otmp, NULL, FALSE);
 }
 
 /* tear down the object pile at <x,y> and create it again, so that any

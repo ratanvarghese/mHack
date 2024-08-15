@@ -1348,6 +1348,13 @@ dokick(void)
     } else if (sobj_at(BOULDER, u.ux, u.uy) && !Passes_walls) {
         pline("There's not enough room to kick in here.");
         no_kick = TRUE;
+    } else if (!rn2(2) && IS_PUDDLE(levl[u.ux][u.uy].typ) &&
+            !Levitation && !Flying && !Wwalking &&
+            /* mud boots negate water resistance */
+            (!uarmf || strncmp(OBJ_DESCR(objects[uarmf->otyp]), "mud ", 4))) {
+        pline_The("water at your %s hinders your ability to kick.",
+            makeplural(body_part(FOOT)));
+        no_kick = TRUE;
     }
 
     if (no_kick) {
@@ -1481,10 +1488,11 @@ dokick(void)
         return ECMD_TIME;
     }
     (void) unmap_invisible(x, y);
-    if ((is_pool(x, y) || gm.maploc->typ == LAVAWALL) ^ !!u.uinwater) {
+    if (((is_pool(x, y) || IS_PUDDLE(levl[x][y].typ)) || gm.maploc->typ == LAVAWALL)
+        ^ !!u.uinwater) {
         /* objects normally can't be removed from water by kicking */
         You("splash some %s around.",
-            hliquid(is_pool(x, y) ? "water" : "lava"));
+            hliquid((is_pool(x, y) || IS_PUDDLE(levl[x][y].typ)) ? "water" : "lava"));
         /* pretend the kick is fast enough for lava not to burn */
         return ECMD_TIME;
     }

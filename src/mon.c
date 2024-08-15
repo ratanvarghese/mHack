@@ -583,6 +583,12 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
             obj->cursed = obj->blessed = FALSE;
         }
         goto default_1;
+    case PM_WATER_ELEMENTAL:
+        if (levl[mtmp->mx][mtmp->my].typ == ROOM) {
+            levl[mtmp->mx][mtmp->my].typ = PUDDLE;
+            water_damage_chain(gl.level.objects[mtmp->mx][mtmp->my], FALSE);
+        }
+        goto default_1;
     case PM_WHITE_UNICORN:
     case PM_GRAY_UNICORN:
     case PM_BLACK_UNICORN:
@@ -808,7 +814,7 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_BABY_GREEN_DRAGON: case PM_BABY_YELLOW_DRAGON:
 
     case PM_STALKER: case PM_AIR_ELEMENTAL: case PM_FIRE_ELEMENTAL:
-    case PM_EARTH_ELEMENTAL: case PM_WATER_ELEMENTAL:
+    case PM_EARTH_ELEMENTAL:
 
     case PM_LICHEN: case PM_BROWN_MOLD: case PM_YELLOW_MOLD:
     case PM_GREEN_MOLD: case PM_RED_MOLD: case PM_SHRIEKER:
@@ -976,7 +982,7 @@ minliquid(struct monst *mtmp)
 staticfn int
 minliquid_core(struct monst *mtmp)
 {
-    boolean inpool, inlava, infountain;
+    boolean inpool, inlava, infountain, inshallow;
     boolean waterwall = is_waterwall(mtmp->mx,mtmp->my);
 
     /* [ceiling clingers are handled below] */
@@ -987,6 +993,7 @@ minliquid_core(struct monst *mtmp)
     inlava = (is_lava(mtmp->mx, mtmp->my)
               && !(is_flyer(mtmp->data) || is_floater(mtmp->data)));
     infountain = IS_FOUNTAIN(levl[mtmp->mx][mtmp->my].typ);
+    inshallow = IS_PUDDLE(levl[mtmp->mx][mtmp->my].typ);
 
     /* Flying and levitation keeps our steed out of the liquid
        (but not water-walking or swimming; note: if hero is in a
@@ -1000,13 +1007,13 @@ minliquid_core(struct monst *mtmp)
      * keep going down, and when it gets to 1 hit point the clone
      * function will fail.
      */
-    if (mtmp->data == &mons[PM_GREMLIN] && (inpool || infountain) && rn2(3)) {
+    if (mtmp->data == &mons[PM_GREMLIN] && (inpool || infountain || inshallow) && rn2(3)) {
         if (split_mon(mtmp, (struct monst *) 0))
             dryup(mtmp->mx, mtmp->my, FALSE);
         if (inpool)
             water_damage_chain(mtmp->minvent, FALSE);
         return 0;
-    } else if (mtmp->data == &mons[PM_IRON_GOLEM] && inpool && !rn2(5)) {
+    } else if (mtmp->data == &mons[PM_IRON_GOLEM] && (inpool || inshallow) && !rn2(5)) {
         int dam = d(2, 6);
 
         if (cansee(mtmp->mx, mtmp->my))
@@ -1113,6 +1120,7 @@ minliquid_core(struct monst *mtmp)
     } else {
         /* but eels have a difficult time outside */
         if (mtmp->data->mlet == S_EEL && !Is_waterlevel(&u.uz)
+            && !inshallow
             && !breathless(mtmp->data)) {
             /* as mhp gets lower, the rate of further loss slows down */
             if (mtmp->mhp > 1 && rn2(mtmp->mhp) > rn2(8))
@@ -2256,7 +2264,8 @@ mfndpos(
                 continue;
             if ((!lavaok || !(flag & ALLOW_WALL)) && ntyp == LAVAWALL)
                 continue;
-            if ((poolok || is_pool(nx, ny) == wantpool)
+            if ((poolok || is_pool(nx, ny) == wantpool
+                || (wantpool && IS_PUDDLE(levl[nx][ny].typ)))
                 && (lavaok || !is_lava(nx, ny))) {
                 int dispx, dispy;
                 boolean monseeu = (mon->mcansee
@@ -2372,7 +2381,7 @@ mfndpos(
                 cnt++;
             }
         }
-    if (!cnt && wantpool && !is_pool(x, y)) {
+    if (!cnt && wantpool && !(is_pool(x, y) || IS_PUDDLE(levl[x][y].typ))) {
         wantpool = FALSE;
         goto nexttry;
     }

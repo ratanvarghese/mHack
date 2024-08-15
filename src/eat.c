@@ -1765,6 +1765,10 @@ rottenfood(struct obj *obj)
             what = "you slap against the",
             where = (u.usteed) ? "saddle" : surface(u.ux, u.uy);
         pline_The("world spins and %s %s.", what, where);
+        if (!Levitation && !Flying && !u.usteed &&
+            (is_pool(u.ux,u.uy) || IS_PUDDLE(levl[u.ux][u.uy].typ))) {
+            water_damage_chain(gi.invent, FALSE);
+        }
         incr_itimeout(&HDeaf, duration);
         disp.botl = TRUE;
         nomul(-duration);

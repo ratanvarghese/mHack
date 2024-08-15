@@ -1804,11 +1804,10 @@ when you have attained the post of %R."]],
          "\"Wear %o.  It will assist you against the undead.\"",
       },
       firsttime = {
-         synopsis = "[You are at %H; the doors are closed.  %lC needs your help!]",
+         synopsis = "[You are at %H.  %lC needs your help!]",
          output = "text",
          text = [[You find yourself standing in sight of %H.  Something
-is obviously wrong here.  The doors to %H, which usually
-stand open, are closed.  Strange human shapes shamble around
+is obviously wrong here.  Strange human shapes shamble around
 outside.
 
 You realize that %l needs your assistance!]],

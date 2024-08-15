@@ -663,6 +663,7 @@ fixup_special(void)
                 /* set_corpsenm() handles weight too */
                 set_corpsenm(otmp, rndmonnum());
             }
+            warp_material(otmp, FALSE, MINERAL);
         }
     } else if (Role_if(PM_CLERIC) && In_quest(&u.uz)) {
         /* less chance for undead corpses (lured from lower morgues) */

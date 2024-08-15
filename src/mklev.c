@@ -17,6 +17,7 @@ staticfn boolean find_okay_roompos(struct mkroom *, coord *) NONNULLARG12;
 staticfn void mksink(struct mkroom *);
 staticfn void mkaltar(struct mkroom *);
 staticfn void mkgrave(struct mkroom *);
+staticfn void mkpuddles(struct mkroom *);
 staticfn void mkinvpos(coordxy, coordxy, int);
 staticfn int mkinvk_check_wall(coordxy x, coordxy y);
 staticfn void mk_knox_portal(coordxy, coordxy);
@@ -845,7 +846,7 @@ fill_ordinary_room(
     int trycnt = 0;
     coord pos;
     struct monst *tmonst; /* always put a web with a spider */
-    coordxy x, y;
+    coordxy x, y, puddlex;
     boolean skip_chests = FALSE;
 
     if (croom->rtype != OROOM && croom->rtype != THEMEROOM)
@@ -885,14 +886,19 @@ fill_ordinary_room(
         x = 2;
     while (!rn2(x) && (++trycnt < 1000))
         mktrap(0, MKTRAP_NOFLAGS, croom, (coord *) 0);
+    puddlex = 40;
     if (!rn2(3) && somexyspace(croom, &pos))
         (void) mkgold(0L, pos.x, pos.y);
     if (Is_rogue_level(&u.uz))
         goto skip_nonrogue;
-    if (!rn2(10))
+    if (!rn2(10)) {
         mkfount(croom);
-    if (!rn2(60))
+        puddlex -= 20;
+    }
+    if (!rn2(60)) {
         mksink(croom);
+        puddlex -= 20;
+    }
     if (!rn2(60))
         mkaltar(croom);
     x = 80 - (depth(&u.uz) * 2);
@@ -900,6 +906,10 @@ fill_ordinary_room(
         x = 2;
     if (!rn2(x))
         mkgrave(croom);
+    if (puddlex < 2)
+        puddlex = 2;
+    if (!rn2(puddlex))
+        mkpuddles(croom);
 
     /* put statues inside */
     if (!rn2(20) && somexyspace(croom, &pos))
@@ -2218,6 +2228,41 @@ mkgrave(struct mkroom *croom)
         (void) mksobj_at(BELL, m.x, m.y, TRUE, FALSE);
     return;
 }
+
+/* make connected spots of shallow water (or pools) and add sea monsters */
+staticfn void
+mkpuddles(struct mkroom *croom)
+{
+    coord m;
+    int tryct = 0;
+    int puddles = 0; /* how many spaces have we altered? */
+    do {
+        if(++tryct > 200) return;
+        if (!somexy(croom, &m))
+        return;
+    } while(occupied(m.x, m.y));
+    do {
+        if (levl[m.x][m.y].typ != PUDDLE && levl[m.x][m.y].typ != POOL) {
+        puddles++;
+        levl[m.x][m.y].typ = (depth(&u.uz) > 9 && !rn2(4) ?
+                      POOL : PUDDLE);
+        }
+        if (puddles > 4 && depth(&u.uz) > 4) {
+            (void)makemon(levl[m.x][m.y].typ == POOL ? mkclass(S_EEL,0) :
+                &mons[PM_PIRANHA],m.x,m.y,NO_MM_FLAGS);
+            puddles -= 2; /* puddles created should always exceed piranhas */
+        }
+        tryct = 0;
+        do {
+            m.x += sgn(rn2(3)-1);
+            m.y += sgn(rn2(3)-1);
+        } while ((occupied(m.x, m.y) ||
+         m.x < croom->lx || m.x > croom->hx ||
+         m.y < croom->ly || m.y > croom->hy)
+             && (++tryct <= 27));
+    } while(tryct <= 27);
+}
+
 
 /*
  * Major level transmutation:  add a set of stairs (to the Sanctum) after

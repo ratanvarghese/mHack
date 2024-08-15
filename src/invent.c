@@ -4569,6 +4569,8 @@ dfeature_at(coordxy x, coordxy y, char *buf)
         dfeature = ice_descr(x, y, altbuf), cmap = -1; /* "ice" */
     else if (is_pool(x, y))
         dfeature = "pool of water";
+    else if (IS_PUDDLE(ltyp))
+        dfeature = "shallow pool of water";
     else if (IS_SINK(ltyp))
         cmap = S_sink; /* "sink" */
     else if (IS_ALTAR(ltyp)) {

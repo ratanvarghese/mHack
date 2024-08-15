@@ -3047,6 +3047,21 @@ pooleffects(
             if (drown())
                 return TRUE;
         }
+    } else if(!u.ustuck && !Levitation && !Flying && IS_PUDDLE(levl[u.ux][u.uy].typ)) {
+        if(u.umonnum == PM_GREMLIN)
+            (void)split_mon(&gy.youmonst, (struct monst *)0);
+        else if (u.umonnum == PM_IRON_GOLEM &&
+            /* mud boots keep the feet dry */
+            (!uarmf || strncmp(OBJ_DESCR(objects[uarmf->otyp]), "mud ", 4))) {
+            int dam = rnd(6);
+            Your("%s rust!", makeplural(body_part(FOOT)));
+            if (u.mhmax > dam) u.mhmax -= dam;
+            losehp(dam, "rusting away", KILLED_BY);
+        }
+        if (verysmall(gy.youmonst.data))
+            water_damage_chain(gi.invent, FALSE);
+        if (!u.usteed)
+            (void)erode_obj(uarmf, "boots", ERODE_RUST, EF_GREASE);
     }
     return FALSE;
 }
