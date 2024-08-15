@@ -3,6 +3,7 @@
 --	Copyright (c) 1991-92 by M. Stephenson, P. Winner
 -- NetHack may be freely redistributed.  See license for details.
 --
+-- Modified for the Terrain patch by L
 --
 --	The "start" level for the quest.
 --

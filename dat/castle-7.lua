@@ -1,9 +1,9 @@
 -- Copyright (c) Tina Hall, 2002
 -- Modifications copyright (c) Slash'EM Development Team, 2003
 -- Modifications copyright (c) Hackemslashem, 2022
--- Modifications copyright (c) Ratan Varghese, 2024
 -- NetHack may be freely redistributed.  See license for details.
 
+-- Modified heavily and converted to Lua by Ratan Varghese
 -- Grund has left this world, but his memory lives on
 des.level_init({ style="mazegrid", bg ="-" });
 

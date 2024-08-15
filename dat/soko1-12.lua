@@ -1,3 +1,7 @@
+-- Written for NetHack Fourk by tsadok
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
 -- "The Dragon of Bactria"
 --MAZE: "soko1-12",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")

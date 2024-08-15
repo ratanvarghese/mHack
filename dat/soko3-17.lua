@@ -1,3 +1,7 @@
+-- Written for NetHack Fourk by tsadok
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
 -- "To the Top"
 --MAZE: "soko4-17",' '
 -- This level is designed to be the FIRST level in the Sokoban branch

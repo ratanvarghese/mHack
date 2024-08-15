@@ -1,3 +1,6 @@
+-- Written for mHack by Ratan Varghese
+
+
 des.level_flags("mazelevel", "noteleport", "hardfloor", "nommap", "temperate");
 des.level_init({ style="mines", fg=".", bg="-", smoothed=true, joined=true,lit=0,walled=true })
 --[[

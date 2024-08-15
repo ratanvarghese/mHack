@@ -1,3 +1,7 @@
+-- Written for GruntHack by Steve Melenchuk
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
 --MAZE:"soko4-8",' '
 des.level_flags("noteleport", "hardfloor", "solidify", "sokoban", "premapped")
 des.message("Mini Me")

@@ -1,5 +1,5 @@
--- The Temple of Moloch from SLASH'EM,
--- adapted into a Moloch's Sanctum variant for mHack
+-- Written for SLASH by Tom Proudfoot ... probably???
+-- Converted to Lua and modified heavily for mHack by Ratan Varghese
 
 
 --GEOMETRY: center,center

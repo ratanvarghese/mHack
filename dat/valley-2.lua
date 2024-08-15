@@ -1,4 +1,5 @@
--- From the Lethe patch
+-- Written for the Lethe patch by Michael Clarke
+-- Converted to Lua and modified for mHack by Ratan Varghese
 
 des.level_init({ style = "solidfill", fg = " " });
 

@@ -3,6 +3,8 @@
 --	Copyright (c) 1991, 1993 by M. Stephenson, P. Winner
 -- NetHack may be freely redistributed.  See license for details.
 --
+-- Modified for the Terrain patch by L
+
 des.level_init({ style = "solidfill", fg = "P" });
 
 des.level_flags("mazelevel");

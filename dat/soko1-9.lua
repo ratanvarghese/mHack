@@ -1,3 +1,7 @@
+-- Written for NetHack Fourk by tsadok
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
 -- "Collecting Marbles"
 --MAZE:"soko1-9",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")

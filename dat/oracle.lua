@@ -2,6 +2,9 @@
 -- Copyright (c) 2015 by Pasi Kallinen
 -- NetHack may be freely redistributed.  See license for details.
 --
+-- Includes modfications written for xNetHack by aosdict
+-- Modified for mHack by Ratan Varghese
+--
 -- Oracle level
 des.level_flags("noflip");
 

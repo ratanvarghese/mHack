@@ -1,3 +1,7 @@
+-- Written for NetHack Fourk by tsadok
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
 -- "Daedalus Delicatessen"
 --MAZE:"soko2-16",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")

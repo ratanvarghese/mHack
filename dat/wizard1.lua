@@ -6,6 +6,9 @@
 --
 -- The top (real) wizard level.
 -- Keeping the Moat for old-time's sake
+
+-- Modified heavily for mHack by Ratan Varghese
+
 des.level_init({ style="mazegrid", bg ="-" });
 
 des.level_flags("mazelevel", "noteleport", "hardfloor")

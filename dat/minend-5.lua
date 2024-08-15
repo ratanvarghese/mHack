@@ -1,5 +1,5 @@
--- The Sewers of Waterdeep
--- Taken from EvilHack, modified to use Lua and less specific monsters and items
+-- Written by Keith Simpson for EvilHack
+-- Modified for mHack by Ratan Varghese
 
 des.level_init({ style = "solidfill", fg = "-" })
 

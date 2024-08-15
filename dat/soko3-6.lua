@@ -1,3 +1,9 @@
+-- Written by Joseph L Traub
+-- Heavily modified for NetHack Sokoban Levels patch by Pasi Kallinen
+-- Possibly modified for SLASHEM by J Ali Harlow
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
 --LEVEL:"soko4-6"
 des.level_flags("noteleport", "hardfloor", "mazelevel", "premapped", "sokoban", "solidify")
 des.level_init({ style = "solidfill", fg = " " });

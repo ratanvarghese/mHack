@@ -1,3 +1,7 @@
+-- Written for NetHack Fourk by tsadok
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
 -- "Easy Peasey"
 --MAZE:"soko4-11",' '
 des.level_flags("noteleport", "hardfloor", "premapped", "sokoban", "solidify")

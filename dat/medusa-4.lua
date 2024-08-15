@@ -3,6 +3,8 @@
 --	Copyright (c) 1990, 1991 by M. Stephenson
 -- NetHack may be freely redistributed.  See license for details.
 --
+-- Modified for mHack by Ratan Varghese
+
 des.level_init({ style = "solidfill", fg = " " });
 des.level_flags("noteleport", "mazelevel")
 --

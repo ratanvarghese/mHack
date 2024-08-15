@@ -1,3 +1,7 @@
+-- Written for GruntHack by Steve Melenchuk
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
 --LEVEL:"soko2-5"
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")
 des.message("Snaggletooth")

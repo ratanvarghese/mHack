@@ -1,3 +1,8 @@
+-- Written by Joseph L Traub
+-- Heavily modified for NetHack Sokoban Levels patch by Pasi Kallinen
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
 --LEVEL:"soko3-5"
 des.level_flags("noteleport", "mazelevel", "premapped", "sokoban", "solidify")
 des.message("Room to Breathe")

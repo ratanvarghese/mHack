@@ -2,6 +2,7 @@
 --	Copyright (c) 1992 by David Cohrs
 -- NetHack may be freely redistributed.  See license for details.
 --
+-- Modified for the Terrain patch by L
 --
 --	The "start" level for the quest.
 --

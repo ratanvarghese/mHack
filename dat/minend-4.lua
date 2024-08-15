@@ -1,6 +1,6 @@
--- "Orc Temple" by Khor
--- modified by k21971 for EvilHack
--- modified and converted to Lua by Ratan Varghese
+-- Written for Orc Temple Patch by Khor
+-- Modified by Keith Simpson for EvilHack
+-- Converted to Lua and modified for mHack by Ratan Varghese
 
 des.level_init({ style = "solidfill", fg = "-" })
 
@@ -109,7 +109,7 @@ des.monster({ id = "orc shaman", x=71, y=7, asleep=1, peaceful=0 })
 
 -- TEMPLE
 local unholy_text = {
-	"Blessed are the destroyers of false hope.", -- The Satanic Bible/EvilHack Orc Temple
+	"Blessed are the destroyers of false hope.", -- The Satanic Bible
 	"Morality is an illusion, a shield for the weak.", -- Animorphs VISSER
 	"Destruction, hence, like creation, is one of Nature's mandates.", -- Marquis de Sade
 	"Agh burzum-ishi krimpatul." --"and in the darkness bind them", Lord of the Rings

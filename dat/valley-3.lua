@@ -1,4 +1,5 @@
--- Inspired by the Castle Dungeon of the Lethe Patch
+-- Written for the Lethe patch by Michael Clarke
+-- Converted to Lua and modified heavily for mHack by Ratan Varghese
 
 des.level_init({ style = "solidfill", fg = " " });
 des.level_flags("mazelevel", "noteleport", "hardfloor", "nommap", "temperate");

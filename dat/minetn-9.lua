@@ -3,11 +3,12 @@
 --	Copyright (c) 1991-95 by M. Stephenson
 -- NetHack may be freely redistributed.  See license for details.
 --
+-- Written for SpliceHack by Kestrel Gregorich-Trevor
+--
 -- A tragic accident has occurred in Frontier Town....
 --
 -- Minetown variant 1
 -- Lavender Town -- Minetown, but spooky!
--- By Kestrel Gregorich-Trevor
 
 des.level_init({ style = "solidfill", fg = " " });
 

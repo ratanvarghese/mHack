@@ -1,3 +1,7 @@
+-- Written for NetHack Fourk by tsadok
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
 -- The following level is adapted from sample sokogen output.
 -- "You Only Need Six"
 --MAZE: "soko3-16",' '

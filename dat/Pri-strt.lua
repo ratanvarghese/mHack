@@ -2,8 +2,10 @@
 --	Copyright (c) 1989 by Jean-Christophe Collet
 --	Copyright (c) 1991-2 by M. Stephenson
 -- Copyright (c) 2004 by Nicolas Webb
--- Copyright (c) 2024 by Ratan Varghese
 -- NetHack may be freely redistributed.  See license for details.
+--
+-- Modified heavily for the biodiversity patch by Nicolas Webb
+-- Converted to Lua and modified for mHack by Ratan Varghese
 --
 --
 --	The "start" level for the quest.
@@ -11,9 +13,6 @@
 --	Here you meet your (besieged) class leader, High Priest
 --	and receive your quest assignment.
 --
-
--- Nicolas Webb added new variations for different gods for the biodiversity patch.
--- Ratan Varghese converted the variations into Lua for mHack.
 
 des.level_init({ style = "solidfill", fg = " " });
 

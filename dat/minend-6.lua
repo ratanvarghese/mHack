@@ -1,4 +1,7 @@
--- The Banquet Hall (from SpliceHack)
+-- Written for SpliceHack Kestrel Gregorich-Trevor
+-- Modified for mHack by Ratan Varghese
+
+-- The Banquet Hall
 --
 --
 -- It's a party for everyone...

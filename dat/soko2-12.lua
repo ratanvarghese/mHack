@@ -1,3 +1,7 @@
+-- Written for GruntHack by Steve Melenchuk
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
 --MAZE:"soko3-9",' '
 des.level_flags("noteleport", "solidify", "sokoban", "premapped")
 des.message("Escape Goat")

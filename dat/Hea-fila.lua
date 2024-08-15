@@ -3,6 +3,7 @@
 --	Copyright (c) 1991, 1993 by M. Stephenson, P. Winner
 -- NetHack may be freely redistributed.  See license for details.
 --
+-- Modified for mHack by Ratan Varghese
 des.level_init({ style = "solidfill", fg = "P" });
 
 des.level_flags("mazelevel", "noflip");

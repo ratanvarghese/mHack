@@ -3,8 +3,9 @@
 -- Copyright (c) 1991 by M. Stephenson
 -- NetHack may be freely redistributed. See license for details.
 
--- Converted to Lua for SpliceHack
--- Modified to be a Valley variant for mHack
+-- Written for SLASH by Tom Proudfoot ... probably???
+-- Ported to Lua for SpliceHack by Kestrel Gregorich-Trevor.
+-- Modified for mHack by Ratan Varghese
 
 des.level_init({ style = "solidfill", fg = " " });
 

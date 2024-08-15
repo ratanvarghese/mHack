@@ -3,6 +3,7 @@
 -- NetHack may be freely redistributed.  See license for details.
 --
 
+-- Modified for mHack by Ratan Varghese
 -- tower2-3 has many spellbooks, but they're difficult to reach
 
 des.level_init({ style = "solidfill", fg = " " });

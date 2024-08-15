@@ -1,3 +1,9 @@
+-- Written by karadoc for K-Mod
+-- Modified for NetHack Fourk by tsadok
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
+
 -- "Stacked Dozen"
 -- Map created by karadoc
 --MAZE: "soko2-17",' '

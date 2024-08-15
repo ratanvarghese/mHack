@@ -1,3 +1,4 @@
+-- Written for mHack by Ratan Varghese
 -- Ouroboros
 
 des.level_init({ style = "solidfill", fg = " " });

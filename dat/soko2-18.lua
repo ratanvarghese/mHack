@@ -1,3 +1,7 @@
+-- Written for NetHack Fourk by tsadok
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
 -- "Count Carefully"
 --MAZE: "soko3-15",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")

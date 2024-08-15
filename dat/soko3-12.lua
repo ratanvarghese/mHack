@@ -1,3 +1,7 @@
+-- Written for NetHack Fourk by tsadok
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
 -- "First Things First"
 --MAZE:"soko4-12",' '
 des.level_flags("noteleport", "hardfloor", "premapped", "sokoban", "solidify")

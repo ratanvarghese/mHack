@@ -1,3 +1,4 @@
+-- Written for mHack by Ratan Varghese
 -- Inspiration: "Vanite, ou Allegorie de la vie humaine", Philippe de Champaigne
 
 des.level_init({ style="solidfill", fg =" " })

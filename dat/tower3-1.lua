@@ -1,17 +1,18 @@
 -- NetHack tower tower3.lua	$NHDT-Date: 1652196038 2022/05/10 15:20:38 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.1 $
 --	Copyright (c) 1989 by Jean-Christophe Collet
---  Copyright (c) 2024 by Ratan Varghese
 -- NetHack may be freely redistributed.  See license for details.
 --
-des.level_init({ style = "solidfill", fg = " " });
 
-des.level_flags("mazelevel", "noteleport", "hardfloor", "solidify")
-
--- Heavily modified for mHack
+-- Modified heavily for mHack by Ratan Varghese
 -- This is essentially a mix of several forest- and courtyard-themed SpliceHack levels:
 -- - the Dark Forest
 -- - Malcanthet's Lair aka the foocubus level
 -- - Vlad's castle
+
+
+des.level_init({ style = "solidfill", fg = " " });
+
+des.level_flags("mazelevel", "noteleport", "hardfloor", "solidify")
 
 --[[
 #000000000111111111122222222223333333333444444444455555555556666666666777777

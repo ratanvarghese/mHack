@@ -1,3 +1,11 @@
+-- Written by Thinking Rabbit
+-- Heavily modified for NetHack Sokoban Levels patch by Pasi Kallinen
+-- Possibly modified for SLASHEM by J Ali Harlow
+-- Possibly modified for SLASHEM Extended by AmyBSOD
+-- Possibly modified for SLASHTHEM by Soviet5lo
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
 --MAZE:"soko2-9",' '
 des.level_flags("noteleport", "solidify", "sokoban", "premapped")
 des.message("Reading Rooms")

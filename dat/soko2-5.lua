@@ -2,6 +2,12 @@
 --  Copyright (c) 1998-1999 by Kevin Hugo
 -- NetHack may be freely redistributed.  See license for details.
 --
+
+-- Written by Joseph L Traub
+-- Heavily modified for NetHack Sokoban Levels patch by Pasi Kallinen
+-- Possibly modified for SLASHEM by J Ali Harlow
+-- Converted to Lua and modified for SpliceHack by RojjaCebolla & Kestrel Gregorich-Trevor
+
 des.level_init({ style = "solidfill", fg = " " });
 
 des.level_flags("mazelevel", "noteleport", "premapped", "solidify", "noflip");

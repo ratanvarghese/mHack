@@ -5,6 +5,7 @@
 --
 -- Upper stage of Vlad's tower
 
+-- Modified for mHack by Ratan Varghese
 -- tower1-2 has fewer walls in the middle
 
 des.level_init({ style = "solidfill", fg = " " });

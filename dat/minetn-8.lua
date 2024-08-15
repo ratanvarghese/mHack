@@ -3,9 +3,10 @@
 --	Copyright (c) 1991-95 by M. Stephenson
 -- NetHack may be freely redistributed.  See license for details.
 
--- "Zoo Town" by Derek S. Ray (SporkHack).
--- Modified by Keith Simpson (EvilHack)
--- Ported to lua by Kestrel Gregorich-Trevor (SpliceHack).
+-- Written for SporkHack by Derek S. Ray ("Zoo Town").
+-- Modified for EvilHack by Keith Simpson
+-- Ported to Lua for SpliceHack by Kestrel Gregorich-Trevor.
+
 des.level_flags("inaccessibles")
 des.level_init({ style="mines", fg=".", bg="-", smoothed=true, joined=true,lit=1,walled=true })
 des.map({ halign = "center", valign = "top", map = [[

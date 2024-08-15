@@ -1,3 +1,7 @@
+-- Written for NetHack Fourk by tsadok
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
 -- "A Hug and a Kiss"
 --MAZE: "soko4-18",' '
 -- This level is designed to be the FIRST level in the Sokoban branch

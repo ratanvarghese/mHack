@@ -1,4 +1,6 @@
--- Based on "Creek Town" by L.
+-- Written for the Terrain patch by L
+-- Modified for mHack by Ratan Varghese
+
 -- No fountains in this town, for obvious reasons.
 --
 

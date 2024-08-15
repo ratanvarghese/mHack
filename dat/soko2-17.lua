@@ -1,3 +1,16 @@
+-- Originally written by J Franklin Mentzer
+-- Heavily modified for NetHack Sokoban Levels patch by Pasi Kallinen
+-- Heavily modified for NetHack Fourk by tsadok
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
+-- This was based on SLASH'EM Sokoban level 1c, but altered in many ways in Fourk.[1]
+-- SLASH'EM Sokoban level 1c was in turn pulled from the Sokoban Levels patch.[2][3]
+-- [1] https://github.com/tsadok/nhfourk/commit/b8ca981f2752bbbb80498991cf51027027df1ef1
+-- [2] https://github.com/k21971/SlashEM/commit/a7906ae6768cb930ec80b57eb3f964e49e493821
+-- [3] https://web.archive.org/web/20140402061823/http://bilious.alt.org/~paxed/nethack/nh342-newsoko.diff
+-- The old, pre-Fourk design is ALSO included as IT'S OWN LEVEL, "Mirror Hall"
+
 -- "The Snake"
 -- (Adapted from Slash'em.)
 --MAZE:"soko3-14",' '

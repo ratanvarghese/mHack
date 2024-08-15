@@ -1,4 +1,4 @@
--- Originally from dNetHack by Chris
+-- Written for dNetHack by Chris
 -- Converted to Lua and modified for mHack by Ratan Varghese
 
 des.level_init({ style="mazegrid", bg ="-" });

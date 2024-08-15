@@ -1,4 +1,7 @@
--- Based on Mall 1 from SLASH'EM
+-- Written for SLASH by Tom Proudfoot ... probably???
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
+-- The SLASHEM Mall relocated to Mine Town
 
 des.room({ type = "ordinary", lit=1,
            xalign="center", yalign="center", w=48, h=15,

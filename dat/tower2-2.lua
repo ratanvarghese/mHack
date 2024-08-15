@@ -3,6 +3,7 @@
 -- NetHack may be freely redistributed.  See license for details.
 --
 
+-- Modified for mHack by Ratan Varghese
 -- tower2-2 has similar niches to tower2-1, but a modified center
 
 des.level_init({ style = "solidfill", fg = " " });

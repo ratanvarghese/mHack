@@ -1,3 +1,5 @@
+-- Written for mHack by Ratan Varghese
+
 -- footrice level
 
 des.level_init({ style = "solidfill", fg = " " });

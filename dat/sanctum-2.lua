@@ -1,7 +1,5 @@
--- This is Cthulhu's Sanctum from the Lethe patch
--- Converted to Lua and heavily vanilla-fied for mHack
--- Perhaps if Lethe patch monsters are added to mHack
--- the vanilla-fication can be undone.
+-- Written for the Lethe patch by Michael Clarke
+-- Converted to Lua and modified heavily for mHack by Ratan Varghese
 
 --
 --	Cthulhu's Sanctum
@@ -11,6 +9,11 @@
 --	reasonable to cast him as the great priest of Moloch, to whom
 --	the amulet has been entrusted for safe keeping.
 --
+
+-- Unfortunately, Cthulhu and other Lethe patch monsters aren't implemented in mHack.
+-- (Or at least not yet..?)
+
+
 des.level_init({ style = "solidfill", fg = " " });
 des.level_flags("mazelevel", "hardfloor", "noteleport", "nommap")
 --GEOMETRY:center,center

@@ -1,3 +1,9 @@
+-- Written by J Franklin Mentzer
+-- Heavily modified for NetHack Sokoban Levels patch by Pasi Kallinen
+-- Possibly modified for SLASHEM by J Ali Harlow
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
 --LEVEL:"soko1-4"
 des.level_flags("noteleport", "mazelevel", "premapped", "sokoban", "solidify")
 des.message("Work For It")

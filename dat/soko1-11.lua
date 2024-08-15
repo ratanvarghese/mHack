@@ -1,3 +1,7 @@
+-- Written for NetHack Fourk by tsadok
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
 -- "Back At Ya"
 --MAZE: "soko1-11",' '
 des.level_flags("noteleport", "premapped", "sokoban", "solidify")

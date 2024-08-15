@@ -1,11 +1,10 @@
 -- NetHack Monk Mon-loca.lua	$NHDT-Date: 1652196007 2022/05/10 15:20:07 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.1 $
 --	Copyright (c) 1989 by Jean-Christophe Collet
 --	Copyright (c) 1991-2 by M. Stephenson
---  Copyright (c) 2024 by Ratan Varghese
 -- NetHack may be freely redistributed.  See license for details.
 --
 
--- Heavily modified for mHack
+-- Modified heavily for mHack by Ratan Varghese
 -- The down stairs are in an unconnected room, reachable by teleportation but not digging.
 -- Magic mapping is intentionally disabled - forcing the player to guess the destination.
 -- The terrain layout and the guaranteed scrolls should help the player find their way.

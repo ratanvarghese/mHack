@@ -2,6 +2,7 @@
 --	Copyright (c) 1992 by Dean Luick
 -- NetHack may be freely redistributed.  See license for details.
 --
+-- Modified for mHack by Ratan Varghese
 --
 --	The "start" level for the quest.
 --

@@ -1,3 +1,10 @@
+-- Written by J Franklin Mentzer
+-- Heavily modified for NetHack Sokoban Levels patch by Pasi Kallinen
+-- Possibly modified for SLASHEM Extended by AmyBSOD
+-- Possibly modified for SLASHTHEM by Soviet5lo
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
 --MAZE:"soko2-10",' '
 des.level_flags("noteleport", "solidify", "sokoban", "premapped")
 des.message("Shave and a Haircut")

@@ -1,3 +1,7 @@
+-- Written for NetHack Fourk by tsadok
+-- Modified for HackEM by Hackemslashem
+-- Converted to Lua and modified for mHack by Ratan Varghese
+
 -- "Picking out the Seeds"
 --MAZE: "soko4-13",' '
 des.level_flags("noteleport", "hardfloor", "premapped", "sokoban", "solidify")

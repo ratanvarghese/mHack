@@ -1,4 +1,4 @@
--- Originally from the New Castle Levels patch by Pasi Kallinen
+-- Written for the New Castle Levels patch by Pasi Kallinen
 -- Modified for UnNetHack by Patric Mueller
 -- Converted to Lua and modified for mHack by Ratan Varghese
 
