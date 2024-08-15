@@ -5,7 +5,7 @@
 des.level_init({ style = "solidfill", fg = " " });
 
 des.level_flags("mazelevel", "noteleport", "hardfloor", "premapped", "sokoban", "solidify");
-
+des.message("Setting That Aside")
 des.map([[
 -------- ------
 |.|....|-|....|

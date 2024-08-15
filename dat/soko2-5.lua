@@ -11,6 +11,7 @@
 des.level_init({ style = "solidfill", fg = " " });
 
 des.level_flags("mazelevel", "noteleport", "premapped", "solidify", "noflip");
+des.message("The Pergola")
 -- https://nethackwiki.com/wiki/Sokoban_Level_3e
 -- reduced holes by 1, to allow for small mistakes
 des.map([[
