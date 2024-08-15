@@ -437,26 +437,38 @@ CLEAN_FILE += $(NHLUAH)
 
 LUALIST = air Arc-fila Arc-filb Arc-goal Arc-loca Arc-strt \
 	astral Bar-fila Bar-filb Bar-goal \
-	Bar-loca Bar-strt bigrm-1 bigrm-10 bigrm-11 bigrm-2 \
+	Bar-loca Bar-strt bigrm-10 bigrm-11 bigrm-12 bigrm-1 bigrm-2 \
 	bigrm-3 bigrm-4 bigrm-5 bigrm-6 bigrm-7 bigrm-8 \
-	bigrm-9 castle Cav-fila Cav-filb Cav-goal Cav-loca \
-	Cav-strt dungeon earth fakewiz1 fakewiz2 fire \
+	bigrm-9 castle-1 castle-2 castle-3 castle-4 castle-5 castle-6 \
+	castle-7 castle-8 Cav-fila Cav-filb Cav-goal Cav-loca \
+	Cav-strt dungeon earth fakewiz1 fire \
 	Hea-fila Hea-filb Hea-goal Hea-loca Hea-strt hellfill \
 	Kni-fila Kni-filb Kni-goal Kni-loca Kni-strt \
-	knox medusa-1 medusa-2 medusa-3 medusa-4 minefill \
-	minend-1 minend-2 minend-3 minetn-1 minetn-2 minetn-3 \
-	minetn-4 minetn-5 minetn-6 minetn-7 Mon-fila Mon-filb \
-	Mon-goal Mon-loca Mon-strt nhcore nhlib oracle \
-	orcus Pri-fila Pri-filb Pri-goal Pri-loca Pri-strt \
+	knox medusa-1 medusa-2 medusa-3 medusa-4 medusa-5 medusa-6 \
+	Mer-fila Mer-filb Mer-goal Mer-loca Mer-strt minefill \
+	minend-1 minend-2 minend-3 minend-4 minend-5 minend-6 \
+	minend-7 minend-8 minetn-10 minetn-11 minetn-1 minetn-2 minetn-3 \
+	minetn-4 minetn-5 minetn-6 minetn-7 minetn-8 minetn-9 \
+	Mon-fila Mon-filb Mon-goal Mon-loca Mon-strt nhcore nhlib oracle \
+	orcus-1 orcus-2 orcus-3 orcus-4 Pri-fila Pri-filb Pri-goal Pri-loca Pri-strt \
 	quest Ran-fila Ran-filb Ran-goal Ran-loca Ran-strt \
 	Rog-fila Rog-filb Rog-goal Rog-loca Rog-strt Sam-fila \
-	Sam-filb Sam-goal Sam-loca Sam-strt sanctum soko1-1 \
-	soko1-2 soko2-1 soko2-2 soko3-1 soko3-2 soko4-1 \
-	soko4-2 themerms Tou-fila Tou-filb Tou-goal Tou-loca \
-	Tou-strt tower1 tower2 tower3 Val-fila Val-filb \
-	Val-goal Val-loca Val-strt valley water Wiz-fila \
-	Wiz-filb Wiz-goal Wiz-loca Wiz-strt wizard1 wizard2 \
-	wizard3 tut-1 tut-2
+	Sam-filb Sam-goal Sam-loca Sam-strt sanctum-1 sanctum-2 sanctum-3 sanctum-4 \
+	soko1-10 soko1-11 soko1-12 soko1-1 soko1-2 soko1-3 soko1-4 \
+	soko1-5 soko1-6 soko1-7 soko1-8 soko1-9 soko2-10 soko2-11 \
+	soko2-12 soko2-13 soko2-14 soko2-15 soko2-16 soko2-17 \
+	soko2-18 soko2-19 soko2-1 soko2-20 soko2-21 soko2-22 soko2-23 \
+	soko2-24 soko2-25 soko2-26 soko2-27 soko2-28 soko2-29 soko2-2 \
+	soko2-30 soko2-31 soko2-32 soko2-33 soko2-34 soko2-3 soko2-4 \
+	soko2-5 soko2-6 soko2-7 soko2-8 soko2-9 soko3-10 soko3-11 soko3-12 \
+	soko3-13 soko3-14 soko3-15 soko3-16 soko3-17 soko3-18 soko3-1 \
+	soko3-2 soko3-3 soko3-4 soko3-5 soko3-6 soko3-7 soko3-8 soko3-9 \
+	themerms Tou-fila Tou-filb Tou-goal Tou-loca \
+	Tou-strt tower1-1 tower1-2 tower2-1 tower2-2 tower2-3 \
+	tower3-1 tower3-2 tower3-3 tut-1 tut-2 Val-fila Val-filb \
+	Val-goal valley-1 valley-2 valley-3 valley-4 valley-5 \
+	Val-loca Val-strt water wizard1 wizard2 wizard3 Wiz-fila \
+	Wiz-filb Wiz-goal Wiz-loca Wiz-strt
 
 LUAFILES = $(addprefix $(DAT)/, $(addsuffix .lua, $(LUALIST)))
 
