@@ -128,7 +128,7 @@ poly_when_petrified(struct permonst *ptr, int petrify_material)
         if(!is_golem(&mons[pm_index])) {
             pm_index = PM_STONE_GOLEM;
         }
-        return (ptr != &mons[pm_index] && !(gm.mvitals[pm_index].mvflags & G_GENOD));
+        return (ptr != &mons[pm_index] && !(svm.mvitals[pm_index].mvflags & G_GENOD));
         /* allow G_EXTINCT */
     } else {
         return FALSE;
