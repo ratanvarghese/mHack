@@ -320,7 +320,7 @@ dosit(void)
                    pline("Squelch!");
                 }
                 useupf(obj, obj->quan);
-            } else if (!(Is_box(obj) || objects[obj->otyp].oc_material == CLOTH))
+            } else if (!(Is_box(obj) || obj->material == CLOTH))
                 pline("It's not very comfortable...");
         }
     } else if (trap != 0 || (u.utrap && (u.utraptype >= TT_LAVA))) {
@@ -368,7 +368,7 @@ dosit(void)
             There("are no cushions floating nearby.");
         else
             You("sit down on the muddy bottom.");
-    } else if (is_pool(u.ux, u.uy) && !eggs_in_water(gy.youmonst.data)) {
+    } else if ((is_pool(u.ux, u.uy) || IS_PUDDLE(typ)) && !eggs_in_water(gy.youmonst.data)) {
  in_water:
         You("sit in the %s.", hliquid("water"));
         if (!rn2(10) && uarm)
@@ -458,6 +458,7 @@ rndcurse(void)
                 continue; /* next target */
 
             if (otmp->oartifact && spec_ability(otmp, SPFX_INTEL)
+                && !(otmp->otyp == DUNCE_CAP)
                 && rn2(10) < 8) {
                 pline("%s!", Tobjnam(otmp, "resist"));
                 continue;

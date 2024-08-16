@@ -114,8 +114,9 @@ const char *materialnm[] = { "mysterious", "liquid",  "wax",        "organic",
                              "flesh",      "paper",   "cloth",      "leather",
                              "wooden",     "bone",    "dragonhide", "iron",
                              "metal",      "copper",  "silver",     "gold",
-                             "platinum",   "mithril", "plastic",    "glass",
-                             "gemstone",   "stone" };
+                             "platinum",   "adamantine", "cold iron", "mithril", 
+                             "plastic",    "gelatinous", "glass",     "crystal",   
+                             "shadowspun", "stone" };
 const char quitchars[] = " \r\n\033";
 NEARDATA struct savefile_info sfcap, sfrestinfo, sfsaveinfo;
 const int shield_static[SHIELD_COUNT] = {
@@ -603,6 +604,8 @@ static const struct instance_globals_n g_init_n = {
     STRANGE_OBJECT, /* nocreate2 */
     STRANGE_OBJECT, /* nocreate3 */
     STRANGE_OBJECT, /* nocreate4 */
+    STRANGE_OBJECT, /* nocreate5 */
+    STRANGE_OBJECT, /* nocreate6 */
     TRUE, /* havestate*/
     IVMAGIC  /* n_magic to validate that structure layout has been preserved */
 };
@@ -720,6 +723,7 @@ static const struct instance_globals_s g_init_s = {
     UNDEFINED_PTR, /* stairs */
     DUMMY, /* smeq */
     FALSE, /* stoned */
+    MINERAL, /* petrify_material */
     UNDEFINED_PTR, /* subrooms */
     /* do.c */
     { 0, 0 }, /* save_dlevel */

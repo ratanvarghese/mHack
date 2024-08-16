@@ -593,6 +593,7 @@ regen_hp(int wtcap)
             rehumanize();
         } else if (gy.youmonst.data->mlet == S_EEL
                    && !is_pool(u.ux, u.uy) && !Is_waterlevel(&u.uz)
+                   && !IS_PUDDLE(levl[u.ux][u.uy].typ)
                    && !Breathless) {
             /* eel out of water loses hp, similar to monster eels;
                as hp gets lower, rate of further loss slows down */

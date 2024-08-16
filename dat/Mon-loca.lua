@@ -3,60 +3,76 @@
 --	Copyright (c) 1991-2 by M. Stephenson
 -- NetHack may be freely redistributed.  See license for details.
 --
+
+-- Modified heavily for mHack by Ratan Varghese
+-- The down stairs are in an unconnected room, reachable by teleportation but not digging.
+-- Magic mapping is intentionally disabled - forcing the player to guess the destination.
+-- The terrain layout and the guaranteed scrolls should help the player find their way.
+
 des.level_init({ style = "solidfill", fg = " " });
 
-des.level_flags("mazelevel");
+des.level_flags("mazelevel", "nommap");
 
---         1         2         3         4         5         6         7 
---123456789012345678901234567890123456789012345678901234567890123456789012345
+--[[
+#         1         2         3         4         5         6         7 
+#123456789012345678901234567890123456789012345678901234567890123456789012345
+--]]
 des.map([[
-             ----------------------------------------------------   --------
-           ---.................................................-    --.....|
-         ---...--------........------........................---     ---...|
-       ---.....-      --.......-    ----..................----         --.--
-     ---.....----      ---------       --..................--         --..| 
-   ---...-----                       ----.----.....----.....---      --..|| 
-----..----                       -----..---  |...---  |.......---   --...|  
-|...---                       ----....---    |.---    |.........-- --...||  
-|...-                      ----.....---     ----      |..........---....|   
-|...----                ----......---       |         |...|.......-....||   
-|......-----          ---.........-         |     -----...|............|    
-|..........-----   ----...........---       -------......||...........||    
-|..............-----................---     |............|||..........|     
-|-S----...............................---   |...........|| |.........||     
-|.....|..............------.............-----..........||  ||........|      
-|.....|.............--    ---.........................||    |.......||      
-|.....|.............-       ---.....................--|     ||......|       
-|---S--------.......----      --.................----        |.....||       
-|...........|..........--------..............-----           ||....|        
-|...........|............................-----                |....|        
-------------------------------------------                    ------        
+----------------------------------------------------------------------------
+|                             PPP##########PPP                             |
+|  ---------------------     PP##........  ##PP        ##########          |
+|  |...................|    PP#...........   #PP       #        #          |
+|  |...................|   PP#.......  ....   #PP      #  ------+--        |
+|  |...................|   P#.......    ...    #P      #  |.PPPP.P|        |
+|  |...................|  PP#.......    ...    #PP     #  |...PPPP|        |
+|  |...................|  P#.........  ....     #P     #  |.....PP|        |
+|  --S-------+----------  P#...............     #P-----#  |.P....P|        |
+|    #       #            P#..............      ##....+#  ----+----        |
+|            #       -----P#.............       #P-----       #            |
+|        ----+----  #+....##.......             #P            #       #    |
+|        |P....P.|  #-----P#......              #P  ----------+-------S--  |
+|        |PP.....|  #     P#......   ..         #P  |...................|  |
+|        |PPPP...|  #     PP#.....  ....       #PP  |...................|  |
+|        |P.PPPP.|  #      P#.....  ....       #P   |...................|  |
+|        --+------  #      PP#....   ..       #PP   |...................|  |
+|          #        #       PP#....          #PP    |...................|  |
+|          ##########        PP##...       ##PP     ---------------------  |
+|                             PPP##########PPP                             |
+----------------------------------------------------------------------------
 ]]);
--- Random Monsters
 
 -- Dungeon Description
 des.region(selection.area(00,00,75,20), "lit")
+
 -- Stairs
-des.stair("up")
-des.stair("down")
+local up_places = { {13,05}, {62,15} }
+local down_places = { {37,14}, {37,15}, {38,14}, {38,15} }
+shuffle(up_places)
+shuffle(down_places)
+des.stair("up", up_places[1])
+des.stair("down", down_places[1])
+
 -- Non diggable walls
 des.non_diggable(selection.area(00,00,75,20))
--- Objects
-des.object()
-des.object()
-des.object()
-des.object()
-des.object()
-des.object()
-des.object()
-des.object()
-des.object()
-des.object()
-des.object()
-des.object()
-des.object()
-des.object()
-des.object()
+
+-- Doors
+des.door("closed", 11,16)
+des.door("closed", 13,08)
+des.door("closed", 13,11)
+des.door("locked", 21,11)
+des.door("locked", 54,09)
+des.door("closed", 62,09)
+des.door("closed", 62,12)
+des.door("closed", 64,04)
+
+-- Fixed Objects
+des.object({ coord = up_places[2], id = "scroll of teleportation", buc = "blessed" })
+des.engraving({ coord = up_places[2], type="burn", text="Elbereth" })
+des.object({ coord = down_places[2], id = "scroll of teleportation", buc = "blessed" })
+des.engraving({ coord = down_places[2], type="burn", text="Elbereth" })
+des.object({ id = "scroll of teleportation", buc = "blessed" })
+des.object({ id = "scroll of teleportation", buc = "blessed" })
+des.object({ id = "scroll of teleportation", buc = "blessed" })
 -- since vegetarian monks shouldn't eat giant corpses, give a chance for
 -- Str boost that isn't throttled by exercise restrictions;
 -- make a modest effort (Elbereth only) to prevent xorns from eating the tins
@@ -65,14 +81,18 @@ local tinloc = tinplace:rndcoord(0)
 des.object({ id="tin", coord=tinloc, quantity=2, buc="blessed",
              montype="spinach" })
 des.engraving({ coord=tinloc, type="burn", text="Elbereth" })
--- Random traps
-des.trap()
-des.trap()
-des.trap()
-des.trap()
-des.trap()
-des.trap()
--- Random monsters.
+
+-- Random Objects
+des.object('?')
+des.object('?')
+des.object('?')
+des.object('?')
+des.object('?')
+des.object('!')
+des.object('!')
+des.object('+')
+des.object('+')
+-- Random monsters
 des.monster("earth elemental")
 des.monster("earth elemental")
 des.monster("earth elemental")
@@ -96,3 +116,26 @@ des.monster("xorn")
 des.monster("xorn")
 des.monster("xorn")
 des.monster("xorn")
+
+-- Engravings
+-- From Ursula K. Le Guin's "rendition" of Lao Tzu's Tao Te Ching
+local the_way = {
+    "The way you go isn't the real way",
+    "The name you can say isn't the real name",
+    "The unwanting soul sees what's hidden",
+    "The ever-wanting soul sees only what it wants",
+    "Hard and easy complete each other",
+    "Long and short shape each other",
+    "High and low depend on each other",
+    "Where the room isn't, there's room for you",
+}
+local text_locs = { {04,03}, {04,07}, {22,03}, {22,07}, {53,13}, {53,17}, {71,13}, {71,17} };
+shuffle(text_locs)
+des.engraving({ coord = text_locs[1], type="engrave", degrade = false, text = the_way[1] })
+des.engraving({ coord = text_locs[2], type="engrave", degrade = false, text = the_way[2] })
+des.engraving({ coord = text_locs[3], type="engrave", degrade = false, text = the_way[3] })
+des.engraving({ coord = text_locs[4], type="engrave", degrade = false, text = the_way[4] })
+des.engraving({ coord = text_locs[5], type="engrave", degrade = false, text = the_way[5] })
+des.engraving({ coord = text_locs[6], type="engrave", degrade = false, text = the_way[6] })
+des.engraving({ coord = text_locs[7], type="engrave", degrade = false, text = the_way[7] })
+des.engraving({ coord = text_locs[8], type="engrave", degrade = false, text = the_way[8] })

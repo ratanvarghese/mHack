@@ -19,6 +19,7 @@ staticfn int gulpmu(struct monst *, struct attack *);
 staticfn int explmu(struct monst *, struct attack *, boolean);
 staticfn void mayberem(struct monst *, const char *, struct obj *,
                      const char *);
+staticfn int passiveum_petrify(struct monst *, struct attack *, int material);
 staticfn int passiveum(struct permonst *, struct monst *, struct attack *);
 
 #define ld() ((yyyymmdd((time_t) 0) - (getyear() * 10000L)) == 0xe5)
@@ -766,7 +767,7 @@ mattacku(struct monst *mtmp)
         case AT_BUTT:
         case AT_TENT:
             if (!range2 && (!MON_WEP(mtmp) || mtmp->mconf || Conflict
-                            || !touch_petrifies(gy.youmonst.data))) {
+                            || !(touch_petrifies(gy.youmonst.data) || Gold_touch))) {
                 if (foundyou) {
                     if (tmp > (j = rnd(20 + i))) {
                         if (unsolid(gy.youmonst.data)
@@ -1061,10 +1062,16 @@ magic_negation(struct monst *mon)
         /* a_can field is only applicable for armor (which must be worn) */
         if ((o->owornmask & W_ARMOR) != 0L) {
             armpro = objects[o->otyp].a_can;
+            /* mithril armor grants MC 2 even if it has a different base
+             * material */
+            if (((o->owornmask & W_ARM) || (o->owornmask & W_ARMC))
+                && o->material == MITHRIL && armpro < 2) {
+                armpro = 2;
+            }
             if (armpro > mc)
                 mc = armpro;
         } else if ((o->owornmask & W_AMUL) != 0L) {
-            via_amul = (o->otyp == AMULET_OF_GUARDING);
+            via_amul = TRUE;
         }
         /* if we've already confirmed Protection, skip additional checks */
         if (is_you || gotprot)
@@ -1113,6 +1120,11 @@ hitmu(struct monst *mtmp, struct attack *mattk)
 
     if (!canspotmon(mtmp))
         map_invisible(mtmp->mx, mtmp->my);
+
+    /* Awaken nearby monsters */
+    if (!(is_silent(mdat) && gm.multi < 0) && rn2(10)) {
+        wake_nearto(u.ux, u.uy, combat_noise(mtmp->data));
+    }
 
     /*  If the monster is undetected & hits you, you should know where
      *  the attack came from.
@@ -1168,6 +1180,16 @@ hitmu(struct monst *mtmp, struct attack *mattk)
         mhm.damage -= rnd(-u.uac);
         if (mhm.damage < 1)
             mhm.damage = 1;
+    }
+
+    /* handle body/equipment made out of harmful materials for touch attacks */
+    /* should come after AC damage reduction */
+    long armask = attack_contact_slots(mtmp, mattk->aatyp);
+    struct obj* hated_obj;
+    mhm.damage += special_dmgval(mtmp, &gy.youmonst, armask, &hated_obj);
+    if (hated_obj) {
+        searmsg(mtmp, &gy.youmonst, hated_obj, FALSE);
+        exercise(A_CON, FALSE);
     }
 
     if (mhm.damage) {
@@ -1312,16 +1334,17 @@ gulpmu(struct monst *mtmp, struct attack *mattk)
             unleash_all();
         }
 
-        if (touch_petrifies(gy.youmonst.data) && !resists_ston(mtmp)) {
+        if ((touch_petrifies(gy.youmonst.data) || Gold_touch) && !resists_ston(mtmp)) {
             /* put the attacker back where it started;
                the resulting statue will end up there
                [note: if poly'd hero could ride or non-poly'd hero could
                acquire touch_petrifies() capability somehow, this code
                would need to deal with possibility of steed having taken
                engulfer's previous spot when hero was forcibly dismounted] */
+            /* TODO: deal with note! */
             remove_monster(mtmp->mx, mtmp->my); /* u.ux,u.uy */
             place_monster(mtmp, omx, omy);
-            minstapetrify(mtmp, TRUE);
+            minstapetrify_material(mtmp, TRUE, Gold_touch ? GOLD : MINERAL);
             /* normally unstuck() would do this, but we're not
                fully swallowed yet so that won't work here */
             if (Punished)
@@ -1512,7 +1535,7 @@ gulpmu(struct monst *mtmp, struct attack *mattk)
 
     if (!u.uswallow) {
         ; /* life-saving has already expelled swallowed hero */
-    } else if (touch_petrifies(gy.youmonst.data) && !resists_ston(mtmp)) {
+    } else if ((touch_petrifies(gy.youmonst.data) || Gold_touch) && !resists_ston(mtmp)) {
         pline("%s very hurriedly %s you!", Monnam(mtmp),
               digests(mtmp->data) ? "regurgitates"
               : enfolds(mtmp->data) ? "releases"
@@ -1682,6 +1705,7 @@ gazemu(struct monst *mtmp, struct attack *mattk)
             }
             if (useeit)
                 pline("%s is turned to stone!", Monnam(mtmp));
+            gs.petrify_material = MINERAL;
             gs.stoned = TRUE;
             killed(mtmp);
 
@@ -2133,7 +2157,7 @@ doseduce(struct monst *mon)
             disp.botl = TRUE;
             break;
         case 3:
-            if (!resists_drli(&gy.youmonst)) {
+            if (!resists_drli(&gy.youmonst) && !item_catches_drain(&gy.youmonst)) {
                 You_feel("out of shape.");
                 losexp("overexertion");
             } else {
@@ -2278,6 +2302,50 @@ mayberem(struct monst *mon,
     remove_worn_item(obj, TRUE);
 }
 
+staticfn int
+passiveum_petrify(
+    struct monst *mtmp,
+    struct attack *mattk,
+    int material)
+{
+    long protector = attk_protection((int) mattk->aatyp),
+         wornitems = mtmp->misc_worn_check;
+
+    /* wielded weapon gives same protection as gloves here */
+    if (MON_WEP(mtmp) != 0)
+        wornitems |= W_ARMG;
+
+    if(Gold_touch && mon_currwep) {
+        struct obj* new_wep = turn_object_to_gold(mon_currwep, canseemon(mtmp));
+        if(new_wep != mon_currwep) {
+            (void) mpickobj(mtmp, new_wep);
+        }
+    }
+
+    if (!resists_ston(mtmp) && monmaterial(monsndx(mtmp->data)) != material
+        && (protector == 0L
+            || (protector != ~0L
+                && (wornitems & protector) != protector))) {
+        if (poly_when_petrified(mtmp->data, Gold_touch ? GOLD : MINERAL)) {
+            mon_to_material(mtmp, Gold_touch ? GOLD : MINERAL);
+            return 1;
+        }
+        if(material == GOLD) {
+            pline("%s turns to gold!", Monnam(mtmp));
+        } else {
+            pline("%s turns to stone!", Monnam(mtmp));
+        }
+        gs.petrify_material = material;
+        gs.stoned = 1;
+        xkilled(mtmp, XKILL_NOMSG);
+        if (!DEADMONSTER(mtmp))
+            return M_ATTK_HIT;
+        return M_ATTK_AGR_DIED;
+    }
+    return M_ATTK_HIT;
+
+}
+
 /* FIXME:
  *  sequencing issue:  a monster's attack might cause poly'd hero
  *  to revert to normal form.  The messages for passive counterattack
@@ -2293,6 +2361,10 @@ passiveum(
 {
     int i, tmp;
     struct attack *oldu_mattk = 0;
+
+    if(Gold_touch) {
+        return passiveum_petrify(mtmp, mattk, GOLD);
+    }
 
     /*
      * mattk      == mtmp's attack that hit you;
@@ -2334,31 +2406,7 @@ passiveum(
             acid_damage(MON_WEP(mtmp));
         goto assess_dmg;
     case AD_STON: /* cockatrice */
-    {
-        long protector = attk_protection((int) mattk->aatyp),
-             wornitems = mtmp->misc_worn_check;
-
-        /* wielded weapon gives same protection as gloves here */
-        if (MON_WEP(mtmp) != 0)
-            wornitems |= W_ARMG;
-
-        if (!resists_ston(mtmp)
-            && (protector == 0L
-                || (protector != ~0L
-                    && (wornitems & protector) != protector))) {
-            if (poly_when_stoned(mtmp->data)) {
-                mon_to_stone(mtmp);
-                return 1;
-            }
-            pline("%s turns to stone!", Monnam(mtmp));
-            gs.stoned = 1;
-            xkilled(mtmp, XKILL_NOMSG);
-            if (!DEADMONSTER(mtmp))
-                return M_ATTK_HIT;
-            return M_ATTK_AGR_DIED;
-        }
-        return M_ATTK_HIT;
-    }
+        return passiveum_petrify(mtmp, mattk, MINERAL);
     case AD_ENCH: /* KMH -- remove enchantment (disenchanter) */
         if (mon_currwep) {
             /* by_you==True: passive counterattack to hero's action
@@ -2454,6 +2502,14 @@ passiveum(
             }
             pline("%s is jolted with your electricity!", Monnam(mtmp));
             break;
+        case AD_MTRL: /* change material (transmuter) */
+            if (mon_currwep) {
+                /* by_you==True: passive counterattack to hero's action
+                   is hero's fault */
+                (void) warp_material(mon_currwep, TRUE, select_new_material(mon_currwep));
+                /* No message */
+            }
+            break;
         default:
             tmp = 0;
             break;
@@ -2495,6 +2551,36 @@ cloneu(void)
     u.mh -= mon->mhp;
     disp.botl = TRUE;
     return mon;
+}
+
+/* Given an attacking monster and the attack type it's currently attacking with,
+ * return a bitmask of W_ARM* values representing the gear slots that might be
+ * coming in contact with the defender.
+ * Intended to return worn items. Will not return W_WEP.
+ * Does not check to see whether slots are ineligible due to being covered by
+ * some other piece of gear. Usually special_dmgval() will handle that.
+ */
+long
+attack_contact_slots(struct monst *magr, int aatyp)
+{
+    struct obj* mwep = (magr == &gy.youmonst ? uwep : magr->mw);
+    if (aatyp == AT_CLAW || aatyp == AT_TUCH || (aatyp == AT_WEAP && !mwep)
+        || (aatyp == AT_HUGS && hug_throttles(magr->data))) {
+        /* attack with hands; gloves and rings might touch */
+        return W_ARMG | W_RINGL | W_RINGR;
+    }
+    if (aatyp == AT_HUGS && !hug_throttles(magr->data)) {
+        /* bear hug which is not a strangling attack; gloves and rings might
+         * touch, but also all torso slots */
+        return W_ARMG | W_RINGL | W_RINGR | W_ARMC | W_ARM | W_ARMU;
+    }
+    if (aatyp == AT_KICK) {
+        return W_ARMF;
+    }
+    if (aatyp == AT_BUTT) {
+        return W_ARMH;
+    }
+    return 0;
 }
 
 /*mhitu.c*/

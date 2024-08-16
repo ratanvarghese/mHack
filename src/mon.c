@@ -465,6 +465,9 @@ genus(int mndx, int mode)
     case PM_PAGE:
         mndx = mode ? PM_KNIGHT : PM_HUMAN;
         break;
+    case PM_TRADER:
+        mndx = mode ? PM_MERCHANT : PM_HUMAN;
+        break;
     case PM_ABBOT:
         mndx = mode ? PM_MONK : PM_HUMAN;
         break;
@@ -580,6 +583,12 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
             obj->cursed = obj->blessed = FALSE;
         }
         goto default_1;
+    case PM_WATER_ELEMENTAL:
+        if (levl[mtmp->mx][mtmp->my].typ == ROOM) {
+            levl[mtmp->mx][mtmp->my].typ = PUDDLE;
+            water_damage_chain(svl.level.objects[mtmp->mx][mtmp->my], FALSE);
+        }
+        goto default_1;
     case PM_WHITE_UNICORN:
     case PM_GRAY_UNICORN:
     case PM_BLACK_UNICORN:
@@ -628,15 +637,27 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
         break;
     case PM_IRON_GOLEM:
         num = d(2, 6);
-        while (num--)
-            obj = mksobj_at(IRON_CHAIN, x, y, TRUE, FALSE);
+        while (num--) {
+            obj = mkobj_at(RANDOM_CLASS, x, y, FALSE);
+            if (!valid_obj_material(obj, IRON)) {
+                delobj(obj);
+                obj = mksobj_at(IRON_CHAIN, x, y, TRUE, FALSE);
+            }
+            obj->material = IRON;
+        }
         free_mgivenname(mtmp); /* don't christen obj */
         break;
     case PM_GLASS_GOLEM:
         num = d(2, 4); /* very low chance of creating all glass gems */
-        while (num--)
-            obj = mksobj_at(FIRST_GLASS_GEM + rn2(NUM_GLASS_GEMS),
-                            x, y, TRUE, FALSE);
+        while (num--) {
+            obj = mkobj_at(RANDOM_CLASS, x, y, FALSE);
+            if (!valid_obj_material(obj, GLASS)
+                || obj->oclass == POTION_CLASS) {
+                delobj(obj);
+                obj = mksobj_at((LAST_REAL_GEM + rnd(9)), x, y, TRUE, FALSE);
+            }
+            obj->material = GLASS;
+        }
         free_mgivenname(mtmp);
         break;
     case PM_CLAY_GOLEM:
@@ -671,19 +692,40 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
         break;
     case PM_LEATHER_GOLEM:
         num = d(2, 4);
-        while (num--)
-            obj = mksobj_at(LEATHER_ARMOR, x, y, TRUE, FALSE);
+        while (num--) {
+            obj = mkobj_at(RANDOM_CLASS, x, y, FALSE);
+            if (!valid_obj_material(obj, LEATHER)) {
+                delobj(obj);
+                obj = mksobj_at(LIGHT_ARMOR, x, y, TRUE, FALSE);
+            }
+            obj->material = LEATHER;
+        }
         free_mgivenname(mtmp);
         break;
     case PM_GOLD_GOLEM:
         /* Good luck gives more coins */
-        obj = mkgold((long) (200 - rnl(101)), x, y);
+        num = d(2, 4);
+        while (num--) {
+            obj = mkobj_at(RANDOM_CLASS, x, y, FALSE);
+            if (!valid_obj_material(obj, GOLD)) {
+                delobj(obj);
+                obj = mkgold(50 + rnd(100), x, y);
+            }
+            obj->material = GOLD;
+        }
         free_mgivenname(mtmp);
         break;
     case PM_PAPER_GOLEM:
         num = rnd(4);
-        while (num--)
-            obj = mksobj_at(SCR_BLANK_PAPER, x, y, TRUE, FALSE);
+        while (num--) {
+            obj = mkobj_at(RANDOM_CLASS, x, y, FALSE);
+            if (!valid_obj_material(obj, PAPER) || obj->oclass == SCROLL_CLASS
+                || obj->oclass == SPBOOK_CLASS) {
+                delobj(obj);
+                obj = mksobj_at(SCR_BLANK_PAPER, x, y, TRUE, FALSE);
+            }
+            obj->material = PAPER;
+        }
         free_mgivenname(mtmp);
         break;
     /* expired puddings will congeal into a large blob;
@@ -772,7 +814,7 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_BABY_GREEN_DRAGON: case PM_BABY_YELLOW_DRAGON:
 
     case PM_STALKER: case PM_AIR_ELEMENTAL: case PM_FIRE_ELEMENTAL:
-    case PM_EARTH_ELEMENTAL: case PM_WATER_ELEMENTAL:
+    case PM_EARTH_ELEMENTAL:
 
     case PM_LICHEN: case PM_BROWN_MOLD: case PM_YELLOW_MOLD:
     case PM_GREEN_MOLD: case PM_RED_MOLD: case PM_SHRIEKER:
@@ -797,7 +839,7 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_OGRE: case PM_OGRE_LEADER: case PM_OGRE_TYRANT:
 
     case PM_QUANTUM_MECHANIC: case PM_GENETIC_ENGINEER:
-    case PM_RUST_MONSTER: case PM_DISENCHANTER:
+    case PM_RUST_MONSTER: case PM_TRANSMUTER: case PM_DISENCHANTER:
 
     case PM_GARTER_SNAKE: case PM_SNAKE: case PM_WATER_MOCCASIN:
     case PM_PYTHON: case PM_PIT_VIPER: case PM_COBRA:
@@ -844,21 +886,25 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_SALAMANDER: case PM_LONG_WORM_TAIL:
 
     case PM_ARCHEOLOGIST: case PM_BARBARIAN: case PM_CAVE_DWELLER:
-    case PM_HEALER: case PM_KNIGHT: case PM_MONK: case PM_CLERIC:
+    case PM_HEALER: case PM_KNIGHT: case PM_MERCHANT:
+    case PM_MONK: case PM_CLERIC:
     case PM_RANGER: case PM_ROGUE: case PM_SAMURAI: case PM_TOURIST:
     case PM_VALKYRIE: case PM_WIZARD:
 
     case PM_LORD_CARNARVON: case PM_PELIAS: case PM_SHAMAN_KARNOV:
-    case PM_HIPPOCRATES: case PM_KING_ARTHUR: case PM_GRAND_MASTER:
+    case PM_HIPPOCRATES: case PM_KING_ARTHUR: case PM_PASION:
+    case PM_GRAND_MASTER:
     case PM_ARCH_PRIEST: case PM_ORION: case PM_MASTER_OF_THIEVES:
     case PM_LORD_SATO: case PM_TWOFLOWER: case PM_NORN:
     case PM_NEFERET_THE_GREEN: case PM_MINION_OF_HUHETOTL:
     case PM_THOTH_AMON: case PM_CHROMATIC_DRAGON: case PM_CYCLOPS:
-    case PM_IXOTH: case PM_MASTER_KAEN: case PM_NALZOK:
+    case PM_IXOTH: case PM_SOSTRATUS:
+    case PM_MASTER_KAEN: case PM_NALZOK:
     case PM_SCORPIUS: case PM_MASTER_ASSASSIN: case PM_ASHIKAGA_TAKAUJI:
     case PM_LORD_SURTUR: case PM_DARK_ONE: case PM_STUDENT:
     case PM_CHIEFTAIN: case PM_NEANDERTHAL: case PM_ATTENDANT:
-    case PM_PAGE: case PM_ABBOT: case PM_ACOLYTE: case PM_HUNTER:
+    case PM_PAGE: case PM_TRADER:
+    case PM_ABBOT: case PM_ACOLYTE: case PM_HUNTER:
     case PM_THUG: case PM_NINJA: case PM_ROSHI: case PM_GUIDE:
     case PM_WARRIOR: case PM_APPRENTICE:
     /*FALLTHRU*/
@@ -936,7 +982,7 @@ minliquid(struct monst *mtmp)
 staticfn int
 minliquid_core(struct monst *mtmp)
 {
-    boolean inpool, inlava, infountain;
+    boolean inpool, inlava, infountain, inshallow;
     boolean waterwall = is_waterwall(mtmp->mx,mtmp->my);
 
     /* [ceiling clingers are handled below] */
@@ -947,6 +993,7 @@ minliquid_core(struct monst *mtmp)
     inlava = (is_lava(mtmp->mx, mtmp->my)
               && !(is_flyer(mtmp->data) || is_floater(mtmp->data)));
     infountain = IS_FOUNTAIN(levl[mtmp->mx][mtmp->my].typ);
+    inshallow = IS_PUDDLE(levl[mtmp->mx][mtmp->my].typ);
 
     /* Flying and levitation keeps our steed out of the liquid
        (but not water-walking or swimming; note: if hero is in a
@@ -960,13 +1007,13 @@ minliquid_core(struct monst *mtmp)
      * keep going down, and when it gets to 1 hit point the clone
      * function will fail.
      */
-    if (mtmp->data == &mons[PM_GREMLIN] && (inpool || infountain) && rn2(3)) {
+    if (mtmp->data == &mons[PM_GREMLIN] && (inpool || infountain || inshallow) && rn2(3)) {
         if (split_mon(mtmp, (struct monst *) 0))
             dryup(mtmp->mx, mtmp->my, FALSE);
         if (inpool)
             water_damage_chain(mtmp->minvent, FALSE);
         return 0;
-    } else if (mtmp->data == &mons[PM_IRON_GOLEM] && inpool && !rn2(5)) {
+    } else if (mtmp->data == &mons[PM_IRON_GOLEM] && (inpool || inshallow) && !rn2(5)) {
         int dam = d(2, 6);
 
         if (cansee(mtmp->mx, mtmp->my))
@@ -1073,6 +1120,7 @@ minliquid_core(struct monst *mtmp)
     } else {
         /* but eels have a difficult time outside */
         if (mtmp->data->mlet == S_EEL && !Is_waterlevel(&u.uz)
+            && !inshallow
             && !breathless(mtmp->data)) {
             /* as mhp gets lower, the rate of further loss slows down */
             if (mtmp->mhp > 1 && rn2(mtmp->mhp) > rn2(8))
@@ -1787,7 +1835,7 @@ mpickgold(struct monst *mtmp)
     int mat_idx;
 
     if ((gold = g_at(mtmp->mx, mtmp->my)) != 0) {
-        mat_idx = objects[gold->otyp].oc_material;
+        mat_idx = gold->material;
         obj_extract_self(gold);
         add_to_minv(mtmp, gold);
         if (cansee(mtmp->mx, mtmp->my)) {
@@ -1922,7 +1970,7 @@ can_touch_safely(struct monst *mtmp, struct obj *otmp)
         return FALSE;
     if (otyp == CORPSE && is_rider(&mons[otmp->corpsenm]))
         return FALSE;
-    if (objects[otyp].oc_material == SILVER && mon_hates_silver(mtmp)
+    if (mon_hates_material(mtmp, otmp->material)
         && (otyp != BELL_OF_OPENING || !is_covetous(mdat)))
         return FALSE;
     if (!touch_artifact(otmp, mtmp))
@@ -2214,7 +2262,8 @@ mfndpos(
                 continue;
             if ((!lavaok || !(flag & ALLOW_WALL)) && ntyp == LAVAWALL)
                 continue;
-            if ((poolok || is_pool(nx, ny) == wantpool)
+            if ((poolok || is_pool(nx, ny) == wantpool
+                || (wantpool && IS_PUDDLE(levl[nx][ny].typ)))
                 && (lavaok || !is_lava(nx, ny))) {
                 int dispx, dispy;
                 boolean monseeu = (mon->mcansee
@@ -2330,7 +2379,7 @@ mfndpos(
                 cnt++;
             }
         }
-    if (!cnt && wantpool && !is_pool(x, y)) {
+    if (!cnt && wantpool && !(is_pool(x, y) || IS_PUDDLE(levl[x][y].typ))) {
         wantpool = FALSE;
         goto nexttry;
     }
@@ -3159,9 +3208,19 @@ mongone(struct monst *mdef)
 void
 monstone(struct monst *mdef)
 {
+    monstone_material(mdef, MINERAL);
+}
+
+/* drop an item and remove monster */
+void
+monstone_material(struct monst *mdef, int material)
+{
     struct obj *otmp, *obj, *oldminvent;
     coordxy x = mdef->mx, y = mdef->my;
     boolean wasinside = FALSE;
+
+    if(!(material == GOLD || material == MINERAL))
+        impossible("monstone_material: material %d?", material);
 
     /* vampshifter reverts to vampire;
        3.6.3: also used to unshift shape-changed sandestin */
@@ -3223,6 +3282,11 @@ monstone(struct monst *mdef)
             (void) add_to_container(otmp, obj);
         }
         otmp->owt = weight(otmp);
+        if(material) {
+            warp_material(otmp, FALSE, material);
+        }
+    } else if(material == GOLD) {
+        otmp = mkgold(100, x, y);
     } else
         otmp = mksobj_at(ROCK, x, y, TRUE, FALSE);
 
@@ -3266,7 +3330,7 @@ monkilled(
     /* no corpse if digested or disintegrated or flammable golem burnt up;
        no corpse for a paper golem means no scrolls; golems that rust or
        rot completely are described as "falling to pieces" so they do
-       leave a corpse (which means staves for wood golem, leather armor for
+       leave a corpse (which means staves for wood golem, light armor for
        leather golem, iron chains for iron golem, not a regular corpse) */
     gd.disintegested = (how == AD_DGST || how == -AD_RBRE
                        || (how == AD_FIRE && completelyburns(mptr)));
@@ -3415,8 +3479,9 @@ xkilled(
     gv.vamp_rise_msg = FALSE; /* might get set in mondead(); checked below */
     gd.disintegested = nocorpse; /* alternate vamp_rise mesg needed if true */
     /* dispose of monster and make cadaver */
-    if (gs.stoned)
-        monstone(mtmp);
+    if (gs.stoned) {
+        monstone_material(mtmp, gs.petrify_material);
+    }
     else
         mondead(mtmp);
     gd.disintegested = FALSE; /* reset */
@@ -3439,6 +3504,7 @@ xkilled(
     mndx = monsndx(mdat);
 
     if (gs.stoned) {
+        gs.petrify_material = MINERAL;
         gs.stoned = FALSE;
         goto cleanup;
     }
@@ -3598,16 +3664,18 @@ xkilled(
 
 #undef LEVEL_SPECIFIC_NOCORPSE
 
-/* changes the monster into a stone monster of the same type
-   this should only be called when poly_when_stoned() is true */
-void
-mon_to_stone(struct monst *mtmp)
+/* changes the monster into a monster of the same type and differing material
+   this should only be called when poly_when_petrified() is true */
+void mon_to_material(struct monst *mtmp, int material)
 {
     if (mtmp->data->mlet == S_GOLEM) {
-        /* it's a golem, and not a stone golem */
+        /* it's a golem, and not a golem of the correct material */
         if (canseemon(mtmp))
             pline_mon(mtmp, "%s solidifies...", Monnam(mtmp));
-        if (newcham(mtmp, &mons[PM_STONE_GOLEM], NO_NC_FLAGS)) {
+        /* currently only petrifying to stone and gold are implemented
+           if petrification to other materials is added, consider that
+           determine_polymon might return a shade or skeleton */
+        if (newcham(mtmp, &mons[determine_polymon(material)], NO_NC_FLAGS)) {
             if (canseemon(mtmp))
                 pline("Now it's %s.", an(pmname(mtmp->data, Mgender(mtmp))));
         } else {
@@ -3616,6 +3684,15 @@ mon_to_stone(struct monst *mtmp)
         }
     } else
         impossible("Can't polystone %s!", a_monnam(mtmp));
+
+}
+
+/* changes the monster into a stone monster of the same type
+   this should only be called when poly_when_stoned() is true */
+void
+mon_to_stone(struct monst *mtmp)
+{
+    mon_to_material(mtmp, MINERAL);
 }
 
 boolean

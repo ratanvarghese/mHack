@@ -3,6 +3,8 @@
 --	Copyright (c) 1990, 1991 by M. Stephenson
 -- NetHack may be freely redistributed.  See license for details.
 --
+-- Modified for mHack by Ratan Varghese
+
 des.level_init({ style = "solidfill", fg = " " });
 des.level_flags("noteleport", "mazelevel", "shortsighted")
 --
@@ -10,24 +12,24 @@ des.level_flags("noteleport", "mazelevel", "shortsighted")
 --
 des.map([[
 }}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}
-}}}}}}}}}}.}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}.}}}}}}}}}}}}}}}}}}}}}}}}}}}}
-}}}}}}}}T..T.}}}}}}}}}}}}}}}}}}}}..}}}}}}}}.}}}...}}}}}}}.}}}}}......}}}}}}}
-}}}}}}.......T.}}}}}}}}}}}..}}}}..T.}}}}}}...T...T..}}...T..}}..-----..}}}}}
-}}}...-----....}}}}}}}}}}.T..}}}}}...}}}}}.....T..}}}}}......T..|...|.T..}}}
-}}}.T.|...|...T.}}}}}}}.T......}}}}..T..}}.}}}.}}...}}}}}.T.....+...|...}}}}
-}}}}..|...|.}}.}}}}}.....}}}T.}}}}.....}}}}}}.T}}}}}}}}}}}}}..T.|...|.}}}}}}
-}}}}}.|...|.}}}}}}..T..}}}}}}}}}}}}}T.}}}}}}}}..}}}}}}}}}}}.....-----.}}}}}}
-}}}}}.--+--..}}}}}}...}}}}}}}}}}}}}}}}}}}T.}}}}}}}}}}}}}}}}.T.}........}}}}}
-}}}}}.......}}}}}}..}}}}}}}}}.}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}.}}}.}}.T.}}}}}}
-}}.T...T...}}}}T}}}}}}}}}}}....}}}}}}}}}}T}}}}}.T}}...}}}}}}}}}}}}}}...}}}}}
-}}}...T}}}}}}}..}}}}}}}}}}}.T...}}}}}}}}.T.}.T.....T....}}}}}}}}}}}}}.}}}}}}
-}}}}}}}}}}}}}}}....}}}}}}}...}}.}}}}}}}}}}............T..}}}}}.T.}}}}}}}}}}}
-}}}}}}}}}}}}}}}}..T..}}}}}}}}}}}}}}..}}}}}..------+--...T.}}}....}}}}}}}}}}}
-}}}}.}..}}}}}}}.T.....}}}}}}}}}}}..T.}}}}.T.|...|...|....}}}}}.}}}}}...}}}}}
-}}}.T.}...}..}}}}T.T.}}}}}}.}}}}}}}....}}...|...+...|.}}}}}}}}}}}}}..T...}}}
-}}}}..}}}.....}}...}}}}}}}...}}}}}}}}}}}}}T.|...|...|}}}}}}}}}}}....T..}}}}}
-}}}}}..}}}.T..}}}.}}}}}}}}.T..}}}}}}}}}}}}}}---S-----}}}}}}}}}}}}}....}}}}}}
-}}}}}}}}}}}..}}}}}}}}}}}}}}}.}}}}}}}}}}}}}}}}}T..T}}}}}}}}}}}}}}}}}}}}}}}}}}
+}}}}}}}}}}w}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}w}}}}}}}}}}}}}}}}}}}}}}}}}}}}
+}}}}}}}}Tw.Tw}}}}}}}}}}}}}}}}}}}}ww}}}}}}}}w}}}www}}}}}}}w}}}}}wwwwww}}}}}}}
+}}}}}}ww.....Tw}}}}}}}}}}}ww}}}}wwTw}}}}}}w..T...Tww}}wwwTww}}w.-----ww}}}}}
+}}}www-----...w}}}}}}}}}}wT.w}}}}}w.w}}}}}w....T.w}}}}}ww....T..|...|.Tww}}}
+}}}wT.|...|...Tw}}}}}}}wT....ww}}}}w.T.w}}w}}}w}}www}}}}}wTw....+...|.ww}}}}
+}}}}w.|...|w}}w}}}}}wwwww}}}Tw}}}}ww..w}}}}}}wT}}}}}}}}}}}}}w.T.|...|w}}}}}}
+}}}}}w|...|w}}}}}}w.T.w}}}}}}}}}}}}}Tw}}}}}}}}ww}}}}}}}}}}}w..w.-----w}}}}}}
+}}}}}w--+--.w}}}}}}www}}}}}}}}}}}}}}}}}}}Tw}}}}}}}}}}}}}}}}wTw}w......w}}}}}
+}}}}}w.....w}}}}}}ww}}}}}}}}}w}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}w}}}w}}wTw}}}}}}
+}}wTw..Twww}}}}T}}}}}}}}}}}w..w}}}}}}}}}}T}}}}}wT}}www}}}}}}}}}}}}}}w.w}}}}}
+}}}wwwT}}}}}}}ww}}}}}}}}}}}wT..w}}}}}}}}wTw}wT.....T..ww}}}}}}}}}}}}}w}}}}}}
+}}}}}}}}}}}}}}}w..w}}}}}}}www}}w}}}}}}}}}}w...........T.w}}}}}wTw}}}}}}}}}}}
+}}}}}}}}}}}}}}}}w.Tww}}}}}}}}}}}}}}ww}}}}}w.------+--...Tw}}}w.ww}}}}}}}}}}}
+}}}}w}ww}}}}}}}wT....w}}}}}}}}}}}wwTw}}}}wT.|...|...|wwww}}}}}w}}}}}www}}}}}
+}}}wTw}www}ww}}}}T.Tw}}}}}}w}}}}}}}wwww}}w..|...+...|w}}}}}}}}}}}}}w.T.ww}}}
+}}}}ww}}}w...w}}w.w}}}}}}}w.w}}}}}}}}}}}}}Tw|...|...|}}}}}}}}}}}ww..T.w}}}}}
+}}}}}ww}}}wT.w}}}w}}}}}}}}wT.w}}}}}}}}}}}}}}---S-----}}}}}}}}}}}}}wwww}}}}}}
+}}}}}}}}}}}ww}}}}}}}}}}}}}}}w}}}}}}}}}}}}}}}}}TwwT}}}}}}}}}}}}}}}}}}}}}}}}}}
 }}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}
 ]]);
 
@@ -79,7 +81,7 @@ des.door("locked",48,15)
 des.feature("fountain", othloc);
 --
 -- same spot as Medusa plus downstairs
-des.object({ id="statue", coord=medloc, buc="uncursed",
+des.object({ id="statue", coord=medloc, buc="uncursed", material="stone",
                       montype="knight", historic=1, male=1,name="Perseus",
                       contents = function()
                          if percent(75) then
@@ -99,13 +101,13 @@ des.object({ id="statue", coord=medloc, buc="uncursed",
 --
 -- first random statue is in one of the three designated rooms but not the
 -- one with Medusa plus downstairs or the one with the fountain
-des.object({ id = "statue", coord=altloc, contents=0 })
-des.object({ id = "statue", contents=0 })
-des.object({ id = "statue", contents=0 })
-des.object({ id = "statue", contents=0 })
-des.object({ id = "statue", contents=0 })
-des.object({ id = "statue", contents=0 })
-des.object({ id = "statue", contents=0 })
+des.object({ id = "statue", coord=altloc, material="stone", contents=0 })
+des.object({ id = "statue", material="stone", contents=0 })
+des.object({ id = "statue", material="stone", contents=0 })
+des.object({ id = "statue", material="stone", contents=0 })
+des.object({ id = "statue", material="stone", contents=0 })
+des.object({ id = "statue", material="stone", contents=0 })
+des.object({ id = "statue", material="stone", contents=0 })
 
 for i=1,8 do
    des.object()

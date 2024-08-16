@@ -1,0 +1,138 @@
+mhack
+
+General Fixes and Modified Features
+-----------------------------------
+Wizards start with extra wands and spellbooks.
+	However they no longer start with rings, potions or scrolls.
+In wizard mode, it is possible to embark on the quest without permission.
+The Mazes of Menace are significantly shorter
+	The Dungeons of Doom is now 20-24 levels, compared to 25-29 levels in vanilla NetHack.
+	Gehennom is now 11-12 levels, compared to 20-24 levels in vanilla NetHack.
+	Lairs for Asmodeus, Baalzebub and Juiblex are removed.
+	Sokoban is now 3 levels, compared to 4 levels in vanilla NetHack.
+The mysterious force in Gehennom does not teleport the player, instead it summons demons.
+	Cross-aligned named demons are prioritized.
+Filler levels on the Healer, Knight and Samurai Quests have shallow water.
+Adjusted difficulty calculations to increase difficulty more steeply in a shorter Gehennom.
+Added des.ugname function to Lua special level loader.
+Fix for predefined corpses inside of ice boxes on special levels.
+Remove the Fake Wizard tower which does not have a magic portal.
+
+Fixes to Post-X.X.X Problems that Were Exposed Via git Repository
+------------------------------------------------------------------
+
+
+Platform- and/or Interface-Specific Fixes
+-----------------------------------------
+
+
+General New Features
+--------------------
+Added wands skill, which can be #enhanced for more powerful wand effects.
+	Certain monsters have high effective wand skill as well.
+	This is not as comprehensive as the wands balance patch in other variants.
+	The main focus is to make the early game easier, not to make the late game
+	more difficult.
+Added Merchant role.
+	Merchants are always looking for markets to buy supplies and sell
+	their wares. They start with precious gems and expensive pieces of jewelry.
+	Merchants are always neutral, and can be either human or gnomish.
+	The special spell for merchants is wizard lock.
+	On the Merchant Quest, Pasion tasks the player with fighting Sostratus
+	for the Crown of Midas, a neutral dunce cap.
+Added the Crown of Midas
+	When worn, The Crown of Midas grants hunger, petrification resistance, and
+	the golden touch.
+	A player (or monster!) who fights bare-handed with the golden touch can
+	turn enemies into gold statues, subject to petrification resistance just
+	like stoning by cockatrice. Enemies are also subject to a petrifying
+	passive attack, as if they were attacking a cockatrice. Weapons that hit
+	a player or monster with the golden touch will turn to gold. Golems without
+	petrification resistance will turn into gold golems instead of stone golems.
+	Players with the golden touch also turn items to gold when applying, wearing,
+	throwing, eating, unlocking, locking, picking up, looting, removing (from a
+	container), quaffing or wielding the item. Some items, including most weapons,
+	can change their material to gold as part of the object materials system.
+	Other items, including most food, will turn into gold pieces. Artifacts and
+	the corpses of petrification-resistant monsters will not turn to gold.
+	Many items had to be added to the object materials system to implement the
+	Crown of Midas including heavy balls, conical hats and statues.
+	The Crown of Midas is intended to be hazardous to careless players, but
+	rewarding to those who can work around the various problems. It also makes
+	the Merchant quest somewhat dangerous, since Sostratus is likely to wear
+	the Crown and use it against the player.
+Added bribery skill, which can be #enhanced for cheaper bribes.
+	Bribery is expensive, but effective against most humanoid monsters.
+	The formula is 'B + ((B * M * M)/C)', where B is 1000 or less (depending on
+	the bribery skill), M is the monster level, and C is charisma.
+	Merchants start at basic in bribery, and can reach expert.
+	Rogues, Tourists and Priests can also enhance the skill. Other roles are
+	restricted, meaning they pay the full price for bribes.
+Added 3 variants of the middle level of the Wizard's tower.
+Added a new map for the Monk locate level, replacing the old map.
+	The new map is a bit of a puzzle.
+Added 2 variants of the bottom level of Vlad's tower, replacing the old map.
+Added 2 variants of the middle level of Vlad's tower.
+Added 2 variants of the top level of Vlad's tower.
+Added a cockatrice-themed Mine's End variant.
+Added an Orcus Town variant with a central maze.
+Added an Orcus Town variant with flower-, skull- and hourglass-shaped rooms.
+Added 2 serpent-themed variants of Medusa's Island.
+Added a Moloch's Sanctum variant focused on a red eye of lava.
+Added a Valley of the Dead variant surrounded by caves.
+Added 3 variants of the Fake Wizard's Tower which has a magic portal.
+Added 3 variants of the Oracle level.
+Added 2 variants to the bottom level of the Wizard's Tower.
+Added 13 variants to the top level of the Wizard's Tower.
+Added a Mine's End variant with many gnomes and wands.
+
+Platform- and/or Interface-Specific New Features
+------------------------------------------------
+
+
+NetHack Community Patches (or Variation) Included
+-------------------------------------------------
+Imported object materials from SpliceHack.
+Imported transmuter from SpliceHack.
+Imported 1 Sokoban puzzle from SpliceHack.
+Imported 55 Sokoban puzzles from HackEM.
+	These likely originated from GruntHack, NetHack Fourk, and the New Sokoban Levels patch.
+Imported Zoo Town and Lavender Town variants of Mine town from SpliceHack.
+Imported shallow water from L's terrain patch.
+	Many imported levels from other variants (below) were modified to include shallow water.
+Imported sewer system big room variant from L's terrain patch.
+Imported Orc Temple variant of Mine's End from EvilHack.
+	This originated from Khor's patch.
+Imported Sewers of Waterdeep variant of Mine's End from EvilHack.
+	Used shallow water instead of sewage, and used different monsters and loot.
+Imported 2 Castle variants from UnNetHack.
+	These originated in a patch by Pasi Kallinen.
+Imported 3 Castle variants from dNetHack.
+Imported Grund's Stronghold from SLASHEM via HackEM, modified to be a Castle variant.
+	Significantly changed the layout and monsters of the left side of the stronghold.
+	Added a moat and random mazes on each side of the stronghold.
+Imported Wizard's Manse from the Lethe patch, modified to be a Castle variant.
+	Reduced the number of thrones, changed the monsters and loot significantly.
+	Changed the islands and shores outside the Manse.
+Imported Orcus Town variant from the Lethe patch.
+Imported 6 variants of the Priest home level from the biodiversity patch.
+	Fixed bugs in the layouts.
+Imported the Banquet Hall from early versions of SpliceHack as a Mine's End variant.
+Imported 1 SLASHEM Mall variant as a Mine Town variant.
+	Changed the shop probabilities and monsters, added a temple.
+Imported Cthulu's Sanctum from the Lethe patch as a Sanctum of Moloch variant.
+	Replaced Lethe patch monsters with vanilla monsters, including Cthulu himself.
+	Fixed the possible location of the high altar.
+Imported Temple of Moloch from SLASHEM as a Moloch's Sanctum variant.
+	Replaced SLASHEM monsters with vanilla NetHack monsters.
+	Modified the layout significantly to be appropriate for the Sanctum.
+Imported Valley of the Dead variant from the Lethe patch.
+Imported Castle Dungeon from the Lethe patch as a Valley of the Dead variant.
+	Modified the layout and monsters significantly to be more Hell-ish.
+	Replaced barracks with "pseudo-barracks" filled with undead using mercenary gear.
+Imported 2 variants of the Oracle level from xNetHack.
+Imported Lost Tomb from SLASHEM via SpliceHack as a Valley of the Dead variant.
+	Modified the layout significantly to have all the features of the Valley of the Dead.
+
+Code Cleanup and Reorganization
+-------------------------------

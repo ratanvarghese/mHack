@@ -1659,7 +1659,7 @@ attributes_enlightenment(
         BLevitation = 0L;
         if (Levitation) {
             /* either trapped in the floor or inside solid rock
-               (or both if chained to buried iron ball and have
+               (or both if chained to buried heavy ball and have
                moved one step into solid rock somehow) */
             boolean trapped = (save_BLev & I_SPECIAL) != 0L,
                     terrain = (save_BLev & FROMOUTSIDE) != 0L;
@@ -1840,8 +1840,12 @@ attributes_enlightenment(
     }
     if (Unchanging && Upolyd) /* !Upolyd handled above */
         you_can("not change from your current form", from_what(UNCHANGING));
-    if (Hate_silver)
-        you_are("harmed by silver", "");
+    for (ltmp = 1; ltmp < NUM_MATERIAL_TYPES; ++ltmp) {
+        if (Hate_material(ltmp)) {
+            Sprintf(buf, "harmed by %s", materialnm[ltmp]);
+            you_are(buf, "");
+        }
+    }
     /* movement and non-armor-based protection */
     if (Fast)
         you_are(Very_fast ? "very fast" : "fast", from_what(FAST));
@@ -1851,6 +1855,8 @@ attributes_enlightenment(
         you_have("free action", from_what(FREE_ACTION));
     if (Fixed_abil)
         you_have("fixed abilities", from_what(FIXED_ABIL));
+    if (Gold_touch)
+        you_can("turn things you touch to gold", from_what(GOLD_TOUCH));
     if (Lifesaved)
         enl_msg("Your life ", "will be", "would have been", " saved", "");
 

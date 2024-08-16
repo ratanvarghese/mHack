@@ -3,26 +3,28 @@
 --	Copyright (c) 1991, 1993 by M. Stephenson, P. Winner
 -- NetHack may be freely redistributed.  See license for details.
 --
+-- Modified for the Terrain patch by L
+
 des.level_init({ style = "solidfill", fg = "P" });
 
 des.level_flags("mazelevel");
 
 --
-des.level_init({ style="mines", fg=".", bg="P", smoothed=false, joined=true, lit=1, walled=false })
+des.level_init({ style="mines", fg="w", bg="P", smoothed=false, joined=true, lit=1, walled=false })
 
 des.map([[
-.P....................................PP.
-PP.......PPPPPPP....PPPPPPP....PPPP...PP.
-...PPPPPPP....PPPPPPP.....PPPPPP..PPP...P
-...PP..............................PPP...
-..PP..............................PP.....
-..PP..............................PPP....
-..PPP..............................PP....
-.PPP..............................PPPP...
-...PP............................PPP...PP
-..PPPP...PPPPP..PPPP...PPPPP.....PP...PP.
-P....PPPPP...PPPP..PPPPP...PPPPPPP...PP..
-PPP..................................PPP.
+wPw......wwwwwww....wwwwwww....wwww..wPPw
+PPwwwwwwwPPPPPPPwwwwPPPPPPPwwwwPPPPwwwPPw
+wwwPPPPPPPwwwwPPPPPPPwwwwwPPPPPPwwPPPwwwP
+..wPPwwwww....wwwwwww.....wwwwww..wPPPw.w
+.wPPw............................wPPww...
+.wPPw............................wPPPw...
+.wPPPw............................wPPw...
+wPPPw.............................PPPPwww
+.wwPP............................PPPw.wPP
+wwPPPPwwwPPPPPwwPPPPwwwPPPPPwwwwwPPw..PPw
+PwwwwPPPPPwwwPPPPwwPPPPPwwwPPPPPPPw..PPww
+PPPw................................wPPPw
 ]]);
 -- Dungeon Description
 des.region(selection.area(00,00,40,11), "lit")

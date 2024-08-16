@@ -1301,6 +1301,233 @@ may be the last time you stand before %l.]],
          text = "\"Well met, %p.  How goeth thy search for the Amulet of Yendor?\"",
       },
    },
+   Mer = {
+      assignquest = {
+         synopsis = "[Travel to %i, and continue to %ns palace. Defeat %ni and secure %o.]",
+         output = "text",
+         text = [["You've amassed quite the fortune, %p. But all we hold dear
+is in peril.
+
+Recently, my business rival %n broke into an ancient tomb.
+There he discovered a relic forgotten by time, %o,
+capable of turning everything and everyone into gold!
+
+With this new power, %n has struck terror into everyone
+from Massalia to Tyre. He turned many promising %cP
+into gold statues, and sent an army of gold golems to attack
+his competitors. Perhaps worst of all, by dumping this much gold
+on the market, he has made all our coins worthless!
+
+Today %n is sitting atop piles of gold in his palace.
+You must go there %p, and take %o away from him!
+
+The fate of the economy depends on it!"]]
+      },
+      badalign = {
+         synopsis = "[Return when you are truly %a.]",
+         output = "text",
+         text = [["We need an honest business partner for this particular
+transaction. Someone who will fulfill the terms of the
+contract, down to the letter. Unfortunately, you have
+gotten unreliable. Do not return until you have truly
+become %a."]]
+      },
+      badlevel = {
+         synopsis = "[You are not ready to face %n.  Come back when you are %Ra.]",
+         output = "text",
+         text = [["You strike a hard bargain, %p, but we need someone
+with a stronger resume to challenge %n. Go, advance
+your skills and knowledge. When you have earned the
+rank of %R, you might be ready."]]
+      },
+      discourage = {
+         "\"Will you please leave your items outside? Fewer bloodstains to clean that way.\"",
+         "\"Hello %p! I was looking for another %r, one who stands a chance.\"",
+         "\"Seen any untended shops recently? If not, I can take yours!\"",
+         "\"For you, good creature; only your corpse for %o.\"",
+         "\"%oC, in exchange for your corpse, a real bargain.\"",
+         "\"You are no better than a shoplifter. Curse you!\"",
+         "\"I am after your hide, not your money!\"",
+         "\"Don't worry, I'll gratefully inherit all your possessions.\"",
+         "\"For you, scum; only your corpse and a diamond for %o.\"",
+         "\"Business is good, and will be even better once I kill you.\"",
+      },
+      encourage = {
+         "\"When you are in trouble, call upon %d for help.\"",
+         "\"With %o upon his head, %n is dangerous to fight up close.\"",
+         "\"%n is rich, but even a fish cannot swim if laden with gold.\"",
+         "\"No deal is good enough for %n. He must be defeated quickly.\"",
+         "\"Consider this a high-risk, high-reward business venture.\"",
+         "\"I'm betting on your success, %p.\"",
+         "\"If you don't succeed, the market will fall into chaos.\"",
+         "\"Watch out for %ns soldiers.\"",
+         "\"Try fighting %n at a distance.\"",
+         "\"We'll be as rich as gods if you prevail.\"",
+      },
+      firsttime = {
+         synopsis = "[You have reached %H but strange beings stalk the streets.]",
+         output = "text",
+         text = [[How peculiar, you've been transported back to %H. But
+something is amiss - where are all your fellow %cP?
+The roads are usually quite busy this time of year.
+
+And by %d, what are those strange beings walking
+about? Those aren't men, but machinations!]],
+      },
+      goal_first = {
+         synopsis = "[There are many gold statues here, with screaming faces.]",
+         output = "text",
+         text = [[You are struck by the sheer opulence of the palace.
+%ns lair is overflowing with gold and jewels,
+enough to pay for a thousand trips to Babylon.
+
+There are even statues made of gold. They are
+incredibly detailed, they almost look real. But
+for some reason they all appear to be screaming
+in silence.]]
+      },
+      goal_next = {
+         text = "Again, you return to %ns palace."
+      },
+      gotit = {
+         synopsis = "[%o seems dangerous, it was not safe with %n.]",
+         output = "text",
+         text = [[You feel a sense of dread as you pick up %o.
+But dangerous as it is, this relic is safer in your possession
+than in the hands of %n.]]
+      },
+      guardtalk_after = {
+         "\"Hello %p, found any rare scrolls on your journey?\"",
+         "\"Thirsty after all that fighting? Try some of my wine.\"",
+         "\"Precious gems for sale! Void of glass, guaranteed!\"",
+         "\"You liquidated %n? Thank %d, there's hope yet.\"",
+         "\"Can I borrow some gold, %p? I'll pay you back double.\"",
+      },
+      guardtalk_before = {
+         "\"Welcome back %p, found any rare scrolls on your journey?\"",
+         "\"I'd offer you a free drink, but %n bankrupted my tavern!\"",
+         "\"Precious gems for sale! Void of glass, guaranteed!\"",
+         "\"%n is an even bigger problem than shoplifting.\"",
+         "\"Can I borrow some gold, %p? I'll pay you back double.\"",
+      },
+      hasamulet = {
+         synopsis = "[Take the Amulet to the heavens, offer it to %d.]",
+         output = "text",
+         text = [["Excellent work, %p! Your assets in %H are collecting
+a hefty interest. But now that you have recovered the
+Amulet of Yendor, it is clear that %d has greater
+fortunes in store for you. The legends say that if you
+climb up to the heavens with the Amulet and offer it
+to %d, you shall earn a reward more precious than
+any gold or jewel."]]
+      },
+      killed_nemesis = {
+         synopsis = "[%n dies.]",
+         output = "text",
+         text = [[%n shouts:
+
+    "Thank you for shopping in %ns death emporium!"
+
+Then he breathes his last and his body falls without ceremony.]]
+      },
+      leader_first = {
+         synopsis = "[%lC checks whether you are ready to save the economy.]",
+         output = "text",
+         text = [["%p, you have returned! I thought you'd never
+return to the known world. Unfortunately, %n
+has created a lot of market uncertainty.
+If he is not defeated, the entire economy
+will pay a terrible price. So, are you ready
+to save the financial system?"]],
+      },
+      leader_last = {
+         synopsis = "[You have failed and %lC never wants to see you again.]",
+         output = "text",
+         text = [["You have offered us the worst deal since
+the Trojan War. And we refuse. We are never doing
+business with you again, we will not even lend
+you a single gold piece.
+
+Leave %H, and never return."]]
+      },
+      leader_next = {
+         text = "\"Hello. By %d, I hope you are ready now, %p.\""
+      },
+      leader_other = {
+         text = "\"We need you, %p, are you ready now?\""
+      },
+      locate_first = {
+         synopsis = "[You feel a cold breeze around %i.]",
+         output = "text",
+         text = [["You feel a cold breeze around you as you approach %i.
+%ns palace can't be far."]]
+      },
+      locate_next = {
+         text = "You feel a chill down your spine as you return to %i."
+      },
+      nemesis_first = {
+         synopsis = "[%n threatens to kill everyone in %H.]",
+         output = "text",
+         text = [["Hello, %p! Welcome to %ns death emporium!
+
+Unfortunately, if you're here for %o,
+you'll have to pay dearly. The gold statues it produces
+are the finest quality, much more shiny and beautiful
+than mere flesh and blood. In fact, I'm thinking of
+heading down to %H and turning everyone
+there into sculptures.
+
+The gods themselves couldn't make me part with
+%o. And if you dare try, I'm sure
+you know how I feel about the problem
+of shoplifting."]],
+      },
+      nemesis_next = {
+         text = "\"I rather dislike rude customers.\"",
+      },
+      nemesis_other = {
+         text = "\"You sneaky minx! Get out of here while you still can!\"",
+      },
+      nemesis_wantsit = {
+         text = "\"You be careful with my %o. I absolutely despise non-paying customers!\"",
+      },
+      nexttime = {
+         text = "Once again, you are standing in %H.",
+      },
+      offeredit = {
+         synopsis = "[%lC wants to keep %o and find the Amulet of Yendor.]",
+         output = "text",
+         text = [[%lC smiles nervously as you approach.
+
+"You retrieved %o? How... profitable...
+Honestly, I am just happy that %n cannot use it.
+You can keep it. %o is safer with you.
+Now you better get back to your
+distant trade route.
+
+I'll keep your assets safe for you. When you return
+with the Amulet of Yendor, I can give you a financial
+report.
+
+And, %p? Be wary. All that glitters is not gold."]],
+      },
+      offeredit2 = {
+         synopsis = "[Be careful with %o and find the Amulet of Yendor.]",
+         output = "text",
+         text = [["By %d! Do not throw %o, that's dangerous!
+That crown can earn enormous profits, but also
+cause terrible loss. You should take it back with
+you to %Z, to aid in your expedition for the Amulet.
+You can return through the magic portal that brought
+you here."]],
+      },
+      othertime = {
+         text = [[You stand in %H again. You worry that this might be the last time you see your homeland.]],
+      },
+      posthanks = {
+         text = "\"Greetings, %p. How is your search for the Amulet of Yendor?\"",
+      },
+   },
    Mon = {
       assignquest = {
          synopsis = "[Find %i, then continue to %ns lair.  Defeat %ni and return with %o.]",
@@ -1577,11 +1804,10 @@ when you have attained the post of %R."]],
          "\"Wear %o.  It will assist you against the undead.\"",
       },
       firsttime = {
-         synopsis = "[You are at %H; the doors are closed.  %lC needs your help!]",
+         synopsis = "[You are at %H.  %lC needs your help!]",
          output = "text",
          text = [[You find yourself standing in sight of %H.  Something
-is obviously wrong here.  The doors to %H, which usually
-stand open, are closed.  Strange human shapes shamble around
+is obviously wrong here.  Strange human shapes shamble around
 outside.
 
 You realize that %l needs your assistance!]],

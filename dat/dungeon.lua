@@ -7,7 +7,7 @@ dungeon = {
    {
       name = "The Dungeons of Doom",
       bonetag = "D",
-      base = 25,
+      base = 20,
       range = 5,
       alignment = "unaligned",
       themerooms = "themerms.lua",
@@ -32,7 +32,7 @@ dungeon = {
          },
          {
             name = "Fort Ludios",
-            base = 18,
+            base = 13,
             range = 4,
             branchtype = "portal"
          },
@@ -53,8 +53,8 @@ dungeon = {
          {
             name = "rogue",
             bonetag = "R",
-            base = 15,
-            range = 4,
+            base = 14,
+            range = 2,
             flags = "roguelike",
          },
          {
@@ -70,33 +70,34 @@ dungeon = {
             base = 10,
             range = 3,
             chance = 40,
-            nlevels = 11
+            nlevels = 12
          },
          {
             name = "medusa",
-            base = -5,
-            range = 4,
-            nlevels = 4,
+            base = -3,
+            range = 2,
+            nlevels = 6,
             alignment = "chaotic"
          },
          {
             name = "castle",
-            base = -1
+            base = -1,
+            nlevels = 8
          }
       }
    },
    {
       name = "Gehennom",
       bonetag = "G",
-      base = 20,
-      range = 5,
+      base = 10,
+      range = 2,
       flags = { "mazelike", "hellish" },
       lvlfill = "hellfill",
       alignment = "noalign",
       branches = {
          {
             name = "Vlad's Tower",
-            base = 9,
+            base = 2,
             range = 5,
             direction = "up"
          }
@@ -105,34 +106,25 @@ dungeon = {
          {
             name = "valley",
             bonetag = "V",
-            base = 1
+            base = 1,
+            nlevels = 5
          },
          {
             name = "sanctum",
-            base = -1
+            base = -1,
+            nlevels = 4
          },
          {
-            name = "juiblex",
-            bonetag = "J",
-            base = 4,
-            range = 4
-         },
-         {
-            name = "baalz",
-            bonetag = "B",
-            base = 6,
-            range = 4
-         },
-         {
-            name = "asmodeus",
-            bonetag = "A",
+            name = "orcus",
+            bonetag = "O",
             base = 2,
-            range = 6
+            range = 2,
+            nlevels = 4
          },
          {
             name = "wizard1",
-            base = 11,
-            range = 6
+            base = 4,
+            range = 2
          },
          {
             name = "wizard2",
@@ -147,22 +139,9 @@ dungeon = {
             base = 2
          },
          {
-            name = "orcus",
-            bonetag = "O",
-            base = 10,
-            range = 6
-         },
-         {
             name = "fakewiz1",
             bonetag = "F",
-            base = -6,
-            range = 4
-         },
-         {
-            name = "fakewiz2",
-            bonetag = "G",
-            base = -6,
-            range = 4
+            base = -3,
          },
       }
    },
@@ -180,7 +159,7 @@ dungeon = {
             bonetag = "T",
             base = 3,
             range = 2,
-            nlevels = 7,
+            nlevels = 11,
             flags = "town"
          },
          {
@@ -188,7 +167,7 @@ dungeon = {
 --          3.7.0: minend changed to no-bones to simplify achievement tracking
 --          bonetag = "E"
             base = -1,
-            nlevels = 3
+            nlevels = 8
          },
       }
    },
@@ -217,7 +196,7 @@ dungeon = {
    },
    {
       name = "Sokoban",
-      base = 4,
+      base = 3,
       alignment = "neutral",
       flags = { "mazelike" },
       entry = -1,
@@ -225,23 +204,18 @@ dungeon = {
          {
             name = "soko1",
             base = 1,
-            nlevels = 2
+            nlevels = 12
          },
          {
             name = "soko2",
             base = 2,
-            nlevels = 2
+            nlevels = 34
          },
          {
             name = "soko3",
             base = 3,
-            nlevels = 2
-         },
-         {
-            name = "soko4",
-            base = 4,
-            nlevels = 2
-         },
+            nlevels = 18
+         }
       }
    },
    {
@@ -269,15 +243,18 @@ dungeon = {
       levels = {
          {
             name = "tower1",
-            base = 1
+            base = 1,
+            nlevels = 2
          },
          {
             name = "tower2",
-            base = 2
+            base = 2,
+            nlevels = 3
          },
          {
             name = "tower3",
-            base = 3
+            base = 3,
+            nlevels = 3
          },
       }
    },

@@ -160,6 +160,7 @@ int lspo_teleport_region(lua_State *);
 int lspo_gas_cloud(lua_State *);
 int lspo_terrain(lua_State *);
 int lspo_trap(lua_State *);
+int lspo_ugname(lua_State *);
 int lspo_wall_property(lua_State *);
 int lspo_wallify(lua_State *);
 
@@ -1275,7 +1276,7 @@ is_ok_location(coordxy x, coordxy y, getloc_flags_t humidity)
         if (!bould || (bould && (humidity & SOLID)))
             return TRUE;
     }
-    if ((humidity & WET) && is_pool(x, y))
+    if ((humidity & WET) && (is_pool(x, y) || IS_PUDDLE(typ)))
         return TRUE;
     if ((humidity & HOT) && is_lava(x, y))
         return TRUE;
@@ -2283,6 +2284,9 @@ create_object(object *o, struct mkroom *croom)
 
             remove_object(otmp);
             if (cobj) {
+                if(cobj->otyp == ICE_BOX) {
+                    freeze_object(otmp);
+                }
                 otmp = add_to_container(cobj, otmp);
                 cobj->owt = weight(cobj);
             } else {
@@ -2343,6 +2347,19 @@ create_object(object *o, struct mkroom *croom)
             }
             otmp->owt = weight(otmp);
             mongone(was);
+        }
+    }
+
+    if(o->material.str) {
+        int i, l;
+        for (i = 1; i < NUM_MATERIAL_TYPES; i++) {
+            l = strlen(materialnm[i]);
+            if (l > 0 && !strncmpi(o->material.str, materialnm[i], l) && valid_obj_material(otmp, i))
+            {
+                otmp->material = i;
+                l++;
+                break; /* from the for loop */
+            }
         }
     }
 
@@ -3482,6 +3499,7 @@ lspo_object(lua_State *L)
 {
     static object zeroobject = {
             { 0 },   /* Str_or_len name */
+            { 0 },   /* Str_or_len material */
             0,       /* corpsenm */
             0, 0,    /* id, spe */
             0,       /* coord */
@@ -3558,6 +3576,7 @@ lspo_object(lua_State *L)
         tmpobj.curse_state = get_table_buc(L);
         tmpobj.corpsenm = NON_PM;
         tmpobj.name.str = get_table_str_opt(L, "name", (char *) 0);
+        tmpobj.material.str = get_table_str_opt(L, "material", (char *) 0);
         tmpobj.quan = get_table_int_or_random(L, "quantity", -1);
         tmpobj.buried = get_table_boolean_opt(L, "buried", 0);
         tmpobj.lit = get_table_boolean_opt(L, "lit", 0);
@@ -3670,6 +3689,7 @@ lspo_object(lua_State *L)
         spo_pop_container();
 
     Free(tmpobj.name.str);
+    Free(tmpobj.material.str);
 
     nhl_push_obj(L, otmp);
 
@@ -5900,6 +5920,14 @@ lspo_wallify(lua_State *L)
     return 0;
 }
 
+int
+lspo_ugname(lua_State *L)
+{
+    lua_pushstring(L, u_gname());
+    return 1;
+}
+
+
 /* reset_level is only needed for testing purposes */
 int
 lspo_reset_level(lua_State *L)
@@ -6318,6 +6346,7 @@ static const struct luaL_Reg nhl_functions[] = {
     { "reset_level", lspo_reset_level },
     { "finalize_level", lspo_finalize_level },
     { "gas_cloud", lspo_gas_cloud },
+    { "ugname", lspo_ugname },
     /* TODO: { "branch", lspo_branch }, */
     /* TODO: { "portal", lspo_portal }, */
     { NULL, NULL }

@@ -2316,6 +2316,9 @@ back_to_glyph(coordxy x, coordxy y)
     case CLOUD:
         idx = S_cloud;
         break;
+    case PUDDLE:
+        idx = S_puddle;
+        break;
     case WATER:
         idx = S_water;
         break;
@@ -3036,7 +3039,7 @@ static const char *const type_names[MAX_TYPE] = {
     "LAVAWALL",
     "IRON_BARS", "DOOR", "CORR", "ROOM", "STAIRS", "LADDER", "FOUNTAIN",
     "THRONE", "SINK", "GRAVE", "ALTAR", "ICE", "DRAWBRIDGE_DOWN", "AIR",
-    "CLOUD"
+    "CLOUD", "PUDDLE"
 };
 
 staticfn const char *
