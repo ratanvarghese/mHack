@@ -976,6 +976,7 @@ addinv_core1(struct obj *obj)
         if (u.uhave.amulet)
             impossible("already have amulet?");
         u.uhave.amulet = 1;
+        make_divine_hallucinated(1);
         record_achievement(ACH_AMUL);
     } else if (obj->otyp == CANDELABRUM_OF_INVOCATION) {
         if (u.uhave.menorah)
@@ -1337,6 +1338,7 @@ freeinv_core(struct obj *obj)
         if (!u.uhave.amulet)
             impossible("don't have amulet?");
         u.uhave.amulet = 0;
+        make_divine_hallucinated(0);
     } else if (obj->otyp == CANDELABRUM_OF_INVOCATION) {
         if (!u.uhave.menorah)
             impossible("don't have candelabrum?");

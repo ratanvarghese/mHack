@@ -140,7 +140,7 @@ static NEARDATA struct artifact artilist[] = {
       PHYS(5, 0), DFNS(AD_WERE), NO_CARY, 0, A_NONE, NON_PM, NON_PM, 1500L,
       NO_COLOR, WEREBANE),
 
-    A("Grayswandir", SABER, (SPFX_RESTR | SPFX_HALRES), 0, 0,
+    A("Grayswandir", SABER, (SPFX_RESTR), 0, 0,
       PHYS(5, 0), NO_DFNS, NO_CARY, 0, A_LAWFUL, NON_PM, NON_PM, 8000L,
       NO_COLOR, GRAYSWANDIR),
 
@@ -178,7 +178,7 @@ static NEARDATA struct artifact artilist[] = {
 
     /* Sunsword emits light when wielded (handled in the core rather than
        via artifact fields), but that light has no particular color */
-    A("Sunsword", LONG_SWORD, (SPFX_RESTR | SPFX_DFLAG2), 0, M2_UNDEAD,
+    A("Sunsword", LONG_SWORD, (SPFX_RESTR | SPFX_DFLAG2 | SPFX_HALRES), 0, M2_UNDEAD,
       PHYS(5, 0), DFNS(AD_BLND), NO_CARY, BLINDING_RAY, A_LAWFUL, NON_PM,
       NON_PM, 1500L, NO_COLOR, SUNSWORD),
 
@@ -192,7 +192,7 @@ static NEARDATA struct artifact artilist[] = {
       NON_PM, 2500L, NO_COLOR, ORB_OF_DETECTION),
 
     A("The Heart of Ahriman", LUCKSTONE,
-      (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL), SPFX_STLTH, 0,
+      (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL), (SPFX_STLTH | SPFX_HALRES), 0,
       /* this stone does double damage if used as a projectile weapon */
       PHYS(5, 0), NO_DFNS, NO_CARY, LEVITATION, A_NEUTRAL, PM_BARBARIAN,
       NON_PM, 2500L, NO_COLOR, HEART_OF_AHRIMAN),
