@@ -17,6 +17,10 @@ Adjusted difficulty calculations to increase difficulty more steeply in a shorte
 Added des.ugname function to Lua special level loader.
 Fix for predefined corpses inside of ice boxes on special levels.
 Remove the Fake Wizard tower which does not have a magic portal.
+Hallucination no longer prevents offering the Amulet of Yendor.
+Grayswandir no longer grants hallucination resistance.
+Sunword grants hallucination resistance when wielded.
+The Heart of Ahriman grants hallucination resistance when carried.
 
 Fixes to Post-X.X.X Problems that Were Exposed Via git Repository
 ------------------------------------------------------------------
@@ -85,6 +89,10 @@ Added 3 variants of the Oracle level.
 Added 2 variants to the bottom level of the Wizard's Tower.
 Added 13 variants to the top level of the Wizard's Tower.
 Added a Mine's End variant with many gnomes and wands.
+The Amulet of Yendor grants extrinsic hallucination.
+	Extrinsic hallucination does not time out and is not cured with a unicorn horn.
+	It can be resisted with an item granting hallucination resistance.
+	It can be avoided by dropping the Amulet.
 
 Platform- and/or Interface-Specific New Features
 ------------------------------------------------
