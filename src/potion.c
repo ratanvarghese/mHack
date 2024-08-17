@@ -471,7 +471,7 @@ make_hallucinated(
                 if (eyecount(gy.youmonst.data) != 1)
                     eyes = makeplural(eyes);
                 Your(eyemsg, eyes, vtense(eyes, "itch"));
-            } else { /* Grayswandir */
+            } else { /* From an artifact or scales */
                 Your(vismsg, "flatten", "normal");
             }
         }
