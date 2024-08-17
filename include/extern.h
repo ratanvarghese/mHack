@@ -2448,6 +2448,7 @@ extern void make_stoned_material(long, const char *, int, const char *, int) NO_
 extern void make_vomiting(long, boolean);
 extern void make_blinded(long, boolean);
 extern void toggle_blindness(void);
+extern void make_divine_hallucinated(boolean);
 extern boolean make_hallucinated(long, boolean, long);
 extern void make_deaf(long, boolean);
 extern void make_glib(int);

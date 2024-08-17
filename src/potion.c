@@ -7,6 +7,7 @@
 
 staticfn long itimeout(long);
 staticfn long itimeout_incr(long, int);
+staticfn void hallucinatory_redraw(void);
 staticfn void ghost_from_bottle(void);
 staticfn int drink_ok(struct obj *);
 staticfn void peffect_restore_ability(struct obj *);
@@ -384,7 +385,51 @@ toggle_blindness(void)
         learn_unseen_invent();
 }
 
+staticfn void
+hallucinatory_redraw(void)
+{
+    /* in case we're mimicking an orange (hallucinatory form
+       of mimicking gold) update the mimicking's-over message */
+    if (!Hallucination)
+        eatmupdate();
+
+    if (u.uswallow) {
+        swallowed(0); /* redraw swallow display */
+    } else {
+        /* The see_* routines should be called *before* the pline. */
+        see_monsters();
+        see_objects();
+        see_traps();
+    }
+
+    /* for perm_inv and anything similar
+    (eg. Qt windowport's equipped items display) */
+    update_inventory();
+
+    disp.botl = TRUE;
+}
+
+void
+make_divine_hallucinated(boolean on)
+{
+    long wp_mask = W_ART;
+    if (on)
+        EHallucination |= wp_mask;
+    else
+        EHallucination &= ~wp_mask;
+
+    if(!EHalluc_resistance && !HHallucination) {
+        hallucinatory_redraw();
+        if(on) {
+            You_feel("divine.");
+        } else {
+            You_feel("mundane.");
+        }
+    }
+}
+
 DISABLE_WARNING_FORMAT_NONLITERAL
+
 
 boolean
 make_hallucinated(
@@ -404,14 +449,14 @@ make_hallucinated(
     verb = (!Blind) ? "looks" : "feels";
 
     if (mask) {
-        if (HHallucination)
+        if (HHallucination || EHallucination)
             changed = TRUE;
 
         if (!xtime)
             EHalluc_resistance |= mask;
         else
             EHalluc_resistance &= ~mask;
-    } else {
+    } else if(!EHallucination) {
         if (!EHalluc_resistance && (!!HHallucination != !!xtime))
             changed = TRUE;
         set_itimeout(&HHallucination, xtime);
@@ -433,25 +478,7 @@ make_hallucinated(
     }
 
     if (changed) {
-        /* in case we're mimicking an orange (hallucinatory form
-           of mimicking gold) update the mimicking's-over message */
-        if (!Hallucination)
-            eatmupdate();
-
-        if (u.uswallow) {
-            swallowed(0); /* redraw swallow display */
-        } else {
-            /* The see_* routines should be called *before* the pline. */
-            see_monsters();
-            see_objects();
-            see_traps();
-        }
-
-        /* for perm_inv and anything similar
-        (eg. Qt windowport's equipped items display) */
-        update_inventory();
-
-        disp.botl = TRUE;
+        hallucinatory_redraw();
         if (talk)
             pline(message, verb);
     }
