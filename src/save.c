@@ -325,6 +325,7 @@ savegamestate(NHFILE *nhfp)
                sizeof (struct spell) * (MAXSPELL + 1));
     }
     save_artifacts(nhfp);
+    save_alchemic_recipes(nhfp);
     save_oracles(nhfp);
     if (nhfp->structlevel) {
         bwrite(nhfp->fd, (genericptr_t) svp.pl_character,

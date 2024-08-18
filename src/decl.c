@@ -1000,7 +1000,6 @@ static const struct instance_globals_saved_q init_svq = {
 static const struct instance_globals_saved_r init_svr = {
     /* mkroom.c */
     { DUMMY },                           /* rooms */
-    { DUMMY }                           /* recipes */
 };
 
 static const struct instance_globals_saved_s init_svs = {

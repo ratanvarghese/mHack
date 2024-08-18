@@ -2437,6 +2437,10 @@ extern const char *udeadinside(void);
 
 /* ### potion.c ### */
 
+extern void init_alchemic_recipes(void);
+extern void save_alchemic_recipes(NHFILE *);
+extern void restore_alchemic_recipes(NHFILE *);
+extern const struct alchemic_recipe *get_alchemic_recipe(int);
 extern void set_itimeout(long *, long) NONNULLARG1;
 extern void incr_itimeout(long *, int) NONNULLARG1;
 extern void make_confused(long, boolean);

@@ -1207,8 +1207,6 @@ struct instance_globals_saved_q {
 struct instance_globals_saved_r {
     /* mkroom.c */
     struct mkroom rooms[(MAXNROFROOMS + 1) * 2];
-    /* o_init.c */
-    struct alchemic_recipe recipes[MAX_ALCHEMIC_RECIPES];
 };
 
 struct instance_globals_saved_s {

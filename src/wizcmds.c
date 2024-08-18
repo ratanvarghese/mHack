@@ -1672,17 +1672,19 @@ int wiz_show_alchemy(void)
         winid win;
         int i;
         win = create_nhwindow(NHW_TEXT);
-        struct alchemic_recipe r;
+        const struct alchemic_recipe *r;
         putstr(win, 0, "Alchemic recipes:");
         for(i = 0; i < MAX_ALCHEMIC_RECIPES; i++) {
-            r = svr.recipes[i];
-            if(r.flags & ALCHEMIC_RECIPE_ASSIGNED) {
+            r = get_alchemic_recipe(i);
+            if(r == NULL) {
+                Sprintf(buf, "0x%02X: null", i);
+            } else if(r->flags & ALCHEMIC_RECIPE_ASSIGNED) {
                 Sprintf(buf, "0x%02X: %20s + %20s = %20s%s",
                         i,
-                        OBJ_NAME(objects[r.input0 + FIRST_ALCHEMIC_POTION]),
-                        OBJ_NAME(objects[r.input1 + FIRST_ALCHEMIC_POTION]),
-                        OBJ_NAME(objects[r.output + FIRST_ALCHEMIC_POTION]),
-                        (r.flags & ALCHEMIC_RECIPE_DIFFICULT) ? " (difficult)" : ""
+                        OBJ_NAME(objects[r->input0 + FIRST_ALCHEMIC_POTION]),
+                        OBJ_NAME(objects[r->input1 + FIRST_ALCHEMIC_POTION]),
+                        OBJ_NAME(objects[r->output + FIRST_ALCHEMIC_POTION]),
+                        (r->flags & ALCHEMIC_RECIPE_DIFFICULT) ? " (difficult)" : ""
                     );
             } else {
                 Sprintf(buf, "0x%02X: unassigned", i);
