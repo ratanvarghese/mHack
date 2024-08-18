@@ -38,6 +38,7 @@ staticfn void peffect_polymorph(struct obj *);
 staticfn boolean H2Opotion_dip(struct obj *, struct obj *, boolean,
                              const char *);
 staticfn short mixtype(struct obj *, struct obj *);
+staticfn short alchemic_mixtype(struct obj *, struct obj *);
 staticfn int dip_ok(struct obj *);
 staticfn int dip_hands_ok(struct obj *);
 staticfn void hold_potion(struct obj *, const char *, const char *,
@@ -2152,93 +2153,60 @@ potionbreathe(struct obj *obj)
     return;
 }
 
+/* returns the potion type when potion o1 is dipped in potion o2 */
+staticfn short
+alchemic_mixtype(struct obj *o1, struct obj *o2)
+{
+    int o1typ = o1->otyp - FIRST_ALCHEMIC_POTION;
+    int o2typ = o2->otyp - FIRST_ALCHEMIC_POTION;
+    if(o1typ > o2typ) {
+        o1typ = o2->otyp - FIRST_ALCHEMIC_POTION;
+        o2typ = o1->otyp - FIRST_ALCHEMIC_POTION;
+    }
+
+    int i = 0;
+    for (i = 0; i < MAX_ALCHEMIC_RECIPES; i++) {
+        if(!(svr.recipes[i].flags & ALCHEMIC_RECIPE_ASSIGNED)) {
+            break;
+        }
+        if(svr.recipes[i].input0 == o1typ && svr.recipes[i].input1 == o2typ) {
+            if (svr.recipes[i].flags & ALCHEMIC_RECIPE_DIFFICULT) {
+                if(rn2(4) < 3) {
+                    break;
+                }
+            }
+            return svr.recipes[i].output + FIRST_ALCHEMIC_POTION;
+        }
+    }
+    return STRANGE_OBJECT;
+}
+
 /* returns the potion type when o1 is dipped in o2 */
 staticfn short
 mixtype(struct obj *o1, struct obj *o2)
 {
-    int o1typ = o1->otyp, o2typ = o2->otyp;
-
-    /* cut down on the number of cases below */
-    if (o1->oclass == POTION_CLASS
-        && (o2typ == POT_GAIN_LEVEL || o2typ == POT_GAIN_ENERGY
-            || o2typ == POT_HEALING || o2typ == POT_EXTRA_HEALING
-            || o2typ == POT_FULL_HEALING || o2typ == POT_ENLIGHTENMENT
-            || o2typ == POT_FRUIT_JUICE)) {
-        /* swap o1 and o2 */
-        o1typ = o2->otyp;
-        o2typ = o1->otyp;
-    }
-
-    switch (o1typ) {
-    case POT_HEALING:
-        if (o2typ == POT_SPEED)
-            return POT_EXTRA_HEALING;
-        /*FALLTHRU*/
-    case POT_EXTRA_HEALING:
-    case POT_FULL_HEALING:
-        if (o2typ == POT_GAIN_LEVEL || o2typ == POT_GAIN_ENERGY)
-            return (o1typ == POT_HEALING) ? POT_EXTRA_HEALING
-                   : (o1typ == POT_EXTRA_HEALING) ? POT_FULL_HEALING
-                     : POT_GAIN_ABILITY;
-        /*FALLTHRU*/
-    case UNICORN_HORN:
-        switch (o2typ) {
-        case POT_SICKNESS:
-            return POT_FRUIT_JUICE;
-        case POT_HALLUCINATION:
-        case POT_BLINDNESS:
-        case POT_CONFUSION:
-            return POT_WATER;
-        }
-        break;
-    case AMETHYST: /* "a-methyst" == "not intoxicated" */
-        if (o2typ == POT_BOOZE)
-            return POT_FRUIT_JUICE;
-        break;
-    case POT_GAIN_LEVEL:
-    case POT_GAIN_ENERGY:
-        switch (o2typ) {
-        case POT_CONFUSION:
-            return (rn2(3) ? POT_BOOZE : POT_ENLIGHTENMENT);
-        case POT_HEALING:
-            return POT_EXTRA_HEALING;
-        case POT_EXTRA_HEALING:
-            return POT_FULL_HEALING;
-        case POT_FULL_HEALING:
-            return POT_GAIN_ABILITY;
-        case POT_FRUIT_JUICE:
-            return POT_SEE_INVISIBLE;
-        case POT_BOOZE:
-            return POT_HALLUCINATION;
-        }
-        break;
-    case POT_FRUIT_JUICE:
-        switch (o2typ) {
-        case POT_SICKNESS:
-            return POT_SICKNESS;
-        case POT_ENLIGHTENMENT:
-        case POT_SPEED:
-            return POT_BOOZE;
-        case POT_GAIN_LEVEL:
-        case POT_GAIN_ENERGY:
-            return POT_SEE_INVISIBLE;
-        }
-        break;
-    case POT_ENLIGHTENMENT:
-        switch (o2typ) {
-        case POT_LEVITATION:
-            if (rn2(3))
-                return POT_GAIN_LEVEL;
+    if(o1->oclass == POTION_CLASS) {
+        return alchemic_mixtype(o1, o2);
+    } else {
+        switch(o1->otyp) {
+        case UNICORN_HORN:
+            switch (o2->otyp) {
+            case POT_SICKNESS:
+                return POT_FRUIT_JUICE;
+            case POT_HALLUCINATION:
+            case POT_BLINDNESS:
+            case POT_CONFUSION:
+                return POT_WATER;
+            }
             break;
-        case POT_FRUIT_JUICE:
-            return POT_BOOZE;
-        case POT_BOOZE:
-            return POT_CONFUSION;
+        case AMETHYST: /* "a-methyst" == "not intoxicated" */
+            if (o2->otyp == POT_BOOZE)
+                return POT_FRUIT_JUICE;
+            break;
         }
-        break;
-    }
 
-    return STRANGE_OBJECT;
+        return STRANGE_OBJECT;
+    }
 }
 
 /* getobj callback for object to be dipped (not the thing being dipped into,
@@ -2534,9 +2502,32 @@ potion_dip(struct obj *obj, struct obj *potion)
               thesimpleoname(potion));
         /* get rid of 'dippee' before potential perm_invent updates */
         useup(potion); /* now gone */
-        /* Mixing potions is dangerous...
-           KMH, balance patch -- acid is particularly unstable */
-        if (obj->cursed || obj->otyp == POT_ACID || !rn2(10)) {
+
+        if (mixture != STRANGE_OBJECT) {
+            obj->blessed = obj->cursed = obj->bknown = 0;
+            if (Blind || Hallucination)
+                obj->dknown = 0;
+            obj->otyp = mixture;
+            obj->odiluted = (obj->otyp != POT_WATER);
+            if (obj->otyp == POT_WATER && !Hallucination) {
+                pline_The("mixture bubbles%s.", Blind ? "" : ", then clears");
+            } else if (!Blind) {
+                pline_The("mixture looks %s.",
+                          hcolor(OBJ_DESCR(objects[obj->otyp])));
+            }
+
+            /* this is required when 'obj' was split off from a bigger stack,
+               so that 'obj' will now be assigned its own inventory slot;
+               it has a side-effect of merging 'obj' into another compatible
+               stack if there is one, so we do it even when no split has
+               been made in order to get the merge result for both cases;
+               as a consequence, mixing while Fumbling drops the mixture */
+            freeinv(obj);
+            hold_potion(obj, "You drop %s!", doname(obj), (const char *) 0);
+            return ECMD_TIME;
+        } else if (obj->cursed || obj->otyp == POT_ACID || !rn2(10)) {
+            /* Mixing potions is dangerous...
+               KMH, balance patch -- acid is particularly unstable */
             /* it would be better to use up the whole stack in advance
                of the message, but we can't because we need to keep it
                around for potionbreathe() [and we can't set obj->in_use
@@ -2551,58 +2542,12 @@ potion_dip(struct obj *obj, struct obj *potion)
             losehp(amt + rnd(9), /* not physical damage */
                    "alchemic blast", KILLED_BY_AN);
             return ECMD_TIME;
-        }
-
-        obj->blessed = obj->cursed = obj->bknown = 0;
-        if (Blind || Hallucination)
-            obj->dknown = 0;
-
-        if (mixture != STRANGE_OBJECT) {
-            obj->otyp = mixture;
         } else {
-            struct obj *otmp;
-
-            switch (obj->odiluted ? 1 : rnd(8)) {
-            case 1:
-                obj->otyp = POT_WATER;
-                break;
-            case 2:
-            case 3:
-                obj->otyp = POT_SICKNESS;
-                break;
-            case 4:
-                otmp = mkobj(POTION_CLASS, FALSE);
-                obj->otyp = otmp->otyp;
-                /* oil uses obj->age field differently from other potions */
-                if (obj->otyp == POT_OIL || otmp->otyp == POT_OIL)
-                    fixup_oil(obj, otmp);
-                obfree(otmp, (struct obj *) 0);
-                break;
-            default:
-                useupall(obj);
-                pline_The("mixture %sevaporates.",
-                          !Blind ? "glows brightly and " : "");
-                return ECMD_TIME;
-            }
+            useupall(obj);
+            pline_The("mixture %sevaporates.",
+                      !Blind ? "glows brightly and " : "");
+            return ECMD_TIME;
         }
-        obj->odiluted = (obj->otyp != POT_WATER);
-
-        if (obj->otyp == POT_WATER && !Hallucination) {
-            pline_The("mixture bubbles%s.", Blind ? "" : ", then clears");
-        } else if (!Blind) {
-            pline_The("mixture looks %s.",
-                      hcolor(OBJ_DESCR(objects[obj->otyp])));
-        }
-
-        /* this is required when 'obj' was split off from a bigger stack,
-           so that 'obj' will now be assigned its own inventory slot;
-           it has a side-effect of merging 'obj' into another compatible
-           stack if there is one, so we do it even when no split has
-           been made in order to get the merge result for both cases;
-           as a consequence, mixing while Fumbling drops the mixture */
-        freeinv(obj);
-        hold_potion(obj, "You drop %s!", doname(obj), (const char *) 0);
-        return ECMD_TIME;
     }
 
     if (potion->otyp == POT_ACID && obj->otyp == CORPSE

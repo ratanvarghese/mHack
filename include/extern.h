@@ -3768,6 +3768,7 @@ extern int wiz_show_stats(void);
 extern int wiz_show_vision(void);
 extern int wiz_show_wmodes(void);
 extern int wiz_smell(void);
+extern int wiz_show_alchemy(void);
 extern int wiz_telekinesis(void);
 extern int wiz_where(void);
 extern int wiz_wish(void);

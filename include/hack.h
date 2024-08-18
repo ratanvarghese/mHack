@@ -854,6 +854,18 @@ struct sortloot_item {
 };
 typedef struct sortloot_item Loot;
 
+struct alchemic_recipe {
+    uint8 input0; /* 0 <= input0 <= (LAST_ALCHEMIC_POTION - FIRST_ALCHEMIC_POTION) */
+    uint8 input1; /* 0 <= input1 <= (LAST_ALCHEMIC_POTION - FIRST_ALCHEMIC_POTION) */
+    uint8 output; /* 0 <= output <= (LAST_ALCHEMIC_POTION - FIRST_ALCHEMIC_POTION) */
+    uint8 flags;
+};
+
+/* Flags for alchemic_recipe */
+#define ALCHEMIC_RECIPE_ASSIGNED     0x01 /* Has this recipe been assigned in o_init.c? */
+#define ALCHEMIC_RECIPE_KNOWN        0x02 /* Has the player learned this recipe? */
+#define ALCHEMIC_RECIPE_DIFFICULT    0x04 /* Does this recipe cause blasts at low skill? */
+
 typedef struct strbuf {
     int    len;
     char  *str;

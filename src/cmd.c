@@ -1948,6 +1948,8 @@ struct ext_func_tab extcmdlist[] = {
               wiz_show_seenv, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
     { '\0',   "wizsmell", "smell monster",
               wiz_smell, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
+    { '\0',   "wizshowalchemy", "set an intrinsic",
+              wiz_show_alchemy, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
     { '\0',   "wiztelekinesis", "telekinesis",
               wiz_telekinesis, IFBURIED | AUTOCOMPLETE | WIZMODECMD, NULL },
     { '\0',   "wizwhere", "show locations of special levels",

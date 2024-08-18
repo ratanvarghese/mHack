@@ -1665,6 +1665,39 @@ wiz_show_stats(void)
 
 RESTORE_WARNING_FORMAT_NONLITERAL
 
+int wiz_show_alchemy(void)
+{
+    if(wizard) {
+        char buf[BUFSZ];
+        winid win;
+        int i;
+        win = create_nhwindow(NHW_TEXT);
+        struct alchemic_recipe r;
+        putstr(win, 0, "Alchemic recipes:");
+        for(i = 0; i < MAX_ALCHEMIC_RECIPES; i++) {
+            r = svr.recipes[i];
+            if(r.flags & ALCHEMIC_RECIPE_ASSIGNED) {
+                Sprintf(buf, "0x%02X: %20s + %20s = %20s%s",
+                        i,
+                        OBJ_NAME(objects[r.input0 + FIRST_ALCHEMIC_POTION]),
+                        OBJ_NAME(objects[r.input1 + FIRST_ALCHEMIC_POTION]),
+                        OBJ_NAME(objects[r.output + FIRST_ALCHEMIC_POTION]),
+                        (r.flags & ALCHEMIC_RECIPE_DIFFICULT) ? " (difficult)" : ""
+                    );
+            } else {
+                Sprintf(buf, "0x%02X: unassigned", i);
+            }
+            putstr(win, 0, buf);
+        }
+        display_nhwindow(win, FALSE);
+        destroy_nhwindow(win);
+    } else {
+        pline(unavailcmd, ecname_from_fn(wiz_intrinsic));
+    }
+    return ECMD_OK;
+}
+
+
 #if (NH_DEVEL_STATUS != NH_STATUS_RELEASED) || defined(DEBUG)
 /* the #wizdispmacros command
  * Verify that some display macros are returning sane values */

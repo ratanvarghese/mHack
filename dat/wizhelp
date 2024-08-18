@@ -33,6 +33,7 @@ Debug-Mode Quick Reference:
 #wizrumorcheck  == validate rumor indexing; also show first, second, and last
                    random engravings, epitaphs, and hallucinatory monsters
 #wizseenv       == show map locations' seen vectors
+#wizshowalchemy == list alchemic recipes
 #wizsmell       == smell a monster
 #wiztelekinesis == magically shove a monster
 #wizwhere       == show dungeon placement of all special levels
