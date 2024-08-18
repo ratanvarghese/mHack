@@ -53,7 +53,7 @@ staticfn int potion_dip(struct obj *obj, struct obj *potion);
    be placed in struct instance_globals gd] */
 static int drink_ok_extra = 0;
 
-/* o_init.c */
+static uint8 recipe_disco[MAX_ALCHEMIC_RECIPES];
 static struct alchemic_recipe recipe_list[MAX_ALCHEMIC_RECIPES];
 
 staticfn void
@@ -108,6 +108,7 @@ recipe_cmp(const genericptr v1, const genericptr v2)
 
 void init_alchemic_recipes(void) {
     int i, j, ri, output;
+    (void) memset((genericptr_t) &recipe_disco, MAX_ALCHEMIC_RECIPES, sizeof recipe_disco);
     (void) memset((genericptr_t) &recipe_list, 0, sizeof recipe_list);
 
     ri = 0x00;
@@ -141,10 +142,12 @@ void init_alchemic_recipes(void) {
 }
 
 void save_alchemic_recipes(NHFILE * nhfp) {
+    bwrite(nhfp->fd, (genericptr_t) recipe_disco, sizeof recipe_disco);
     bwrite(nhfp->fd, (genericptr_t) recipe_list, sizeof recipe_list);
 }
 
 void restore_alchemic_recipes(NHFILE * nhfp) {
+    mread(nhfp->fd, (genericptr_t) recipe_disco, sizeof recipe_disco);
     mread(nhfp->fd, (genericptr_t) recipe_list, sizeof recipe_list);
 }
 
@@ -156,6 +159,68 @@ const struct alchemic_recipe *get_alchemic_recipe(int index) {
     }
 }
 
+boolean discover_recipe(int input0_otyp, int input1_otyp, int output_otyp) {
+    int i, di;
+    struct alchemic_recipe *r;
+    int o1typ = input0_otyp - FIRST_ALCHEMIC_POTION;
+    int o2typ = input1_otyp - FIRST_ALCHEMIC_POTION;
+    int o3typ = output_otyp - FIRST_ALCHEMIC_POTION;
+    if(o1typ > o2typ) {
+        o1typ = input1_otyp - FIRST_ALCHEMIC_POTION;
+        o2typ = input0_otyp - FIRST_ALCHEMIC_POTION;
+    }
+    for(i = 0; i < MAX_ALCHEMIC_RECIPES; i++) {
+        r = &recipe_list[i];
+        if(r->input0 == o1typ && r->input1 == o2typ && r->output == o3typ) {
+            if((r->flags & ALCHEMIC_RECIPE_KNOWN)) {
+                return FALSE;
+            } else {
+                r->flags = (r->flags | ALCHEMIC_RECIPE_KNOWN);
+                for(di = 0; di < MAX_ALCHEMIC_RECIPES; di++) {
+                    if(recipe_disco[di] == i) {
+                        impossible("Discovered alchemic formula twice: %d", i);
+                    }
+                    if(recipe_disco[di] == MAX_ALCHEMIC_RECIPES) {
+                        recipe_disco[di] = i;
+                        break;
+                    }
+                }
+                return TRUE;
+            }
+        }
+    }
+    return FALSE;
+}
+
+/* display a list of discovered alchemic recipes; return their count */
+int
+disp_alchemic_recipe_discoveries(
+    winid tmpwin) /* supplied by dodiscover(); type is NHW_TEXT */
+{
+    int i;
+    char buf[BUFSZ];
+
+    for (i = 0; i < MAX_ALCHEMIC_RECIPES; i++) {
+        const struct alchemic_recipe *r;
+
+        if (recipe_disco[i] == MAX_ALCHEMIC_RECIPES)
+            break; /* empty slot implies end of list */
+        if (tmpwin == WIN_ERR)
+            continue; /* for WIN_ERR, we just count */
+
+        if (i == 0)
+            putstr(tmpwin, iflags.menu_headings.attr, "Alchemic Recipes");
+
+        r = get_alchemic_recipe(recipe_disco[i]);
+        Sprintf(buf, "  %s + %s = %s",
+                    alchemic_typename(r->input0 + FIRST_ALCHEMIC_POTION),
+                    alchemic_typename(r->input1 + FIRST_ALCHEMIC_POTION),
+                    alchemic_typename(r->output + FIRST_ALCHEMIC_POTION)
+                );
+        putstr(tmpwin, 0, buf);
+    }
+    return i;
+}
 
 /* force `val' to be within valid range for intrinsic timeout value */
 staticfn long
@@ -2574,6 +2639,8 @@ potion_dip(struct obj *obj, struct obj *potion)
         return ECMD_TIME;
     } else if (obj->oclass == POTION_CLASS && obj->otyp != potion->otyp) {
         int amt = (int) obj->quan;
+        int old_otyp1 = obj->otyp;
+        int old_otyp2 = potion->otyp;
         boolean magic;
 
         mixture = mixtype(obj, potion);
@@ -2620,6 +2687,9 @@ potion_dip(struct obj *obj, struct obj *potion)
             } else if (!Blind) {
                 pline_The("mixture looks %s.",
                           hcolor(OBJ_DESCR(objects[obj->otyp])));
+                if(discover_recipe(old_otyp1, old_otyp2, mixture)) {
+                    pline("You discovered a new alchemic formula!");
+                }
             }
 
             /* this is required when 'obj' was split off from a bigger stack,

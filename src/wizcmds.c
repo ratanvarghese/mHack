@@ -1679,11 +1679,12 @@ int wiz_show_alchemy(void)
             if(r == NULL) {
                 Sprintf(buf, "0x%02X: null", i);
             } else if(r->flags & ALCHEMIC_RECIPE_ASSIGNED) {
-                Sprintf(buf, "0x%02X: %20s + %20s = %20s%s",
+                Sprintf(buf, "0x%02X: %20s + %20s = %20s%s%s",
                         i,
                         OBJ_NAME(objects[r->input0 + FIRST_ALCHEMIC_POTION]),
                         OBJ_NAME(objects[r->input1 + FIRST_ALCHEMIC_POTION]),
                         OBJ_NAME(objects[r->output + FIRST_ALCHEMIC_POTION]),
+                        (r->flags & ALCHEMIC_RECIPE_KNOWN) ? " (known)" : "",
                         (r->flags & ALCHEMIC_RECIPE_DIFFICULT) ? " (difficult)" : ""
                     );
             } else {

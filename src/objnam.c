@@ -320,6 +320,36 @@ safe_typename(int otyp)
     return res;
 }
 
+/* typename for alchemic formulae */
+char *
+alchemic_typename(int otyp)
+{
+    if(objects[otyp].oc_class == POTION_CLASS) {
+        struct objclass *ocl = &objects[otyp];
+
+        const char *actualn = OBJ_NAME(*ocl);
+        const char *dn = OBJ_DESCR(*ocl);
+        const char *un = ocl->oc_uname;
+        int nn = ocl->oc_name_known;
+
+        char *buf = nextobuf();
+        if (nn) {
+            Strcpy(buf, "potion of ");
+            Strcat(buf, actualn);
+        } else if (un) {
+            Strcpy(buf, "potion called ");
+            Strcat(buf, un);
+        } else {
+            Strcpy(buf, dn);
+            Strcat(buf, " potion");
+        }
+        return buf;
+    } else {
+        /* Might want to implement this if recipes involve other classes of object */
+        return obj_typename(otyp);
+    }
+}
+
 boolean
 obj_is_pname(struct obj *obj)
 {
