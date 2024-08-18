@@ -774,6 +774,7 @@ m_initinv(struct monst *mtmp)
             (void) mongets(mtmp, MUMMY_WRAPPING);
         break;
     case S_QUANTMECH:
+        mongets(mtmp, CONICAL_FLASK);
         if (!rn2(20) && ptr == &mons[PM_QUANTUM_MECHANIC]) {
             struct obj *catcorpse;
 

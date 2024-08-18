@@ -900,10 +900,12 @@ TOOL("magic lamp",        "lamp", 0, 0, 1, 0, 15, 20, 50, COPPER, CLR_YELLOW,
 /* other tools */
 TOOL("expensive camera",    NoDes, 1, 0, 0, 1, 15, 12,200, PLASTIC, CLR_BLACK,
                                                             EXPENSIVE_CAMERA),
-TOOL("mirror",   "looking glass", 0, 0, 0, 0, 45, 13, 10, GLASS, HI_SILVER,
+TOOL("mirror",   "looking glass", 0, 0, 0, 0, 40, 13, 10, GLASS, HI_SILVER,
                                                                 MIRROR),
 TOOL("crystal ball", "glass orb", 0, 0, 1, 1, 15,150, 60, GLASS, HI_GLASS,
                                                                 CRYSTAL_BALL),
+TOOL("conical flask",      NoDes, 0, 0, 0, 0,  5, 13, 30, GLASS, HI_GLASS,
+                                                                CONICAL_FLASK),
 /* eyewear - tools which can be worn on the face; (!mrg, !chg, !mgc)
    worn lenses don't confer the Blinded property, blindfolds and towels do;
    wet towel can be used as a weapon but is not a weptool and uses obj->spe

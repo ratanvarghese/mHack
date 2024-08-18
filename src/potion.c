@@ -222,6 +222,69 @@ disp_alchemic_recipe_discoveries(
     return i;
 }
 
+int
+use_conical_flask(struct obj *flask)
+{
+    uchar here = levl[u.ux][u.uy].typ;
+    boolean at_pool = is_pool(u.ux, u.uy),
+            at_fountain = IS_FOUNTAIN(here), at_sink = IS_SINK(here),
+            at_puddle = IS_PUDDLE(here),
+            at_here = (at_pool || at_fountain || at_sink || at_puddle);
+    char c = '\0';
+    char qbuf[QBUFSZ];
+    struct obj *potion1;
+    struct obj *potion2;
+    short mixture;
+
+    if(Blind) {
+        pline("You wouldn't be able to see the result");
+        return ECMD_OK;
+    }
+    pline("Alchemic tests require a source of water.");
+    if(!at_here) {
+        if (carrying(POT_WATER) && objects[POT_WATER].oc_name_known) {
+            pline("Better not waste bottled water for that.");
+        }
+        return ECMD_OK;
+    }
+    if (!can_reach_floor(FALSE)) {
+        You("can't reach the water.");
+        return ECMD_OK;
+    }
+
+    Sprintf(qbuf, "Use %s for the test?",
+        (at_fountain ? "water from the fountain" : "the water below you")
+    );
+    c = yn_function(qbuf, ynqchars, 'q', TRUE);
+    if(c != 'y') {
+        return ECMD_CANCEL;
+    }
+    pline("You fill the %s with water.", xname(flask));
+    potion1 = getobj("sample first", drink_ok, GETOBJ_NOFLAGS);
+    if (!potion1)
+        return ECMD_CANCEL;
+    potion2 = getobj("sample second", drink_ok, GETOBJ_NOFLAGS);
+    if (!potion2)
+        return ECMD_CANCEL;
+    if (potion1->otyp == potion2->otyp) {
+        pline("Those are the same kind of potion!");
+        return ECMD_CANCEL;
+    }
+    pline("You pour a drop of each potion into the %s.", xname(flask));
+    mixture = alchemic_mixtype(potion1, potion2);
+    if(mixture == STRANGE_OBJECT) {
+        pline("As you swirl the flask, nothing interesting happens.");
+    } else {
+        pline("As you swirl the flask, the mixture looks %s.",
+            hcolor(OBJ_DESCR(objects[mixture])));
+        if(discover_recipe(potion1->otyp, potion2->otyp, mixture)) {
+            pline("You discovered a new alchemic formula!");
+        }
+    }
+    You("toss aside the contaminated water.");
+    return ECMD_TIME;
+}
+
 /* force `val' to be within valid range for intrinsic timeout value */
 staticfn long
 itimeout(long val)

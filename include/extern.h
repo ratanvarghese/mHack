@@ -2444,6 +2444,7 @@ extern void restore_alchemic_recipes(NHFILE *);
 extern const struct alchemic_recipe *get_alchemic_recipe(int);
 extern boolean discover_recipe(int, int, int);
 extern int disp_alchemic_recipe_discoveries(winid);
+extern int use_conical_flask(struct obj *flask) NONNULLARG1;
 extern void set_itimeout(long *, long) NONNULLARG1;
 extern void incr_itimeout(long *, int) NONNULLARG1;
 extern void make_confused(long, boolean);
