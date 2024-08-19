@@ -338,6 +338,7 @@ static const struct def_skill Skill_H[] = {
     { P_HEALING_SPELL, P_EXPERT },
     { P_BARE_HANDED_COMBAT, P_BASIC },
     { P_WAND, P_EXPERT },
+    { P_ALCHEMY, P_SKILLED },
     { P_NONE, 0 }
 };
 static const struct def_skill Skill_K[] = {
@@ -396,6 +397,7 @@ static const struct def_skill Skill_Mer[] = {
     { P_BARE_HANDED_COMBAT, P_EXPERT },
     { P_WAND, P_EXPERT },
     { P_BRIBERY, P_EXPERT },
+    { P_ALCHEMY, P_BASIC },
     { P_NONE, 0 }
 };
 static const struct def_skill Skill_Mon[] = {
@@ -412,6 +414,7 @@ static const struct def_skill Skill_Mon[] = {
     { P_MATTER_SPELL, P_BASIC },
     { P_MARTIAL_ARTS, P_GRAND_MASTER },
     { P_WAND, P_EXPERT },
+    { P_ALCHEMY, P_BASIC },
     { P_NONE, 0 }
 };
 static const struct def_skill Skill_P[] = {
@@ -438,6 +441,7 @@ static const struct def_skill Skill_P[] = {
     { P_BARE_HANDED_COMBAT, P_BASIC },
     { P_WAND, P_EXPERT },
     { P_BRIBERY, P_BASIC },
+    { P_ALCHEMY, P_BASIC },
     { P_NONE, 0 }
 };
 static const struct def_skill Skill_R[] = {
@@ -466,6 +470,7 @@ static const struct def_skill Skill_R[] = {
     { P_BARE_HANDED_COMBAT, P_EXPERT },
     { P_WAND, P_SKILLED },
     { P_BRIBERY, P_SKILLED },
+    { P_ALCHEMY, P_BASIC },
     { P_NONE, 0 }
 };
 static const struct def_skill Skill_Ran[] = {
@@ -555,6 +560,7 @@ static const struct def_skill Skill_T[] = {
     { P_BARE_HANDED_COMBAT, P_SKILLED },
     { P_WAND, P_EXPERT },
     { P_BRIBERY, P_BASIC },
+    { P_ALCHEMY, P_BASIC },
     { P_NONE, 0 }
 };
 static const struct def_skill Skill_V[] = {
@@ -605,6 +611,7 @@ static const struct def_skill Skill_W[] = {
     { P_RIDING, P_BASIC },
     { P_BARE_HANDED_COMBAT, P_BASIC },
     { P_WAND, P_EXPERT },
+    { P_ALCHEMY, P_BASIC },
     { P_NONE, 0 }
 };
 

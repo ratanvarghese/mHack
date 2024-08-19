@@ -5,6 +5,7 @@
 
 #include "hack.h"
 
+staticfn boolean alchemy_skill_check(void);
 staticfn void set_recipe(int, int, int, int, boolean);
 staticfn int QSORTCALLBACK recipe_cmp(const genericptr, const genericptr);
 staticfn long itimeout(long);
@@ -55,6 +56,30 @@ static int drink_ok_extra = 0;
 
 static uint8 recipe_disco[MAX_ALCHEMIC_RECIPES];
 static struct alchemic_recipe recipe_list[MAX_ALCHEMIC_RECIPES];
+
+staticfn boolean
+alchemy_skill_check(void)
+{
+    int cutoff = 6;
+    switch(P_SKILL(P_ALCHEMY)) {
+    case P_MASTER:
+    case P_GRAND_MASTER:
+    case P_EXPERT:
+        cutoff = 1;
+        break;
+    case P_SKILLED:
+        cutoff = 2;
+        break;
+    case P_BASIC:
+        cutoff = 4;
+        break;
+    case P_ISRESTRICTED:
+    case P_UNSKILLED:
+    default:
+        cutoff = 5;
+    }
+    return rnd(6) > cutoff;
+}
 
 staticfn void
 set_recipe(int index, int input0_otyp, int input1_otyp, int output_otyp, boolean difficult)
@@ -279,6 +304,8 @@ use_conical_flask(struct obj *flask)
             hcolor(OBJ_DESCR(objects[mixture])));
         if(discover_recipe(potion1->otyp, potion2->otyp, mixture)) {
             pline("You discovered a new alchemic formula!");
+            use_skill(P_ALCHEMY, 1);
+            exercise(A_WIS, TRUE);
         }
     }
     You("toss aside the contaminated water.");
@@ -2405,7 +2432,7 @@ alchemic_mixtype(struct obj *o1, struct obj *o2)
         }
         if(recipe_list[i].input0 == o1typ && recipe_list[i].input1 == o2typ) {
             if (recipe_list[i].flags & ALCHEMIC_RECIPE_DIFFICULT) {
-                if(rn2(4) < 3) {
+                if(!alchemy_skill_check()) {
                     break;
                 }
             }
@@ -2752,6 +2779,8 @@ potion_dip(struct obj *obj, struct obj *potion)
                           hcolor(OBJ_DESCR(objects[obj->otyp])));
                 if(discover_recipe(old_otyp1, old_otyp2, mixture)) {
                     pline("You discovered a new alchemic formula!");
+                    use_skill(P_ALCHEMY, 1);
+                    exercise(A_WIS, TRUE);
                 }
             }
 
@@ -2764,7 +2793,7 @@ potion_dip(struct obj *obj, struct obj *potion)
             freeinv(obj);
             hold_potion(obj, "You drop %s!", doname(obj), (const char *) 0);
             return ECMD_TIME;
-        } else if (obj->cursed || obj->otyp == POT_ACID || !rn2(10)) {
+        } else if (obj->cursed || obj->otyp == POT_ACID || !alchemy_skill_check()) {
             /* Mixing potions is dangerous...
                KMH, balance patch -- acid is particularly unstable */
             /* it would be better to use up the whole stack in advance

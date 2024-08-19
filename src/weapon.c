@@ -35,6 +35,7 @@ staticfn void skill_advance(int);
 #define PN_MATTER_SPELL (-14)
 #define PN_WAND (-15)
 #define PN_BRIBERY (-16)
+#define PN_ALCHEMY (-17)
 
 static NEARDATA const short skill_names_indices[P_NUM_SKILLS] = {
     /* Weapon */
@@ -46,7 +47,8 @@ static NEARDATA const short skill_names_indices[P_NUM_SKILLS] = {
     PN_ATTACK_SPELL, PN_HEALING_SPELL, PN_DIVINATION_SPELL,
     PN_ENCHANTMENT_SPELL, PN_CLERIC_SPELL, PN_ESCAPE_SPELL, PN_MATTER_SPELL,
     /* Other */
-    PN_BARE_HANDED, PN_TWO_WEAPONS, PN_RIDING, PN_WAND, PN_BRIBERY
+    PN_BARE_HANDED, PN_TWO_WEAPONS, PN_RIDING, PN_WAND, PN_BRIBERY,
+    PN_ALCHEMY
 };
 
 /* note: entry [0] isn't used */
@@ -55,7 +57,7 @@ static NEARDATA const char *const odd_skill_names[] = {
     "two weapon combat", "riding", "polearms", "saber", "hammer", "whip",
     "attack spells", "healing spells", "divination spells",
     "enchantment spells", "clerical spells", "escape spells", "matter spells",
-    "wands", "bribery"
+    "wands", "bribery", "alchemy"
 };
 /* indexed via is_martial() */
 static NEARDATA const char *const barehands_or_martial[] = {
