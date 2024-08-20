@@ -1392,6 +1392,10 @@ hmon_hitmon_do_hit(
         else
             Strcpy(hmd->saved_oname, bare_artifactname(obj));
 
+        if (obj->opoisoned && is_poisonable(obj)) {
+            hmd->ispoisoned = TRUE;
+        }
+
         if (obj->oclass == WEAPON_CLASS || is_weptool(obj)
             || obj->oclass == GEM_CLASS) {
             hmon_hitmon_weapon(hmd, mon, obj);
@@ -1497,24 +1501,34 @@ hmon_hitmon_poison(
     if (nopoison < 2)
         nopoison = 2;
     if (Role_if(PM_SAMURAI)) {
-        You("dishonorably use a poisoned weapon!");
+        You("dishonorably use a chemically treated weapon!");
         adjalign(-sgn(u.ualign.type));
     } else if (u.ualign.type == A_LAWFUL && u.ualign.record > -10) {
-        You_feel("like an evil coward for using a poisoned weapon.");
+        You_feel("like an evil coward for using a chemically treated weapon.");
         adjalign(-1);
     }
-    if (!rn2(nopoison)) {
+
+    if (obj->opoisoned != POT_SICKNESS) {
+        hmd->specialpoison = obj->opoisoned;
+        hmd->unpoisonmsg = FALSE;
+    }
+
+    if (hmd->specialpoison) {
+        obj->opoisoned = FALSE;
+    } else if (!rn2(nopoison)) {
         /* remove poison now in case obj ends up in a bones file */
         obj->opoisoned = FALSE;
         /* defer "obj is no longer poisoned" until after hit message */
-        hmd->unpoisonmsg = TRUE;
+        hmd->unpoisonmsg = (!hmd->specialpoison);
     }
-    if (resists_poison(mon))
-        hmd->needpoismsg = TRUE;
-    else if (rn2(10))
-        hmd->dmg += rnd(6);
-    else
-        hmd->poiskilled = TRUE;
+    if (!hmd->specialpoison) {
+        if (resists_poison(mon))
+            hmd->needpoismsg = TRUE;
+        else if (rn2(10))
+            hmd->dmg += rnd(6);
+        else
+            hmd->poiskilled = TRUE;
+    }
 }
 
 staticfn void
@@ -1710,6 +1724,7 @@ hmon_hitmon(
     hmd.material = obj ? obj->material
                        : 0; /* 0 == NO_MATERIAL */
     hmd.jousting = 0;
+    hmd.specialpoison = 0;
     hmd.hated_obj = NULL;
     hmd.hittxt = FALSE;
     hmd.get_dmg_bonus = TRUE;
@@ -1833,6 +1848,17 @@ hmon_hitmon(
                 pline("%s appears confused.", Monnam(mon));
         }
     }
+
+    if (hmd.specialpoison && !hmd.destroyed) {
+        struct obj *pseudo = mksobj(hmd.specialpoison, FALSE, FALSE);
+        pseudo->blessed = 0;
+        pseudo->cursed = 1;
+        potionhit(mon, pseudo, POTHIT_HERO_WEP);
+        if (DEADMONSTER(mon))
+            hmd.destroyed = TRUE;
+    }
+
+
     if (hmd.unpoisonmsg)
         Your("%s %s no longer poisoned.", hmd.saved_oname,
              vtense(hmd.saved_oname, "are"));
@@ -3037,7 +3063,7 @@ mhitm_ad_drst(
         if (!negated && !rn2(8)) {
             Sprintf(buf, "%s %s", s_suffix(Monnam(magr)),
                     mpoisons_subj(magr, mattk));
-            poisoned(buf, ptmp, pmname(pa, Mgender(magr)), 30, FALSE);
+            poisoned(buf, ptmp, pmname(pa, Mgender(magr)), 30, FALSE, 0);
         }
     } else {
         /* mhitm */

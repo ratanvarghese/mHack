@@ -4881,6 +4881,10 @@ mergable(
     if (obj->oclass == COIN_CLASS)
         return TRUE;
 
+    /* different types of poison will never merge */
+    if (obj->opoisoned != otmp->opoisoned)
+        return FALSE;
+
     if (obj->cursed != otmp->cursed || obj->blessed != otmp->blessed)
         return FALSE;
 #if 0   /* don't require 'bypass' to match; that results in items dropped

@@ -4469,7 +4469,7 @@ zhitu(
             (void) destroy_items(&gy.youmonst, AD_ELEC, orig_dam);
         break;
     case ZT_POISON_GAS:
-        poisoned("blast", A_DEX, "poisoned blast", 15, FALSE);
+        poisoned("blast", A_DEX, "poisoned blast", 15, FALSE, 0);
         break;
     case ZT_ACID:
         if (Acid_resistance) {

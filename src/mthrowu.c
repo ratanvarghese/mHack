@@ -399,7 +399,12 @@ ohitmon(
                   Monnam(mtmp), exclam(damage));
 
         if (otmp->opoisoned && is_poisonable(otmp)) {
-            if (resists_poison(mtmp)) {
+            if (otmp->opoisoned != POT_SICKNESS) {
+                struct obj *pseudo = mksobj(otmp->opoisoned, FALSE, FALSE);
+                pseudo->blessed = 0;
+                pseudo->cursed = 1;
+                potionhit(mtmp, pseudo, POTHIT_MONST_WEP);
+            } else if (resists_poison(mtmp)) {
                 if (vis)
                     pline_The("poison doesn't seem to affect %s.",
                               mon_nam(mtmp));
@@ -683,7 +688,7 @@ m_throw(
                 poisoned(onmbuf, A_STR, knmbuf,
                          /* if damage triggered life-saving,
                             poison is limited to attrib loss */
-                         (u.umortality > oldumort) ? 0 : 10, TRUE);
+                         (u.umortality > oldumort) ? 0 : 10, TRUE, singleobj->opoisoned);
             }
             if (hitu && can_blnd((struct monst *) 0, &gy.youmonst,
                                  (uchar) ((singleobj->otyp == BLINDING_VENOM)

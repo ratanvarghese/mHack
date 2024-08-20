@@ -715,8 +715,14 @@ xname_flags(
             Sprintf(buf, "%s amulet", dn);
         break;
     case WEAPON_CLASS:
-        if (is_poisonable(obj) && obj->opoisoned)
-            Strcpy(buf, "poisoned ");
+        if (is_poisonable(obj) && obj->opoisoned) {
+            if (obj->opoisoned == POT_SICKNESS) Strcpy(buf, "poisoned ");
+            else if (obj->opoisoned == POT_SLEEPING) Strcpy(buf, "drugged ");
+            else if (obj->opoisoned == POT_PARALYSIS) Strcpy(buf, "envenomed ");
+            else if (obj->opoisoned == POT_OIL) Strcpy(buf, "oiled ");
+            /* else if (obj->opoisoned == POT_FILTH) Strcpy(buf, "filth-crusted "); */
+            else Strcpy(buf, "potion-coated ");
+        }
         /*FALLTHRU*/
     case VENOM_CLASS:
     case TOOL_CLASS:
@@ -1286,8 +1292,7 @@ doname_base(
     struct obj *obj,       /* object to format */
     unsigned doname_flags) /* special case requests */
 {
-    boolean ispoisoned = FALSE,
-            with_price = (doname_flags & DONAME_WITH_PRICE) != 0,
+    boolean with_price = (doname_flags & DONAME_WITH_PRICE) != 0,
             vague_quan = (doname_flags & DONAME_VAGUE_QUAN) != 0,
             for_menu = (doname_flags & DONAME_FOR_MENU) != 0;
     boolean known, dknown, cknown, bknown, lknown,
@@ -1297,6 +1302,7 @@ doname_base(
                               * the start of prefix instead of the
                               * end (Strcat is used on the end) */
     const char *aname = 0;
+    int ispoisoned = 0;
     int omndx = obj->corpsenm;
     char *bp;
     char *bp_eos, *bp_end;
@@ -1329,9 +1335,24 @@ doname_base(
      * combining both into one function taking a parameter.
      */
     /* must check opoisoned--someone can have a weirdly-named fruit */
-    if (!strncmp(bp, "poisoned ", 9) && obj->opoisoned) {
+    if (!strncmp(bp, "poisoned ", 9) && obj->opoisoned == POT_SICKNESS) {
         bp += 9; /* doesn't affect bp_eos or bpspaceleft */
-        ispoisoned = TRUE;
+        ispoisoned = POT_SICKNESS;
+    } else if (!strncmp(bp, "drugged ", 8) && obj->opoisoned == POT_SLEEPING) {
+        bp += 8;
+        ispoisoned = POT_SLEEPING;
+    } else if (!strncmp(bp, "envenomed ", 10) && obj->opoisoned == POT_PARALYSIS) {
+        bp += 10;
+        ispoisoned = POT_PARALYSIS;
+    } else if (!strncmp(bp, "oiled ", 6) && obj->opoisoned) {
+        bp += 6;
+        ispoisoned = POT_OIL;
+    /* } else if (!strncmp(bp, "filth-crusted ", 14) && obj->opoisoned) {
+        bp += 14;
+        ispoisoned = POT_FILTH; */
+    } else if (!strncmp(bp, "potion-coated ", 14) && obj->opoisoned) {
+        bp += 14;
+        ispoisoned = obj->opoisoned;
     }
 
     /* fruits are allowed to be given artifact names; when that happens,
@@ -1470,8 +1491,20 @@ doname_base(
         }
         /*FALLTHRU*/
     case WEAPON_CLASS:
-        if (ispoisoned)
-            Strcat(prefix, "poisoned ");
+        if (ispoisoned) {
+            if (ispoisoned == POT_SICKNESS)
+                Strcat(prefix, "poisoned ");
+            else if (ispoisoned == POT_SLEEPING)
+                Strcat(prefix, "drugged ");
+            else if (ispoisoned == POT_PARALYSIS)
+                Strcat(prefix, "envenomed ");
+            else if (ispoisoned == POT_OIL)
+                Strcat(prefix, "oiled ");
+            /* else if (ispoisoned == POT_FILTH)
+                Strcat(prefix, "filth-crusted "); */
+            else
+                Strcat(prefix, "potion-coated ");
+        }
         add_erosion_words(obj, prefix);
         if (known) {
             Sprintf(eos(prefix), "%+d ", obj->spe); /* sitoa(obj->spe)+" " */

@@ -190,7 +190,7 @@ extern void gainstr(struct obj *, int, boolean);
 extern void losestr(int, const char *, schar);
 extern void poison_strdmg(int, int, const char *, schar);
 extern void poisontell(int, boolean);
-extern void poisoned(const char *, int, const char *, int, boolean) NONNULLARG1;
+extern void poisoned(const char *, int, const char *, int, boolean, int) NONNULLARG1;
 extern void change_luck(schar);
 extern int stone_luck(boolean);
 extern void set_moreluck(void);
