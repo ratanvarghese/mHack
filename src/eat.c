@@ -2766,10 +2766,12 @@ doeat(void)
         int res = edibility_prompts(otmp);
 
         if (res) {
-            Your(
-               "%s stops tingling and your sense of smell returns to normal.",
-                 body_part(NOSE));
-            u.uedibility = 0;
+            if(!Role_if(PM_ALCHEMIST)) {
+                Your(
+                    "%s stops tingling and your sense of smell returns to normal.",
+                     body_part(NOSE));
+                u.uedibility = 0;
+            }
             if (res == 1)
                 return ECMD_OK;
         }

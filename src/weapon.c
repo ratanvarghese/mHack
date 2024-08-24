@@ -1851,9 +1851,12 @@ skill_init(const struct def_skill *class_skill)
         P_SKILL(P_ENCHANTMENT_SPELL) = P_BASIC;
     }
 
-    /* set skills for bribery */
+    /* set skills for bribery and alchemy */
     if (Role_if(PM_MERCHANT)) {
         P_SKILL(P_BRIBERY) = P_BASIC;
+    }
+    if (Role_if(PM_ALCHEMIST)) {
+        P_SKILL(P_ALCHEMY) = P_BASIC;
     }
 
     /* walk through array to set skill maximums */

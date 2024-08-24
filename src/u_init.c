@@ -16,6 +16,7 @@ struct trobj {
 staticfn struct obj *ini_inv_mkobj_filter(int, boolean);
 staticfn short ini_inv_obj_substitution(struct trobj *,
                                       struct obj *) NONNULLPTRS;
+staticfn void ini_inv_adjust_obj_material(struct obj *obj) NONNULLARG1;
 staticfn void ini_inv_adjust_obj(struct trobj *,
                                struct obj *) NONNULLPTRS;
 staticfn void ini_inv_use_obj(struct obj *) NONNULLARG1;
@@ -34,6 +35,19 @@ staticfn boolean restricted_spell_discipline(int);
 /*
  *      Initial inventory for the various roles.
  */
+static struct trobj Alchemist[] = {
+#define ALC_DARTS 0
+    { DART, 2, WEAPON_CLASS, 25, UNDEF_BLESS }, /* quan is variable */
+    { RUBBER_HOSE, 2, WEAPON_CLASS, 1, UNDEF_BLESS },
+    { ALCHEMY_SMOCK, 0, ARMOR_CLASS, 1, UNDEF_BLESS },
+    { POT_POLYMORPH, 0, POTION_CLASS, 3, 1 }, /* blessed polymorph */
+    { POT_PARALYSIS, 0, POTION_CLASS, 1, 0 },
+    { UNDEF_TYP, 0, POTION_CLASS, 6, 0 },
+    { OILSKIN_SACK, UNDEF_SPE, TOOL_CLASS, 1, UNDEF_BLESS },
+    { CONICAL_FLASK, UNDEF_SPE, TOOL_CLASS, 1, UNDEF_BLESS },
+    { TOWEL, UNDEF_SPE, TOOL_CLASS, 1, UNDEF_BLESS },
+    { 0, 0, 0, 0, 0 }
+};
 
 static struct trobj Archeologist[] = {
     /* if adventure has a name...  idea from tan@uvm-gen */
@@ -246,6 +260,31 @@ static struct inv_sub {
     { PM_GNOME, BOW, CROSSBOW },
     { PM_GNOME, ARROW, CROSSBOW_BOLT },
     { NON_PM, STRANGE_OBJECT, STRANGE_OBJECT }
+};
+
+static const struct def_skill Skill_Alc[] = {
+    { P_DAGGER, P_SKILLED },
+    { P_KNIFE, P_EXPERT },
+    { P_PICK_AXE, P_BASIC },
+    { P_HAMMER, P_BASIC },
+    { P_QUARTERSTAFF, P_BASIC },
+    { P_SPEAR, P_SKILLED },
+    { P_TRIDENT, P_SKILLED },
+    { P_BOW, P_SKILLED },
+    { P_SLING, P_SKILLED },
+    { P_CROSSBOW, P_EXPERT },
+    { P_DART, P_EXPERT },
+    { P_SHURIKEN, P_BASIC },
+    { P_WHIP, P_EXPERT },
+    { P_UNICORN_HORN, P_EXPERT },
+    { P_ATTACK_SPELL, P_BASIC },
+    { P_DIVINATION_SPELL, P_BASIC },
+    { P_MATTER_SPELL, P_EXPERT },
+    { P_TWO_WEAPON_COMBAT, P_BASIC },
+    { P_BARE_HANDED_COMBAT, P_BASIC },
+    { P_WAND, P_SKILLED },
+    { P_ALCHEMY, P_EXPERT },
+    { P_NONE, 0 }
 };
 
 static const struct def_skill Skill_A[] = {
@@ -676,6 +715,15 @@ u_init_role(void)
      * random number generators are bad enough to seriously
      * skew the results if we use rn2(2)...  --KAA
      */
+    case PM_ALCHEMIST:
+        Alchemist[ALC_DARTS].trquan = rn1(20, 21);
+        u.uedibility = 1;
+        ini_inv(Alchemist);
+        if (!rn2(5))
+            ini_inv(Magicmarker);
+        knows_class(POTION_CLASS);
+        skill_init(Skill_Alc);
+        break;
     case PM_ARCHEOLOGIST:
         ini_inv(Archeologist);
         if (!rn2(10))
@@ -1198,6 +1246,22 @@ ini_inv_obj_substitution(struct trobj *trop, struct obj *obj)
 }
 
 staticfn void
+ini_inv_adjust_obj_material(struct obj *obj)
+{
+    int new_material;
+    if(Role_if(PM_ALCHEMIST)) {
+        switch(obj->otyp) {
+        case ALCHEMY_SMOCK: new_material = LEATHER; break;
+        case DART: new_material = SILVER; break;
+        default: new_material = objects[obj->otyp].oc_material;
+        }
+    } else {
+        new_material = objects[obj->otyp].oc_material;
+    }
+    obj->material = new_material;
+}
+
+staticfn void
 ini_inv_adjust_obj(struct trobj *trop, struct obj *obj)
 {
     if (trop->trclass == COIN_CLASS) {
@@ -1226,14 +1290,6 @@ ini_inv_adjust_obj(struct trobj *trop, struct obj *obj)
             if (trop->trotyp == MAGIC_MARKER && obj->spe < 96)
                 obj->spe += rn2(4);
         } else {
-            /* In xnethack, object material was discarded, in order to avoid
-               start scumming for materials. While I think that's a good idea,
-               I also think if starting with odd materials is rare enough, players
-               will not try to scum for them, and new players will be very
-               excited to occasionally start with some sort of weird item.
-               - Kes */
-            if (rn2(50)) obj->material = objects[obj->otyp].oc_material;
-
             /* Don't start with +0 or negative rings */
             if (objects[obj->otyp].oc_class == RING_CLASS
                 && objects[obj->otyp].oc_charged && obj->spe <= 0)
@@ -1242,6 +1298,7 @@ ini_inv_adjust_obj(struct trobj *trop, struct obj *obj)
         if (trop->trbless != UNDEF_BLESS)
             obj->blessed = trop->trbless;
 
+        ini_inv_adjust_obj_material(obj);
     }
     /* defined after setting otyp+quan + blessedness */
     obj->owt = weight(obj);
