@@ -40,6 +40,7 @@ static const char *const artifact_names[] = {
 #define     PHYS(a,b)   {0,AD_PHYS,a,b}         /* physical */
 #define     DRLI(a,b)   {0,AD_DRLI,a,b}         /* life drain */
 #define     COLD(a,b)   {0,AD_COLD,a,b}
+#define     ACID(a,b)   {0,AD_ACID,a,b}
 #define     FIRE(a,b)   {0,AD_FIRE,a,b}
 #define     ELEC(a,b)   {0,AD_ELEC,a,b}         /* electrical shock */
 #define     STUN(a,b)   {0,AD_STUN,a,b}         /* magical attack */
@@ -126,6 +127,11 @@ static NEARDATA struct artifact artilist[] = {
     A("Fire Brand", LONG_SWORD, (SPFX_RESTR | SPFX_ATTK | SPFX_DEFN), 0, 0,
       FIRE(5, 0), FIRE(0, 0), NO_CARY, 0, A_NONE, NON_PM, NON_PM, 3000L,
       NO_COLOR, FIRE_BRAND),
+
+    /* Similar to the brands, but weaker and aligned*/
+    A("Sourcoil", RUBBER_HOSE, (SPFX_RESTR | SPFX_ATTK | SPFX_DEFN), 0, 0,
+      ACID(5, 0), ACID(0, 0), NO_CARY, 0, A_CHAOTIC, PM_ALCHEMIST, NON_PM, 1000L,
+      NO_COLOR, SOURCOIL),
 
     A("Dragonbane", BROADSWORD,
       (SPFX_RESTR | SPFX_DCLAS | SPFX_REFLECT), 0, S_DRAGON,
@@ -300,6 +306,7 @@ static NEARDATA struct artifact artilist[] = {
 #undef PHYS
 #undef DRLI
 #undef COLD
+#undef ACID
 #undef FIRE
 #undef ELEC
 #undef STUN

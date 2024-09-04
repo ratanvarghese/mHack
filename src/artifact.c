@@ -667,6 +667,8 @@ set_artifact_intrinsic(struct obj *otmp, boolean on, long wp_mask)
         mask = &EFire_resistance;
     else if (dtyp == AD_COLD)
         mask = &ECold_resistance;
+    else if (dtyp == AD_ACID)
+        mask = &EAcid_resistance;
     else if (dtyp == AD_ELEC)
         mask = &EShock_resistance;
     else if (dtyp == AD_MAGM)
@@ -980,6 +982,8 @@ spec_applies(const struct artifact *weap, struct monst *mtmp)
             return !(yours ? Fire_resistance : resists_fire(mtmp));
         case AD_COLD:
             return !(yours ? Cold_resistance : resists_cold(mtmp));
+        case AD_ACID:
+            return !(yours ? Acid_resistance : resists_acid(mtmp));
         case AD_ELEC:
             return !(yours ? Shock_resistance : resists_elec(mtmp));
         case AD_MAGM:
@@ -1446,6 +1450,14 @@ artifact_hit(
             int itemdmg = destroy_items(mdef, AD_COLD, *dmgptr);
             if (!youdefend)
                 *dmgptr += itemdmg; /* item destruction dmg */
+        }
+        return realizes_damage;
+    }
+    if (attacks(AD_ACID, otmp)) {
+        if (realizes_damage) {
+            pline_The("sizzling hose %s %s%c",
+                      !gs.spec_dbon_applies ? "hits" : "melts", hittee,
+                      !gs.spec_dbon_applies ? '.' : '!');
         }
         return realizes_damage;
     }
@@ -2196,6 +2208,7 @@ abil_to_adtyp(long *abil)
     } abil2adtyp[] = {
         { &EFire_resistance, AD_FIRE },
         { &ECold_resistance, AD_COLD },
+        { &EAcid_resistance, AD_ACID },
         { &EShock_resistance, AD_ELEC },
         { &EAntimagic, AD_MAGM },
         { &EDisint_resistance, AD_DISN },
