@@ -390,6 +390,252 @@ You have an odd feeling this may be the last time you ever come here.]],
 regain the Amulet of Yendor for %d?"]],
       },
    },
+   Alc = {
+      assignquest = {
+         synopsis = "[%nC has killed %cP. Locate %i, defeat %ni, and return %O.]",
+         output = "text",
+         text = [["A few days ago, a team of %cP started an experiment to
+concoct the most precious substance in the universe, the Elixr
+of Life. But the experiment went awry, and instead of the prized
+Elixr, the %cP created a sentient, unstable substance:
+%n.
+
+"%n killed the %cP which created it, then stole
+%o and fled.
+
+"While we mourned our fallen colleagues and repaired our lab,
+%n spawned inhuman, unfeeling minions to continue
+harassing us. Without %o, we can't
+hold them off for much longer.
+
+"You must venture deep into the bowels of %i.
+There, you will find %n. You must neutralize it, and
+return %o to me. All organic life
+depends on it."]],
+      },
+      badalign = {
+         synopsis = "[\"%pC, you need a more %a viewpoint.\"]",
+         output = "text",
+         text = [["%pC, you have been playing it too safe! Where is your
+experimental spirit? You'll need a more %a viewpoint
+before you are ready for the quest that awaits you.
+
+"Go from here, and come back when you have opened your mind."]],
+      },
+      badlevel = {
+         synopsis = "[\"%pC, return once become %Ra\"]",
+         output = "text",
+         text = [["%p, there is much you still have to learn. You will need
+knowledge of the elements, and all the compounds they can combine
+to form. Continue your adventures, keep experimenting, and return
+once you become %Ra."]],
+      },
+      discourage = {
+         "\"%p, I will pull the air from your lungs.\"",
+         "\"%p, I will drain your blood and leave your corpse a dry husk.\"",
+         "\"%p, I will dissolve your flesh and crack your bones.\"",
+         "\"%p, I will shock your brain with gigavolts of lightning.\"",
+         "\"Time for your final experiment, %r!\"",
+         "\"%r, your kind created the means of their own destruction.\"",
+         "\"With %o, I will destroy all organic life, atom by atom.\"",
+         "\"I am the perfect lifeform, your precious species is obsolete.\"",
+         "\"The age of %d has ended, and followers of %d will soon be extinct.\"",
+         "\"Using the power of %o, my word will be law, and all shall kneel or die.\"",
+      },
+      encourage = {
+         "\"%nC is unstable at high temperatures.\"",
+         "\"%nC has a high electrical conductivity, it can shock you on contact!\"",
+         "\"I'm proud of you %p, and I believe you can save us all.\"",
+         "\"Please, take any lab equipment that could help you defeat %n.\"",
+         "\"%nC has a low pH, it can even burn your flesh!\"",
+         "\"Did you pack your alchemy smock?\"",
+         "\"%nC is a threat to all organic life.\"",
+         "\"I hope you remember the formula for the potion of full healing.\"",
+         "\"I'm counting on you, %p, and so is the scientific community.\"",
+         "\"Throwing poison at %n is like throwing water at a fish.\"",
+      },
+      firsttime = {
+         synopsis = "[You arrive at %H, but something is amiss.]",
+         output = "text",
+         text = [[You are suddenly back at %H, your
+workplace. But it seems much emptier than before. There aren't
+any chemists relaxing in the yard. Indeed, there are no
+townspeople walking by, or even any stray animals.
+
+Suddenly, you notice a flash of electromagnetic rays!
+Could that be an energy vortex? But instead of being
+confined to a controlled experimental environment, the
+vortex is floating about outside, towards you!]],
+      },
+      goal_alt = {
+         text = "As you arrive once again at the cold basement of %n.",
+      },
+      goal_first = {
+         synopsis = "[%nC lurks somewhere in this cold subterranean haunt.]",
+         output = "text",
+         text = [[You feel a chill. The air feels icy cold, and smells metallic. Static
+electricity jumps across your body. That's when you realize that
+%n is lurking somewhere in this underground hideout.]],
+      },
+      goal_next = {
+         text = "Yet again the air around you feels chilly and smells oddly metallic.",
+      },
+      gotit = {
+         synopsis = "[You feel surging energy of %o.]",
+         output = "text",
+         text = [[As you pick up %o, you feel a surge of
+energy. Suddenly all the chaotic motions of atoms seem
+entirely predictable. It is almost as though all the elements
+of the universe are yours to command.]],
+      },
+      guardtalk_after = {
+         "\"With %n destroyed, we can resume our search for the Elixr of Life.\"",
+         "\"Now that %n is destroyed, I feel sanguine.\"",
+         "\"Got any spare lead? After transmuting it, I'll give you a cut of the gold.\"",
+         "\"I met a traveller who claimed that air is not an element. Ridiculous!\"",
+         "\"Is lava wet?\"",
+      },
+      guardtalk_before = {
+         "\"With %n attacking us, we must pause our search for the Elixr of Life.\"",
+         "\"Ever since %n killed our colleagues, I have felt melancholic.\"",
+         "\"Got any spare lead? After transmuting it, I'll give you a cut of the gold.\"",
+         "\"I met a traveller who claimed that earth is not an element. Ridiculous!\"",
+         "\"Is water wet?\"",
+      },
+      hasamulet = {
+         synopsis = "[\"Take the Amulet to the altar of %d on the Astral Plane and offer it.\"]",
+         output = "text",
+         text = [["Excellent work, %p! By bringing the Amulet of Yendor out of the
+depths of Gehennom, you have succeeded where so many before you
+have failed. The Amulet is rarer than dilithium crystals and more
+resilient than steel: it is the most precious object in the universe.
+
+"But your journey is not done yet! For according to the ancient
+alchemical texts, the Amulet of Yendor is prized by the gods
+themselves. You must take the Amulet to the highest point you can
+reach, find the high altar of %d on the Astral Plane,
+and offer the Amulet there.
+
+"In return, %d will reward you for your service. With what,
+I cannot say for sure. But know this: you will be remembered
+forever as the greatest %r in history."]],
+      },
+      killed_nemesis = {
+         synopsis = "[%nC undergoes a violent chemical reaction and sublimates]",
+         output = "text",
+         text = [[%nC sizzles, sputters and pops. Noxious gas rises from
+the unstable, viscous substance. The sentient substance %n
+vibrates uncontrollably and lets out a disturbingly human shriek.
+Then at last it explodes, and the last of %n sublimates
+into the atmosphere.]],
+      },
+      leader_first = {
+         synopsis = "[\"The world is out of equilibrium, we need your help.\"]",
+         output = "text",
+         text = [["Good to see you again, %p. As you can see, this lab and
+perhaps the entire world has been thrown out of equilibrium. Terrible
+events have transpired, and we need someone who can inhibit its
+dangerous reactions.
+
+We need your help, %p. But let me check if you have all the prerequisites."]],
+      },
+      leader_last = {
+         synopsis = "[\"You abandoned the %a path, and are unwelcome here.\"]",
+         output = "text",
+         text = [["%p, you have betrayed us, you have betrayed alchemy, and you
+have betrayed me. You have lost your spirit of creative discovery
+and careful observation. You have abandoned the %a path and embraced
+mindless obedience.
+
+You are no longer welcome here - I would rather be poisoned with
+belladonna than see you again. Leave, and never return!"]],
+      },
+      leader_next = {
+         text = "\"Welcome back, %p. Are you ready for the quest now?\"",
+      },
+      leader_other = {
+         text = "\"Hello again, %p. I hope you are ready this time.\"",
+      },
+      locate_first = {
+         synopsis = "[You remember this place: it is %i.]",
+         output = "text",
+         text = [[Something feels familiar about this place. The scent,
+perhaps? A wave of nostalgia rips through your mind like a
+chain reaction. You remember the years of your youth,
+studying alchemic formulae with your fellow students.
+
+You realize at last, you are at %i.
+But it feels colder and emptier than in
+those halcyon days.]],
+      },
+      locate_next = {
+         text = "You have returned to %i once again.",
+      },
+      nemesis_first = {
+         synopsis = "[%nC aims to end all fleshy forms of life, starting with you.]",
+         output = "text",
+         text = [[An enormous pile of viscous ooze slides towards you.
+It starts pulsing furiously, emitting sqelching sounds
+interspersed with words of human speech. The sparks of
+electicity jumping across the surface of the fluid
+indicate that this must be %n, the sentient substance.
+
+"So %l has sent another %r to challenge me?
+How futile. You fools cannot defeat me, but your primitive
+organic brains cannot comprehend that all is already lost.
+
+"I will exterminate all you disgusting creatures of flesh
+and blood. Then by the power of %o, I will
+transmute your remains into orderly ingots of iron. All
+who oppose me will be annihilated.
+
+"Starting with you."]],
+      },
+      nemesis_next = {
+         text = "\"You have contaminated my workspace long enough! Time to exterminate you.\"",
+      },
+      nemesis_other = {
+         text = "\"Fool, you escaped only to return! You organic beings never learn.\"",
+      },
+      nemesis_wantsit = {
+         text = "\"%r, I shall take back %o and dissolve your body!\"",
+      },
+      nexttime = {
+         text = "You return to %H, and you know that %l will be here.",
+      },
+      offeredit= {
+         synopsis = "[%lC tells you to guard %o, and to return when you have triumphed.]",
+         output = "text",
+         text = [[When %l sees %o, she smiles, and says:
+
+    Excellent work, %p. Thanks to you, %n will never
+    torment the life on this planet ever again.
+
+    As for %o, take it with you, and use it on your
+    quest for the Amulet of Yendor. As we rebuild our facilities,
+    we need the favor of the gods more than ever, and they would
+    appreciate having the Amulet in their grasp.
+
+    Furthermore, until we can clean our laboratory of contamination,
+    we won't be conducting experiments on %o.]],
+      },
+      offeredit2 = {
+         synopsis = "[\"You keep %o.  Return to %Z to search for the Amulet.\"]",
+         output = "text",
+         text = [[%l gazes deeply at %o, closes her eyes, and sighs.
+Then she hands %o back to you.
+
+"Please, take it with you, and continue your search for
+the Amulet.  You can go back to %Z
+through the magic portal which brought you here."]],
+      },
+      othertime = {
+         text = "Perhaps for the last time, you approach %H.",
+      },
+      posthanks = {
+         text = "\"Hello again %p. How is your quest for the Amulet of Yendor?\"",
+      },
+   },
    Bar = {
       assignquest = {
          synopsis = "[\"Find %n, defeat %ni, and return %o to us.\"]",
