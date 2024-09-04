@@ -2521,6 +2521,8 @@ mixtype(struct obj *o1, struct obj *o2)
         case AMETHYST: /* "a-methyst" == "not intoxicated" */
             if (o2->otyp == POT_BOOZE)
                 return POT_FRUIT_JUICE;
+            else if(is_art(o1, ART_STONE_OF_PHILOSOPHERS))
+                return POT_POLYMORPH;
             break;
         }
 

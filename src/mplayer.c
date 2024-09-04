@@ -168,6 +168,7 @@ mk_mplayer(struct permonst *ptr, coordxy x, coordxy y, boolean special)
                 armor = SILVER_DRAGON_SCALE_MAIL;
             }
             cloak = ALCHEMY_SMOCK;
+            break;
         case PM_BARBARIAN:
             if (rn2(2)) {
                 weapon = rn2(2) ? TWO_HANDED_SWORD : BATTLE_AXE;

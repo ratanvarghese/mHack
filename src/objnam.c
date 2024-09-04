@@ -4235,6 +4235,7 @@ readobjnam_preparse(struct _readobjnam_data *d)
                 || !strncmpi(d->bp, "gold ring", l = 9)
                 || !strncmpi(d->bp, "heavy ball", l = 9)
                 || !strncmpi(d->bp, "platinum yendorian express card", l = 31)
+                || !strncmpi(d->bp, "stone of philosophers", l = 25)
                 || !strcmp(d->bp, "gold")) {
                 /* hack so that silver dragon scales/mail doesn't get
                  * interpreted as silver */

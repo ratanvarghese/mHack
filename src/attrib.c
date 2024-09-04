@@ -30,9 +30,9 @@ static const struct innate {
                  { 10, &(HFast), "quick", "slow" },
                  { 0, 0, 0, 0 } },
 
-  alc_abil[] = { { 7, &(HFire_resistance), "cool", "warmer" },
-                 { 14, &(HCold_resistance), "warm", "cooler" },
-                 { 21, &(HShock_resistance), "insulated", "conductive" },
+  alc_abil[] = { { 8, &(HCold_resistance), "warm", "cooler" },
+                 { 16, &(HFire_resistance), "cool", "warmer" },
+                 { 24, &(HShock_resistance), "insulated", "conductive" },
                  { 0, 0, 0, 0 } },
 
   bar_abil[] = { { 1, &(HPoison_resistance), "", "" },

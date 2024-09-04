@@ -6083,7 +6083,7 @@ passive_obj(
     case AD_MTRL:
         if (!mon->mcan) {
             if(warp_material(obj, TRUE, select_new_material(obj)) && carried(obj)) {
-                pline("Your %s warps!", simpleonames(obj));
+                pline("Your %s warp%s!", simpleonames(obj), obj->quan == 1 ? "s" : "");
             }
         }
         break;

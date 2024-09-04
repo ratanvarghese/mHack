@@ -26,6 +26,7 @@ staticfn boolean bane_applies(const struct artifact *, struct monst *)
 staticfn int spec_applies(const struct artifact *, struct monst *)
                                                                  NONNULLARG12;
 staticfn int invoke_ok(struct obj *);
+staticfn int transmute_ok(struct obj *);
 staticfn void nothing_special(struct obj *) NONNULLARG1;
 staticfn int arti_invoke(struct obj *);
 staticfn boolean Mb_hit(struct monst * magr, struct monst *mdef,
@@ -1694,6 +1695,23 @@ invoke_ok(struct obj *obj)
     return GETOBJ_EXCLUDE;
 }
 
+/* getobj callback for object to be transmuted */
+staticfn int
+transmute_ok(struct obj *obj)
+{
+    int new_material;
+    if (!obj)
+        return GETOBJ_EXCLUDE;
+    if (obj->oartifact)
+        return GETOBJ_EXCLUDE;
+    for(new_material = 1; new_material < NUM_MATERIAL_TYPES; new_material++) {
+        if(obj->material != new_material && !valid_obj_material(obj, new_material)) {
+            return GETOBJ_SUGGEST;
+        }
+    }
+    return GETOBJ_EXCLUDE;
+}
+
 /* the #invoke command */
 int
 doinvoke(void)
@@ -2011,6 +2029,20 @@ arti_invoke(struct obj *obj)
                 obj->age = svm.moves;
             }
             break;
+        case TRANSMUTE: {
+            struct obj *otmp = getobj("transmute", transmute_ok, GETOBJ_PROMPT);
+            if (!otmp) {
+                obj->age = 0;
+                return ECMD_CANCEL;
+            }
+            if(warp_material(otmp, TRUE, select_new_material(otmp))) {
+                pline("Your %s warp%s!", simpleonames(otmp), otmp->quan == 1 ? "s" : "");
+            } else {
+                nothing_special(obj);
+                return ECMD_TIME;
+            }
+            break;
+        }
         default:
             impossible("Unknown invoke power %d.", oart->inv_prop);
             break;
