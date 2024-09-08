@@ -1144,6 +1144,7 @@ MARKER(LAST_ALCHEMIC_POTION, POT_OIL)
  */
 POTION("water",                 "clear",  0, 0, 80, 100, CLR_CYAN,
                                                         POT_WATER),
+MARKER(LAST_POTION, POT_WATER)
 #undef POTION
 
 /* scrolls ... */

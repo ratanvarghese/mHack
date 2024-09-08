@@ -5,9 +5,15 @@
 
 #include "hack.h"
 
+#define MAX_ALCHEMIC_RECIPES 255
+#define ALCHEMIC_DISCO_EMPTY 0
+#define ALCHEMIC_DISCO_OFFSET 1
+
 staticfn boolean alchemy_skill_check(void);
-staticfn void set_recipe(int, int, int, int, boolean);
+staticfn void set_recipe(int, int, int, uint16);
 staticfn int QSORTCALLBACK recipe_cmp(const genericptr, const genericptr);
+staticfn int seek_alchemic_recipe(int, int);
+staticfn boolean discover_recipe(int, boolean);
 staticfn long itimeout(long);
 staticfn long itimeout_incr(long, int);
 staticfn void hallucinatory_redraw(void);
@@ -41,7 +47,6 @@ staticfn void peffect_polymorph(struct obj *);
 staticfn boolean H2Opotion_dip(struct obj *, struct obj *, boolean,
                              const char *);
 staticfn short mixtype(struct obj *, struct obj *);
-staticfn short alchemic_mixtype(struct obj *, struct obj *);
 staticfn int dip_ok(struct obj *);
 staticfn int dip_hands_ok(struct obj *);
 staticfn void hold_potion(struct obj *, const char *, const char *,
@@ -54,7 +59,8 @@ staticfn int potion_dip(struct obj *obj, struct obj *potion);
    be placed in struct instance_globals gd] */
 static int drink_ok_extra = 0;
 
-static uint8 recipe_disco[MAX_ALCHEMIC_RECIPES];
+static int last_assigned_recipe = -1;
+static uint16 recipe_disco[MAX_ALCHEMIC_RECIPES];
 static struct alchemic_recipe recipe_list[MAX_ALCHEMIC_RECIPES];
 
 staticfn boolean
@@ -82,34 +88,32 @@ alchemy_skill_check(void)
 }
 
 staticfn void
-set_recipe(int index, int input0_otyp, int input1_otyp, int output_otyp, boolean difficult)
+set_recipe(int input0_otyp, int input1_otyp, int output_otyp, uint16 r_flags)
 {
+    int index = last_assigned_recipe + 1;
     if(index < 0 || index >= MAX_ALCHEMIC_RECIPES) {
         panic("set_recipe: invalid index: (%d)", index);
     }
     if(recipe_list[index].flags & ALCHEMIC_RECIPE_ASSIGNED) {
         panic("set_recipe: assigning at index %d twice.", index);
     }
-    if(input0_otyp < FIRST_ALCHEMIC_POTION || input0_otyp > LAST_ALCHEMIC_POTION) {
+    if(input0_otyp < FIRST_OBJECT) {
         panic("set_recipe: invalid input0_otyp (%d)", input0_otyp);
     }
-    if(input1_otyp < FIRST_ALCHEMIC_POTION || input1_otyp > LAST_ALCHEMIC_POTION) {
+    if(input1_otyp < FIRST_ALCHEMIC_POTION || input1_otyp > LAST_POTION) {
         panic("set_recipe: invalid input1_otyp (%d)", input1_otyp);
     }
-    if(output_otyp < FIRST_ALCHEMIC_POTION || output_otyp > LAST_ALCHEMIC_POTION) {
+    if(output_otyp < FIRST_ALCHEMIC_POTION || output_otyp > LAST_POTION) {
         panic("set_recipe: invalid output_otyp (%d)", output_otyp);
     }
     if(input0_otyp == input1_otyp) {
         panic("set_recipe: input0_otyp == input1_otyp (%d)", input1_otyp);
     }
-    recipe_list[index].input0 = (input0_otyp - FIRST_ALCHEMIC_POTION);
-    recipe_list[index].input1 = (input1_otyp - FIRST_ALCHEMIC_POTION);
-    recipe_list[index].output = (output_otyp - FIRST_ALCHEMIC_POTION);
-    if(difficult) {
-        recipe_list[index].flags = (ALCHEMIC_RECIPE_ASSIGNED | ALCHEMIC_RECIPE_DIFFICULT);
-    } else {
-        recipe_list[index].flags = ALCHEMIC_RECIPE_ASSIGNED;
-    }
+    recipe_list[index].input0 = input0_otyp;
+    recipe_list[index].input1 = input1_otyp;
+    recipe_list[index].output = output_otyp;
+    recipe_list[index].flags = (ALCHEMIC_RECIPE_ASSIGNED | r_flags);
+    last_assigned_recipe = index;
 }
 
 staticfn int QSORTCALLBACK
@@ -131,38 +135,47 @@ recipe_cmp(const genericptr v1, const genericptr v2)
     return (r1.output > r2.output) - (r1.output < r2.output);
 }
 
+int max_assigned_alchemic_recipe(void) {
+    return last_assigned_recipe;
+}
+
 void init_alchemic_recipes(void) {
-    int i, j, ri, output;
-    (void) memset((genericptr_t) &recipe_disco, MAX_ALCHEMIC_RECIPES, sizeof recipe_disco);
+    int i, j, output;
+    uint16 r_flags;
+    (void) memset((genericptr_t) &recipe_disco, ALCHEMIC_DISCO_EMPTY, sizeof recipe_disco);
     (void) memset((genericptr_t) &recipe_list, 0, sizeof recipe_list);
 
-    ri = 0x00;
+    last_assigned_recipe = -1;
+    set_recipe(UNICORN_HORN, POT_SICKNESS, POT_FRUIT_JUICE, 0);
+    set_recipe(UNICORN_HORN, POT_HALLUCINATION, POT_WATER, 0);
+    set_recipe(UNICORN_HORN, POT_BLINDNESS, POT_WATER, 0);
+    set_recipe(UNICORN_HORN, POT_CONFUSION, POT_WATER, 0);
+    set_recipe(AMETHYST, POT_WATER, POT_POLYMORPH, ALCHEMIC_RECIPE_ARTIFACT0);
+
     for(i = FIRST_ALCHEMIC_POTION; i <= LAST_ALCHEMIC_POTION; i++) {
         for(j = (i + 1); j <= LAST_ALCHEMIC_POTION; j++) {
             if(objects[i].oc_magic && objects[j].oc_magic) {
                 output = rn1(LAST_ALCHEMIC_POTION - FIRST_ALCHEMIC_POTION + 1, FIRST_ALCHEMIC_POTION);
-                set_recipe(ri, i, j, output, rn2(100) < (objects[output].oc_cost/10));
-                ri++;
+                r_flags = (rn2(100) < (objects[output].oc_cost/10)) ? ALCHEMIC_RECIPE_DIFFICULT : 0;
+                set_recipe(i, j, output, r_flags | ALCHEMIC_RECIPE_DISCOVERY);
             }
         }
 
         if(i != POT_SICKNESS) {
-            set_recipe(ri, i, POT_SICKNESS, POT_SICKNESS, FALSE);
-            ri++;
+            set_recipe(i, POT_SICKNESS, POT_SICKNESS, ALCHEMIC_RECIPE_DISCOVERY);
         }
         if(i != POT_FRUIT_JUICE && i != POT_SICKNESS && objects[i].oc_cost < 150) {
-            set_recipe(ri, i, POT_FRUIT_JUICE, i, i != POT_BOOZE);
-            ri++;
+            r_flags = (i == POT_BOOZE) ? 0 : ALCHEMIC_RECIPE_DIFFICULT;
+            set_recipe(i, POT_FRUIT_JUICE, i, r_flags | ALCHEMIC_RECIPE_DISCOVERY);
+        }
+
+        if(i == POT_BOOZE) {
+            set_recipe(AMETHYST, i, POT_FRUIT_JUICE, 0);
+        } else {
+            set_recipe(AMETHYST, i, POT_POLYMORPH, ALCHEMIC_RECIPE_ARTIFACT0);
         }
     }
 
-    for(i = 0; (recipe_list[i].flags & ALCHEMIC_RECIPE_ASSIGNED); i++) {
-        if(recipe_list[i].input0 > recipe_list[i].input1) {
-            int tmp = recipe_list[i].input0;
-            recipe_list[i].input0 = recipe_list[i].input1;
-            recipe_list[i].input1 = tmp;
-        }
-    }
     qsort(recipe_list, MAX_ALCHEMIC_RECIPES, sizeof (struct alchemic_recipe), recipe_cmp);
 }
 
@@ -172,49 +185,59 @@ void save_alchemic_recipes(NHFILE * nhfp) {
 }
 
 void restore_alchemic_recipes(NHFILE * nhfp) {
+    int i;
+
     mread(nhfp->fd, (genericptr_t) recipe_disco, sizeof recipe_disco);
     mread(nhfp->fd, (genericptr_t) recipe_list, sizeof recipe_list);
-}
 
-const struct alchemic_recipe *get_alchemic_recipe(int index) {
-    if(index < 0 || index >= MAX_ALCHEMIC_RECIPES) {
-        return NULL;
-    } else {
-        return &recipe_list[index];
-    }
-}
-
-boolean discover_recipe(int input0_otyp, int input1_otyp, int output_otyp) {
-    int i, di;
-    struct alchemic_recipe *r;
-    int o1typ = input0_otyp - FIRST_ALCHEMIC_POTION;
-    int o2typ = input1_otyp - FIRST_ALCHEMIC_POTION;
-    int o3typ = output_otyp - FIRST_ALCHEMIC_POTION;
-    if(o1typ > o2typ) {
-        o1typ = input1_otyp - FIRST_ALCHEMIC_POTION;
-        o2typ = input0_otyp - FIRST_ALCHEMIC_POTION;
-    }
     for(i = 0; i < MAX_ALCHEMIC_RECIPES; i++) {
-        r = &recipe_list[i];
-        if(r->input0 == o1typ && r->input1 == o2typ && r->output == o3typ) {
-            if((r->flags & ALCHEMIC_RECIPE_KNOWN)) {
-                return FALSE;
-            } else {
-                r->flags = (r->flags | ALCHEMIC_RECIPE_KNOWN);
-                for(di = 0; di < MAX_ALCHEMIC_RECIPES; di++) {
-                    if(recipe_disco[di] == i) {
-                        impossible("Discovered alchemic formula twice: %d", i);
-                    }
-                    if(recipe_disco[di] == MAX_ALCHEMIC_RECIPES) {
-                        recipe_disco[di] = i;
-                        break;
-                    }
-                }
-                return TRUE;
-            }
+        if((recipe_list[i].flags & ALCHEMIC_RECIPE_ASSIGNED)) {
+            last_assigned_recipe = i;
         }
     }
-    return FALSE;
+}
+
+struct alchemic_recipe *get_alchemic_recipe(int index) {
+    return (index < 0 || index >= MAX_ALCHEMIC_RECIPES) ? NULL : &recipe_list[index];
+}
+
+staticfn
+int seek_alchemic_recipe(int input0_otyp, int input1_otyp) {
+    int i;
+    for(i = 0; i < MAX_ALCHEMIC_RECIPES; i++) {
+        if(recipe_list[i].input0 == input0_otyp && recipe_list[i].input1 == input1_otyp) {
+            return i;
+        }
+        if(recipe_list[i].input0 == input1_otyp && recipe_list[i].input1 == input0_otyp) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+staticfn boolean
+discover_recipe(int recipe_index, boolean eureka_message) {
+    struct alchemic_recipe *r = get_alchemic_recipe(recipe_index);
+    int di;
+    if(r == NULL || (r->flags & ALCHEMIC_RECIPE_KNOWN) || !(r->flags & ALCHEMIC_RECIPE_DISCOVERY)) {
+        return FALSE;
+    }
+    r->flags = (r->flags | ALCHEMIC_RECIPE_KNOWN);
+    for(di = 0; di < MAX_ALCHEMIC_RECIPES; di++) {
+        if(recipe_disco[di] == (recipe_index + ALCHEMIC_DISCO_OFFSET)) {
+            impossible("Discovered alchemic formula twice: %d", recipe_index);
+        }
+        if(recipe_disco[di] == ALCHEMIC_DISCO_EMPTY) {
+            recipe_disco[di] = (recipe_index + ALCHEMIC_DISCO_OFFSET);
+            break;
+        }
+    }
+    if(eureka_message) {
+        pline("Eureka! You discovered a new alchemic formula!");
+    }
+    use_skill(P_ALCHEMY, 1);
+    exercise(A_WIS, TRUE);
+    return TRUE;
 }
 
 /* display a list of discovered alchemic recipes; return their count */
@@ -224,11 +247,9 @@ disp_alchemic_recipe_discoveries(
 {
     int i;
     char buf[BUFSZ];
-
+    struct alchemic_recipe *r;
     for (i = 0; i < MAX_ALCHEMIC_RECIPES; i++) {
-        const struct alchemic_recipe *r;
-
-        if (recipe_disco[i] == MAX_ALCHEMIC_RECIPES)
+        if (recipe_disco[i] == ALCHEMIC_DISCO_EMPTY)
             break; /* empty slot implies end of list */
         if (tmpwin == WIN_ERR)
             continue; /* for WIN_ERR, we just count */
@@ -236,11 +257,11 @@ disp_alchemic_recipe_discoveries(
         if (i == 0)
             putstr(tmpwin, iflags.menu_headings.attr, "Alchemic Recipes");
 
-        r = get_alchemic_recipe(recipe_disco[i]);
+        r = get_alchemic_recipe(recipe_disco[i] - ALCHEMIC_DISCO_OFFSET);
         Sprintf(buf, "  %s + %s = %s",
-                    alchemic_typename(r->input0 + FIRST_ALCHEMIC_POTION),
-                    alchemic_typename(r->input1 + FIRST_ALCHEMIC_POTION),
-                    alchemic_typename(r->output + FIRST_ALCHEMIC_POTION)
+                    alchemic_typename(r->input0),
+                    alchemic_typename(r->input1),
+                    alchemic_typename(r->output)
                 );
         putstr(tmpwin, 0, buf);
     }
@@ -296,17 +317,13 @@ use_conical_flask(struct obj *flask)
         return ECMD_CANCEL;
     }
     pline("You pour a drop of each potion into the %s.", xname(flask));
-    mixture = alchemic_mixtype(potion1, potion2);
+    mixture = mixtype(potion1, potion2);
     if(mixture == STRANGE_OBJECT) {
         pline("As you swirl the flask, nothing interesting happens.");
     } else {
         pline("As you swirl the flask, the mixture looks %s.",
             hcolor(OBJ_DESCR(objects[mixture])));
-        if(discover_recipe(potion1->otyp, potion2->otyp, mixture)) {
-            pline("You discovered a new alchemic formula!");
-            use_skill(P_ALCHEMY, 1);
-            exercise(A_WIS, TRUE);
-        }
+        discover_recipe(seek_alchemic_recipe(potion1->otyp, potion2->otyp), TRUE);
     }
     You("toss aside the contaminated water.");
     return ECMD_TIME;
@@ -2472,61 +2489,24 @@ potionbreathe(struct obj *obj)
     return;
 }
 
-/* returns the potion type when potion o1 is dipped in potion o2 */
+/* returns the potion type when o0 is dipped in o1 */
 staticfn short
-alchemic_mixtype(struct obj *o1, struct obj *o2)
+mixtype(struct obj *o0, struct obj *o1)
 {
-    int o1typ = o1->otyp - FIRST_ALCHEMIC_POTION;
-    int o2typ = o2->otyp - FIRST_ALCHEMIC_POTION;
-    if(o1typ > o2typ) {
-        o1typ = o2->otyp - FIRST_ALCHEMIC_POTION;
-        o2typ = o1->otyp - FIRST_ALCHEMIC_POTION;
-    }
-
-    int i = 0;
-    for (i = 0; i < MAX_ALCHEMIC_RECIPES; i++) {
-        if(!(recipe_list[i].flags & ALCHEMIC_RECIPE_ASSIGNED)) {
-            break;
-        }
-        if(recipe_list[i].input0 == o1typ && recipe_list[i].input1 == o2typ) {
-            if (recipe_list[i].flags & ALCHEMIC_RECIPE_DIFFICULT) {
-                if(!alchemy_skill_check()) {
-                    break;
-                }
-            }
-            return recipe_list[i].output + FIRST_ALCHEMIC_POTION;
-        }
-    }
-    return STRANGE_OBJECT;
-}
-
-/* returns the potion type when o1 is dipped in o2 */
-staticfn short
-mixtype(struct obj *o1, struct obj *o2)
-{
-    if(o1->oclass == POTION_CLASS) {
-        return alchemic_mixtype(o1, o2);
-    } else {
-        switch(o1->otyp) {
-        case UNICORN_HORN:
-            switch (o2->otyp) {
-            case POT_SICKNESS:
-                return POT_FRUIT_JUICE;
-            case POT_HALLUCINATION:
-            case POT_BLINDNESS:
-            case POT_CONFUSION:
-                return POT_WATER;
-            }
-            break;
-        case AMETHYST: /* "a-methyst" == "not intoxicated" */
-            if (o2->otyp == POT_BOOZE)
-                return POT_FRUIT_JUICE;
-            else if(is_art(o1, ART_STONE_OF_PHILOSOPHERS))
-                return POT_POLYMORPH;
-            break;
-        }
-
+    int recipe_index = seek_alchemic_recipe(o0->otyp, o1->otyp);
+    struct alchemic_recipe *r = get_alchemic_recipe(recipe_index);
+    boolean input0_artifact = (r && (r->input0 == o0->otyp)) ? o0->oartifact : o1->oartifact;
+    boolean input1_artifact = (r && (r->input1 == o1->otyp)) ? o1->oartifact : o0->oartifact;
+    if(r == NULL) {
         return STRANGE_OBJECT;
+    } else if((r->flags & ALCHEMIC_RECIPE_ARTIFACT0) && !input0_artifact) {
+        return STRANGE_OBJECT;
+    } else if((r->flags & ALCHEMIC_RECIPE_ARTIFACT1) && !input1_artifact) {
+        return STRANGE_OBJECT;
+    } else if((r->flags & ALCHEMIC_RECIPE_DIFFICULT) && !alchemy_skill_check()) {
+        return STRANGE_OBJECT;
+    } else {
+        return r->output;
     }
 }
 
@@ -2837,11 +2817,7 @@ potion_dip(struct obj *obj, struct obj *potion)
             } else if (!Blind) {
                 pline_The("mixture looks %s.",
                           hcolor(OBJ_DESCR(objects[obj->otyp])));
-                if(discover_recipe(old_otyp1, old_otyp2, mixture)) {
-                    pline("You discovered a new alchemic formula!");
-                    use_skill(P_ALCHEMY, 1);
-                    exercise(A_WIS, TRUE);
-                }
+                discover_recipe(seek_alchemic_recipe(old_otyp1, old_otyp2), TRUE);
             }
 
             /* this is required when 'obj' was split off from a bigger stack,

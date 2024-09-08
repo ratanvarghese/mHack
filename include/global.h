@@ -444,7 +444,6 @@ extern struct nomakedefs_s nomakedefs;
 #ifndef MAX_MSG_HISTORY
 #define MAX_MSG_HISTORY 128 /* max # of lines in msg_history */
 
-#define MAX_ALCHEMIC_RECIPES 240 /* max # of alchemical recipes, deliberately below 256 */
 #endif
 
 #include "color.h"

@@ -2438,11 +2438,11 @@ extern const char *udeadinside(void);
 
 /* ### potion.c ### */
 
+extern int max_assigned_alchemic_recipe(void);
 extern void init_alchemic_recipes(void);
 extern void save_alchemic_recipes(NHFILE *);
 extern void restore_alchemic_recipes(NHFILE *);
-extern const struct alchemic_recipe *get_alchemic_recipe(int);
-extern boolean discover_recipe(int, int, int);
+extern struct alchemic_recipe *get_alchemic_recipe(int);
 extern int disp_alchemic_recipe_discoveries(winid);
 extern int use_conical_flask(struct obj *flask) NONNULLARG1;
 extern void set_itimeout(long *, long) NONNULLARG1;
