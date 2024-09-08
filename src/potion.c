@@ -13,7 +13,7 @@ staticfn boolean alchemy_skill_check(void);
 staticfn void set_recipe(int, int, int, uint16);
 staticfn int QSORTCALLBACK recipe_cmp(const genericptr, const genericptr);
 staticfn int seek_alchemic_recipe(int, int);
-staticfn boolean discover_recipe(int, boolean);
+staticfn boolean discover_recipe(int);
 staticfn long itimeout(long);
 staticfn long itimeout_incr(long, int);
 staticfn void hallucinatory_redraw(void);
@@ -216,7 +216,7 @@ int seek_alchemic_recipe(int input0_otyp, int input1_otyp) {
 }
 
 staticfn boolean
-discover_recipe(int recipe_index, boolean eureka_message) {
+discover_recipe(int recipe_index) {
     struct alchemic_recipe *r = get_alchemic_recipe(recipe_index);
     int di;
     if(r == NULL || (r->flags & ALCHEMIC_RECIPE_KNOWN) || !(r->flags & ALCHEMIC_RECIPE_DISCOVERY)) {
@@ -231,9 +231,6 @@ discover_recipe(int recipe_index, boolean eureka_message) {
             recipe_disco[di] = (recipe_index + ALCHEMIC_DISCO_OFFSET);
             break;
         }
-    }
-    if(eureka_message) {
-        pline("Eureka! You discovered a new alchemic formula!");
     }
     use_skill(P_ALCHEMY, 1);
     exercise(A_WIS, TRUE);
@@ -323,7 +320,9 @@ use_conical_flask(struct obj *flask)
     } else {
         pline("As you swirl the flask, the mixture looks %s.",
             hcolor(OBJ_DESCR(objects[mixture])));
-        discover_recipe(seek_alchemic_recipe(potion1->otyp, potion2->otyp), TRUE);
+        if(discover_recipe(seek_alchemic_recipe(potion1->otyp, potion2->otyp))) {
+            pline("Eureka! You discovered a new alchemic formula!");
+        }
     }
     You("toss aside the contaminated water.");
     return ECMD_TIME;
@@ -2817,7 +2816,9 @@ potion_dip(struct obj *obj, struct obj *potion)
             } else if (!Blind) {
                 pline_The("mixture looks %s.",
                           hcolor(OBJ_DESCR(objects[obj->otyp])));
-                discover_recipe(seek_alchemic_recipe(old_otyp1, old_otyp2), TRUE);
+                if(discover_recipe(seek_alchemic_recipe(old_otyp1, old_otyp2))) {
+                    pline("Eureka! You discovered a new alchemic formula!");
+                }
             }
 
             /* this is required when 'obj' was split off from a bigger stack,
