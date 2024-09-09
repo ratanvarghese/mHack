@@ -39,6 +39,7 @@ des.room({ type = "ordinary",
 
 des.room({ type = "ordinary",
            contents = function()
+              des.object("scroll of alchemy")
               des.object()
               des.object()
               des.trap()

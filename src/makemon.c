@@ -777,6 +777,9 @@ m_initinv(struct monst *mtmp)
         break;
     case S_QUANTMECH:
         mongets(mtmp, CONICAL_FLASK);
+        if(!rn2(2) || !rn2(8) || !rn2(18) || !rn2(32) || !rn2(50) || !rn2(72)) { /*electron shells*/
+            mongets(mtmp, SCR_ALCHEMY);
+        }
         if (!rn2(20) && ptr == &mons[PM_QUANTUM_MECHANIC]) {
             struct obj *catcorpse;
 

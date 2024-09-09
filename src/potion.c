@@ -8,12 +8,12 @@
 #define MAX_ALCHEMIC_RECIPES 255
 #define ALCHEMIC_DISCO_EMPTY 0
 #define ALCHEMIC_DISCO_OFFSET 1
+#define ALCHEMIC_DISCO_SAMPLE 32
 
 staticfn boolean alchemy_skill_check(void);
 staticfn void set_recipe(int, int, int, uint16);
 staticfn int QSORTCALLBACK recipe_cmp(const genericptr, const genericptr);
 staticfn int seek_alchemic_recipe(int, int);
-staticfn boolean discover_recipe(int);
 staticfn long itimeout(long);
 staticfn long itimeout_incr(long, int);
 staticfn void hallucinatory_redraw(void);
@@ -215,8 +215,7 @@ int seek_alchemic_recipe(int input0_otyp, int input1_otyp) {
     return -1;
 }
 
-staticfn boolean
-discover_recipe(int recipe_index) {
+boolean discover_recipe(int recipe_index) {
     struct alchemic_recipe *r = get_alchemic_recipe(recipe_index);
     int di;
     if(r == NULL || (r->flags & ALCHEMIC_RECIPE_KNOWN) || !(r->flags & ALCHEMIC_RECIPE_DISCOVERY)) {
@@ -235,6 +234,32 @@ discover_recipe(int recipe_index) {
     use_skill(P_ALCHEMY, 1);
     exercise(A_WIS, TRUE);
     return TRUE;
+}
+
+boolean discover_random_recipe(int target_output) {
+    int ri;
+    int si = 0;
+    struct alchemic_recipe *r = NULL;
+    uint16 sample[ALCHEMIC_DISCO_SAMPLE];
+    (void) memset((genericptr_t) &sample, ALCHEMIC_DISCO_EMPTY, sizeof sample);
+    for(ri = 0; ri <= last_assigned_recipe && si < ALCHEMIC_DISCO_SAMPLE; ri++) {
+        r = get_alchemic_recipe(ri);
+        if((target_output == STRANGE_OBJECT) || (target_output == r->output)) {
+            if(r->flags == (ALCHEMIC_RECIPE_ASSIGNED | ALCHEMIC_RECIPE_DISCOVERY)) {
+                sample[si] = ri + ALCHEMIC_DISCO_OFFSET;
+                si++;
+            }
+        }
+    }
+    if(si == 0) {
+        if (target_output == STRANGE_OBJECT) {
+            return FALSE;
+        } else {
+            return discover_random_recipe(STRANGE_OBJECT);
+        }
+    } else {
+        return discover_recipe(sample[rn2(si)] - ALCHEMIC_DISCO_OFFSET);
+    }
 }
 
 /* display a list of discovered alchemic recipes; return their count */

@@ -77,6 +77,7 @@ des.monster("P")
 des.monster("P")
 
 -- Items
+des.object("scroll of alchemy")
 des.object("?")
 des.object("?")
 des.object("?")

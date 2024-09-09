@@ -106,6 +106,7 @@ des.object({ id = "chest", x = 53, y = 04, trapped = 0,
                 des.object("!")
                 des.object("!")
                 des.object("!")
+                des.object("scroll of alchemy")
              end
 })
 des.object({ id = "chest", x = 53, y = 16, trapped = 0,
@@ -117,6 +118,7 @@ des.object({ id = "chest", x = 53, y = 16, trapped = 0,
                 des.object("!")
                 des.object("!")
                 des.object("!")
+                des.object("scroll of alchemy")
              end
 })
 des.object()
