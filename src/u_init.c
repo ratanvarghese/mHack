@@ -39,10 +39,12 @@ static struct trobj Alchemist[] = {
 #define ALC_DARTS 0
     { DART, 2, WEAPON_CLASS, 25, UNDEF_BLESS }, /* quan is variable */
     { RUBBER_HOSE, 2, WEAPON_CLASS, 1, UNDEF_BLESS },
-    { ALCHEMY_SMOCK, 0, ARMOR_CLASS, 1, UNDEF_BLESS },
+    { DENTED_POT, 0, ARMOR_CLASS, 1, UNDEF_BLESS },
+    { ALCHEMY_SMOCK, 1, ARMOR_CLASS, 1, UNDEF_BLESS },
     { POT_POLYMORPH, 0, POTION_CLASS, 3, 1 }, /* blessed polymorph */
     { POT_PARALYSIS, 0, POTION_CLASS, 1, 0 },
     { UNDEF_TYP, 0, POTION_CLASS, 6, 0 },
+    { WAN_CANCELLATION, UNDEF_SPE, WAND_CLASS, 1, UNDEF_BLESS },
     { OILSKIN_SACK, UNDEF_SPE, TOOL_CLASS, 1, UNDEF_BLESS },
     { CONICAL_FLASK, UNDEF_SPE, TOOL_CLASS, 1, UNDEF_BLESS },
     { TOWEL, UNDEF_SPE, TOOL_CLASS, 1, UNDEF_BLESS },
@@ -722,6 +724,7 @@ u_init_role(void)
         if (!rn2(5))
             ini_inv(Magicmarker);
         knows_class(POTION_CLASS);
+        knows_object(SCR_ALCHEMY);
         skill_init(Skill_Alc);
         break;
     case PM_ARCHEOLOGIST:
@@ -1090,6 +1093,9 @@ restricted_spell_discipline(int otyp)
     int this_skill = spell_skilltype(otyp);
 
     switch (Role_switch) {
+    case PM_ALCHEMIST:
+        skills = Skill_Alc;
+        break;
     case PM_ARCHEOLOGIST:
         skills = Skill_A;
         break;
@@ -1170,8 +1176,6 @@ ini_inv_mkobj_filter(int oclass, boolean got_level1_spellbook)
            || otyp == gn.nocreate4 || otyp == gn.nocreate5
            || otyp == gn.nocreate6
            /* 'useless' items */
-           || otyp == POT_HALLUCINATION
-           || otyp == POT_ACID
            || otyp == SCR_AMNESIA
            || otyp == SCR_FIRE
            || otyp == SCR_BLANK_PAPER
@@ -1194,6 +1198,8 @@ ini_inv_mkobj_filter(int oclass, boolean got_level1_spellbook)
            || (oclass == GEM_CLASS
                && !(otyp >= FIRST_REAL_GEM && otyp <= LAST_REAL_GEM)
                && Role_if(PM_MERCHANT))
+           /* Alchemists should get magic potions */
+           || (oclass == POTION_CLASS && !objects[otyp].oc_magic && Role_if(PM_ALCHEMIST))
            /* powerful spells are either useless to
               low level players or unbalancing; also
               spells in restricted skill categories */
@@ -1251,6 +1257,7 @@ ini_inv_adjust_obj_material(struct obj *obj)
     int new_material;
     if(Role_if(PM_ALCHEMIST)) {
         switch(obj->otyp) {
+        case DENTED_POT: new_material = ADAMANTINE; break;
         case ALCHEMY_SMOCK: new_material = LEATHER; break;
         case DART: new_material = SILVER; break;
         default: new_material = objects[obj->otyp].oc_material;
