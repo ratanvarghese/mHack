@@ -55,7 +55,7 @@ des.region(selection.area(53,04,55,07),"unlit")
 des.region({ region={37,07,44,08}, lit=1, type="ordinary", irregular=1 })
 
 des.door("locked",17,15)
-des.door("locked",27,05)
+des.door("locked",27,15)
 des.door("locked",36,08)
 des.door("locked",37,09)
 des.door("locked",46,07)
