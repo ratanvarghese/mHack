@@ -1090,7 +1090,7 @@ domonnoise(struct monst *mtmp)
                 pline_msg = "discusses electrons in a vapor of mercury.";
                 break;
             case PM_GENETIC_ENGINEER:
-                pline_msg = "discusses color of pea flowers.";
+                pline_msg = "discusses the colors of pea flowers.";
                 break;
             case PM_ARCHEOLOGIST:
                 pline_msg =
