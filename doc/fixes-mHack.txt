@@ -121,8 +121,9 @@ Added Alchemist role.
 	The Alchemist starting inventory is slightly inspired by the Drunk role in
 	NetHack-- and SLASHTHEM.
 Added the Stone of Philosophers
-	When carried, the Stone of Philosophers grants acid resistance. When invoked, it
-	can change the material of an object, similar to a transmuter.
+	When carried, the Stone of Philosophers grants acid resistance and polymorph
+	control. When invoked, it can change the material of a carried object, similar
+	to a transmuter.
 
 Platform- and/or Interface-Specific New Features
 ------------------------------------------------

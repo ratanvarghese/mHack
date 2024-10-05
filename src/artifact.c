@@ -823,6 +823,13 @@ set_artifact_intrinsic(struct obj *otmp, boolean on, long wp_mask)
             EHunger |= wp_mask;
         }
     }
+    if (spfx & SPFX_PCTRL) {
+        if (on) {
+            EPolymorph_control |= wp_mask;
+        } else {
+            EPolymorph_control &= ~wp_mask;
+        }
+    }
 
     if (wp_mask == W_ART && !on && oart->inv_prop) {
         /* might have to turn off invoked power too */
