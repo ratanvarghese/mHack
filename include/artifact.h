@@ -38,6 +38,7 @@
 #define SPFX_REFLECT 0x04000000L /* Reflection */
 #define SPFX_PROTECT 0x08000000L /* Protection */
 #define SPFX_GOLD   0x10000000L /* Turn objects and monsters to gold */
+#define SPFX_PCTRL  0x20000000L /* Polymorph control */
 
 struct artifact {
     short otyp;
@@ -66,7 +67,8 @@ enum invoke_prop_types {
     ENLIGHTENING,
     CREATE_AMMO,
     BANISH,
-    BLINDING_RAY
+    BLINDING_RAY,
+    TRANSMUTE
 };
 
 /* clang-format on */

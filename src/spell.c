@@ -60,6 +60,7 @@ staticfn void propagate_chain_lightning(struct chain_lightning_queue *,
  * Reasoning:
  *   spelbase, spelheal:
  *      Arc are aware of magic through historical research
+ *      Alc use magic to understand and manipulate matter
  *      Bar abhor magic (Conan finds it "interferes with his animal instincts")
  *      Cav are ignorant to magic
  *      Hea are very aware of healing magic through medical research
@@ -81,6 +82,7 @@ staticfn void propagate_chain_lightning(struct chain_lightning_queue *,
  *
  *  spelspec, spelsbon:
  *      Arc map masters (SPE_MAGIC_MAPPING)
+ *      Alc transform (SPE_POLYMORPH)
  *      Bar fugue/berserker (SPE_HASTE_SELF)
  *      Cav born to dig (SPE_DIG)
  *      Hea to heal (SPE_CURE_SICKNESS)

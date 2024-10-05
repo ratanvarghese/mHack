@@ -3182,6 +3182,8 @@ itemactions(struct obj *otmp)
                    "Clean yourself off with this towel");
     else if (otmp->otyp == CRYSTAL_BALL)
         ia_addmenu(win, IA_APPLY_OBJ, 'a', "Peer into this crystal ball");
+    else if (otmp->otyp == CONICAL_FLASK)
+        ia_addmenu(win, IA_APPLY_OBJ, 'a', "Test mixing potions with this flask");
     else if (otmp->otyp == MAGIC_MARKER)
         ia_addmenu(win, IA_APPLY_OBJ, 'a',
                    "Write on something with this marker");
@@ -4878,6 +4880,10 @@ mergable(
     /* coins of the same kind will always merge */
     if (obj->oclass == COIN_CLASS)
         return TRUE;
+
+    /* different types of poison will never merge */
+    if (obj->opoisoned != otmp->opoisoned)
+        return FALSE;
 
     if (obj->cursed != otmp->cursed || obj->blessed != otmp->blessed)
         return FALSE;

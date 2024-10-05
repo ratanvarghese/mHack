@@ -7,6 +7,7 @@
 
 staticfn int use_camera(struct obj *);
 staticfn int use_towel(struct obj *);
+staticfn int use_conical_flask(struct obj *);
 staticfn boolean its_dead(coordxy, coordxy, int *);
 staticfn int use_stethoscope(struct obj *);
 staticfn void use_whistle(struct obj *);
@@ -4262,6 +4263,9 @@ doapply(void)
         break;
     case CRYSTAL_BALL:
         use_crystal_ball(&obj);
+        break;
+    case CONICAL_FLASK:
+        res = use_conical_flask(obj);
         break;
     case MAGIC_MARKER:
         res = dowrite(obj);

@@ -150,7 +150,9 @@ m_initthrow(struct monst *mtmp, int otyp, int oquan)
     otmp->quan = (long) rn1(oquan, 3);
     otmp->owt = weight(otmp);
     if (otyp == ORCISH_ARROW)
-        otmp->opoisoned = TRUE;
+        otmp->opoisoned = POT_SICKNESS;
+    else if (otyp == ELVEN_ARROW && !rn2(12))
+        otmp->opoisoned = POT_SLEEPING;
     (void) mpickobj(mtmp, otmp);
 }
 
@@ -774,6 +776,10 @@ m_initinv(struct monst *mtmp)
             (void) mongets(mtmp, MUMMY_WRAPPING);
         break;
     case S_QUANTMECH:
+        mongets(mtmp, CONICAL_FLASK);
+        if(!rn2(2) || !rn2(8) || !rn2(18) || !rn2(32) || !rn2(50) || !rn2(72)) { /*electron shells*/
+            mongets(mtmp, SCR_ALCHEMY);
+        }
         if (!rn2(20) && ptr == &mons[PM_QUANTUM_MECHANIC]) {
             struct obj *catcorpse;
 

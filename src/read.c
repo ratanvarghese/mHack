@@ -36,6 +36,7 @@ staticfn void seffect_amnesia(struct obj **);
 staticfn void seffect_fire(struct obj **);
 staticfn void seffect_earth(struct obj **);
 staticfn void seffect_punishment(struct obj **);
+staticfn void seffect_alchemy(struct obj **);
 staticfn void seffect_stinking_cloud(struct obj **);
 staticfn void seffect_blank_paper(struct obj **);
 staticfn void seffect_teleportation(struct obj **);
@@ -1883,6 +1884,43 @@ seffect_punishment(struct obj **sobjp)
 }
 
 staticfn void
+seffect_alchemy(struct obj **sobjp)
+{
+    struct obj *sobj = *sobjp;
+    boolean sblessed = sobj->blessed;
+    boolean scursed = sobj->cursed;
+    boolean confused = (Confusion != 0);
+
+    int target_output = STRANGE_OBJECT;
+    if(confused) {
+        switch(d(1,4)) {
+        case 1: target_output = POT_BOOZE; break;
+        case 2: target_output = POT_HALLUCINATION; break;
+        default: target_output = POT_CONFUSION;
+        }
+    } else if(sblessed) {
+        switch(d(1,4)) {
+        case 1: target_output = POT_GAIN_LEVEL; break;
+        case 2: target_output = POT_GAIN_ENERGY; break;
+        default: target_output = POT_FULL_HEALING;
+        }
+    } else if(scursed) {
+        switch(d(1,4)) {
+        case 1: target_output = POT_SLEEPING; break;
+        case 2: target_output = POT_PARALYSIS; break;
+        default: target_output = POT_SICKNESS;
+        }
+    }
+
+    if(discover_random_recipe(target_output)) {
+        pline("You learn an alchemic formula from the scroll.");
+        gk.known = TRUE;
+    } else {
+        pline1(nothing_happens);
+    }
+}
+
+staticfn void
 seffect_stinking_cloud(struct obj **sobjp)
 {
     struct obj *sobj = *sobjp;
@@ -2166,6 +2204,9 @@ seffects(struct obj *sobj) /* sobj - scroll or fake spellbook for spell */
         break;
     case SCR_PUNISHMENT:
         seffect_punishment(&sobj);
+        break;
+    case SCR_ALCHEMY:
+        seffect_alchemy(&sobj);
         break;
     case SCR_STINKING_CLOUD:
         seffect_stinking_cloud(&sobj);

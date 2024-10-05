@@ -93,6 +93,37 @@ The Amulet of Yendor grants extrinsic hallucination.
 	Extrinsic hallucination does not time out and is not cured with a unicorn horn.
 	It can be resisted with an item granting hallucination resistance.
 	It can be avoided by dropping the Amulet.
+Added randomized alchemy system, conical flasks and alchemy skill
+	Alchemical recipes are randomized each game. They can be discovered by trial and
+	error or by using a scroll of alchemy. By using a conical flask while standing
+	above water, it is also possible to test an alchemical recipe without using up
+	the potions involved.
+	Certain recipes are 'difficult': for difficult recipes, the chance of success
+	scales with the player's skill at alchemy. The alchemy skill is trained by
+	discovering a new alchemical recipe through trial and error (with or without
+	a conical flask).
+	Once learned, recipes are listed on the Discoveries page.
+	Scrolls of alchemy cannot be written, but scrolls of alchemy and conical flasks
+	can be found in the inventory of Q-class monsters.
+Added #wizshowalchemy command
+	This command shows all alchemical recipes in the current game. It is exclusive
+	to wizard mode.
+Added Alchemist role.
+	Alchemists have a deep understanding of the materials and energies of the
+	universe. Using their potions and laboratory equipment, alchemists can
+	neutralize enemies, transform objects and even mutate their own bodies.
+	Alchemists are neutral or chaotic, and can be human, elvish, gnomish or orcish.
+	Their special spell is polymorph, and their crowning gift is a spellbook of polymorph.
+	The first sacrifice gift for Alchemists is Sourcoil: a rubber hose which does double
+	damage to targets which are not acid resistant.
+	On the Alchemist quest, Maria tasks the player with fighting Unbioctium for
+	the Stone of Philosophers, a neutral amethyst.
+	The Alchemist starting inventory is slightly inspired by the Drunk role in
+	NetHack-- and SLASHTHEM.
+Added the Stone of Philosophers
+	When carried, the Stone of Philosophers grants acid resistance and polymorph
+	control. When invoked, it can change the material of a carried object, similar
+	to a transmuter.
 
 Platform- and/or Interface-Specific New Features
 ------------------------------------------------
@@ -141,6 +172,10 @@ Imported Castle Dungeon from the Lethe patch as a Valley of the Dead variant.
 Imported 2 variants of the Oracle level from xNetHack.
 Imported Lost Tomb from SLASHEM via SpliceHack as a Valley of the Dead variant.
 	Modified the layout significantly to have all the features of the Valley of the Dead.
+Imported potion-coated projectiles from SpliceHack.
+	The special effect of potions of oil was left out. Most other potion-coatings
+	including drugged projectiles (potion of sleeping) and envenomed projectiles
+	(potion of paralysis) still work.
 
 Code Cleanup and Reorganization
 -------------------------------

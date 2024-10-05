@@ -50,6 +50,8 @@ cost(struct obj *otmp)
         return 20;
     case SCR_GENOCIDE:
         return 30;
+    case SCR_ALCHEMY:
+        return 1000; /* Intentionally too difficult to write. */
     case SCR_BLANK_PAPER:
     default:
         impossible("You can't write such a weird scroll!");

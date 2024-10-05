@@ -40,6 +40,7 @@ static const char *const artifact_names[] = {
 #define     PHYS(a,b)   {0,AD_PHYS,a,b}         /* physical */
 #define     DRLI(a,b)   {0,AD_DRLI,a,b}         /* life drain */
 #define     COLD(a,b)   {0,AD_COLD,a,b}
+#define     ACID(a,b)   {0,AD_ACID,a,b}
 #define     FIRE(a,b)   {0,AD_FIRE,a,b}
 #define     ELEC(a,b)   {0,AD_ELEC,a,b}         /* electrical shock */
 #define     STUN(a,b)   {0,AD_STUN,a,b}         /* magical attack */
@@ -127,6 +128,11 @@ static NEARDATA struct artifact artilist[] = {
       FIRE(5, 0), FIRE(0, 0), NO_CARY, 0, A_NONE, NON_PM, NON_PM, 3000L,
       NO_COLOR, FIRE_BRAND),
 
+    /* Similar to the brands, but weaker and aligned*/
+    A("Sourcoil", RUBBER_HOSE, (SPFX_RESTR | SPFX_ATTK | SPFX_DEFN), 0, 0,
+      ACID(5, 0), ACID(0, 0), NO_CARY, 0, A_CHAOTIC, PM_ALCHEMIST, NON_PM, 1000L,
+      NO_COLOR, SOURCOIL),
+
     A("Dragonbane", BROADSWORD,
       (SPFX_RESTR | SPFX_DCLAS | SPFX_REFLECT), 0, S_DRAGON,
       PHYS(5, 0), NO_DFNS, NO_CARY, 0, A_NONE, NON_PM, NON_PM, 500L,
@@ -190,6 +196,11 @@ static NEARDATA struct artifact artilist[] = {
       (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL), (SPFX_ESP | SPFX_HSPDAM), 0,
       NO_ATTK, NO_DFNS, CARY(AD_MAGM), INVIS, A_LAWFUL, PM_ARCHEOLOGIST,
       NON_PM, 2500L, NO_COLOR, ORB_OF_DETECTION),
+
+    A("The Stone of Philosophers", AMETHYST,
+      (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL), (SPFX_PCTRL), 0,
+      NO_ATTK, NO_DFNS, CARY(AD_ACID), TRANSMUTE, A_NEUTRAL, PM_ALCHEMIST,
+      NON_PM, 5000L, NO_COLOR, STONE_OF_PHILOSOPHERS),
 
     A("The Heart of Ahriman", LUCKSTONE,
       (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL), (SPFX_STLTH | SPFX_HALRES), 0,
@@ -295,6 +306,7 @@ static NEARDATA struct artifact artilist[] = {
 #undef PHYS
 #undef DRLI
 #undef COLD
+#undef ACID
 #undef FIRE
 #undef ELEC
 #undef STUN

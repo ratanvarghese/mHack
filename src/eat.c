@@ -2717,12 +2717,18 @@ doeat_nonfood(struct obj *otmp)
     } else if (objects[otmp->otyp].oc_material == PAPER)
         nodelicious = TRUE;
 
-    if (otmp->oclass == WEAPON_CLASS && otmp->opoisoned) {
+    if (otmp->opoisoned == POT_SICKNESS) {
         pline("Ecch - that must have been poisonous!");
         if (!Poison_resistance) {
             poison_strdmg(rnd(4), rnd(15), xname(otmp), KILLED_BY_AN);
         } else
             You("seem unaffected by the poison.");
+    } else if (otmp->opoisoned) {
+        struct obj *pseudo = mksobj(otmp->opoisoned, FALSE, FALSE);
+        otmp->blessed = 0;
+        otmp->cursed = 1;
+        pline("Acck - that tasted funny!");
+        peffects(pseudo);
     } else if (!nodelicious) {
         pline("%s%s is delicious!",
               (obj_is_pname(otmp)
@@ -2760,10 +2766,12 @@ doeat(void)
         int res = edibility_prompts(otmp);
 
         if (res) {
-            Your(
-               "%s stops tingling and your sense of smell returns to normal.",
-                 body_part(NOSE));
-            u.uedibility = 0;
+            if(!Role_if(PM_ALCHEMIST)) {
+                Your(
+                    "%s stops tingling and your sense of smell returns to normal.",
+                     body_part(NOSE));
+                u.uedibility = 0;
+            }
             if (res == 1)
                 return ECMD_OK;
         }

@@ -518,6 +518,7 @@ struct _hitmon_data {
     boolean lightobj;
     int material;
     int jousting;
+    int specialpoison;
     struct obj *hated_obj;
     boolean hittxt;
     boolean get_dmg_bonus;

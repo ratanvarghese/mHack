@@ -5,6 +5,15 @@
 
 #include "hack.h"
 
+#define MAX_ALCHEMIC_RECIPES 255
+#define ALCHEMIC_DISCO_EMPTY 0
+#define ALCHEMIC_DISCO_OFFSET 1
+#define ALCHEMIC_DISCO_SAMPLE 32
+
+staticfn boolean alchemy_skill_check(void);
+staticfn void set_recipe(int, int, int, uint16);
+staticfn int QSORTCALLBACK recipe_cmp(const genericptr, const genericptr);
+staticfn int seek_alchemic_recipe(int, int);
 staticfn long itimeout(long);
 staticfn long itimeout_incr(long, int);
 staticfn void hallucinatory_redraw(void);
@@ -49,6 +58,300 @@ staticfn int potion_dip(struct obj *obj, struct obj *potion);
    any potions [reinitialized every time it's used so does not need to
    be placed in struct instance_globals gd] */
 static int drink_ok_extra = 0;
+
+static int last_assigned_recipe = -1;
+static uint16 recipe_disco[MAX_ALCHEMIC_RECIPES];
+static struct alchemic_recipe recipe_list[MAX_ALCHEMIC_RECIPES];
+
+staticfn boolean
+alchemy_skill_check(void)
+{
+    int cutoff = 6;
+    switch(P_SKILL(P_ALCHEMY)) {
+    case P_MASTER:
+    case P_GRAND_MASTER:
+    case P_EXPERT:
+        cutoff = 1;
+        break;
+    case P_SKILLED:
+        cutoff = 2;
+        break;
+    case P_BASIC:
+        cutoff = 4;
+        break;
+    case P_ISRESTRICTED:
+    case P_UNSKILLED:
+    default:
+        cutoff = 5;
+    }
+    return rnd(6) > cutoff;
+}
+
+staticfn void
+set_recipe(int input0_otyp, int input1_otyp, int output_otyp, uint16 r_flags)
+{
+    int index = last_assigned_recipe + 1;
+    if(index < 0 || index >= MAX_ALCHEMIC_RECIPES) {
+        panic("set_recipe: invalid index: (%d)", index);
+    }
+    if(recipe_list[index].flags & ALCHEMIC_RECIPE_ASSIGNED) {
+        panic("set_recipe: assigning at index %d twice.", index);
+    }
+    if(input0_otyp < FIRST_OBJECT) {
+        panic("set_recipe: invalid input0_otyp (%d)", input0_otyp);
+    }
+    if(input1_otyp < FIRST_ALCHEMIC_POTION || input1_otyp > LAST_POTION) {
+        panic("set_recipe: invalid input1_otyp (%d)", input1_otyp);
+    }
+    if(output_otyp < FIRST_ALCHEMIC_POTION || output_otyp > LAST_POTION) {
+        panic("set_recipe: invalid output_otyp (%d)", output_otyp);
+    }
+    if(input0_otyp == input1_otyp) {
+        panic("set_recipe: input0_otyp == input1_otyp (%d)", input1_otyp);
+    }
+    recipe_list[index].input0 = input0_otyp;
+    recipe_list[index].input1 = input1_otyp;
+    recipe_list[index].output = output_otyp;
+    recipe_list[index].flags = (ALCHEMIC_RECIPE_ASSIGNED | r_flags);
+    last_assigned_recipe = index;
+}
+
+staticfn int QSORTCALLBACK
+recipe_cmp(const genericptr v1, const genericptr v2)
+{
+    struct alchemic_recipe r1 = *(const struct alchemic_recipe *) v1;
+    struct alchemic_recipe r2 = *(const struct alchemic_recipe *) v2;
+    int r1_assigned = (r1.flags & ALCHEMIC_RECIPE_ASSIGNED);
+    int r2_assigned = (r2.flags & ALCHEMIC_RECIPE_ASSIGNED);
+    if(!r1_assigned || !r2_assigned) {
+        return r2_assigned - r1_assigned;
+    }
+    if(r1.input0 != r2.input0) {
+        return (r1.input0 > r2.input0) - (r1.input0 < r2.input0);
+    }
+    if(r1.input1 != r2.input1) {
+        return (r1.input1 > r2.input1) - (r1.input1 < r2.input1);
+    }
+    return (r1.output > r2.output) - (r1.output < r2.output);
+}
+
+int max_assigned_alchemic_recipe(void) {
+    return last_assigned_recipe;
+}
+
+void init_alchemic_recipes(void) {
+    int i, j, output;
+    uint16 r_flags;
+    (void) memset((genericptr_t) &recipe_disco, ALCHEMIC_DISCO_EMPTY, sizeof recipe_disco);
+    (void) memset((genericptr_t) &recipe_list, 0, sizeof recipe_list);
+
+    last_assigned_recipe = -1;
+    set_recipe(UNICORN_HORN, POT_SICKNESS, POT_FRUIT_JUICE, 0);
+    set_recipe(UNICORN_HORN, POT_HALLUCINATION, POT_WATER, 0);
+    set_recipe(UNICORN_HORN, POT_BLINDNESS, POT_WATER, 0);
+    set_recipe(UNICORN_HORN, POT_CONFUSION, POT_WATER, 0);
+    set_recipe(AMETHYST, POT_WATER, POT_POLYMORPH, ALCHEMIC_RECIPE_ARTIFACT0);
+
+    for(i = FIRST_ALCHEMIC_POTION; i <= LAST_ALCHEMIC_POTION; i++) {
+        for(j = (i + 1); j <= LAST_ALCHEMIC_POTION; j++) {
+            if(objects[i].oc_magic && objects[j].oc_magic) {
+                output = rn1(LAST_ALCHEMIC_POTION - FIRST_ALCHEMIC_POTION + 1, FIRST_ALCHEMIC_POTION);
+                r_flags = (rn2(100) < (objects[output].oc_cost/10)) ? ALCHEMIC_RECIPE_DIFFICULT : 0;
+                set_recipe(i, j, output, r_flags | ALCHEMIC_RECIPE_DISCOVERY);
+            }
+        }
+
+        if(i != POT_SICKNESS) {
+            set_recipe(i, POT_SICKNESS, POT_SICKNESS, ALCHEMIC_RECIPE_DISCOVERY);
+        }
+        if(i != POT_FRUIT_JUICE && i != POT_SICKNESS && objects[i].oc_cost < 150) {
+            r_flags = (i == POT_BOOZE) ? 0 : ALCHEMIC_RECIPE_DIFFICULT;
+            set_recipe(i, POT_FRUIT_JUICE, i, r_flags | ALCHEMIC_RECIPE_DISCOVERY);
+        }
+
+        if(i == POT_BOOZE) {
+            set_recipe(AMETHYST, i, POT_FRUIT_JUICE, 0);
+        } else {
+            set_recipe(AMETHYST, i, POT_POLYMORPH, ALCHEMIC_RECIPE_ARTIFACT0);
+        }
+    }
+
+    qsort(recipe_list, MAX_ALCHEMIC_RECIPES, sizeof (struct alchemic_recipe), recipe_cmp);
+}
+
+void save_alchemic_recipes(NHFILE * nhfp) {
+    bwrite(nhfp->fd, (genericptr_t) recipe_disco, sizeof recipe_disco);
+    bwrite(nhfp->fd, (genericptr_t) recipe_list, sizeof recipe_list);
+}
+
+void restore_alchemic_recipes(NHFILE * nhfp) {
+    int i;
+
+    mread(nhfp->fd, (genericptr_t) recipe_disco, sizeof recipe_disco);
+    mread(nhfp->fd, (genericptr_t) recipe_list, sizeof recipe_list);
+
+    for(i = 0; i < MAX_ALCHEMIC_RECIPES; i++) {
+        if((recipe_list[i].flags & ALCHEMIC_RECIPE_ASSIGNED)) {
+            last_assigned_recipe = i;
+        }
+    }
+}
+
+struct alchemic_recipe *get_alchemic_recipe(int index) {
+    return (index < 0 || index >= MAX_ALCHEMIC_RECIPES) ? NULL : &recipe_list[index];
+}
+
+staticfn
+int seek_alchemic_recipe(int input0_otyp, int input1_otyp) {
+    int i;
+    for(i = 0; i < MAX_ALCHEMIC_RECIPES; i++) {
+        if(recipe_list[i].input0 == input0_otyp && recipe_list[i].input1 == input1_otyp) {
+            return i;
+        }
+        if(recipe_list[i].input0 == input1_otyp && recipe_list[i].input1 == input0_otyp) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+boolean discover_recipe(int recipe_index) {
+    struct alchemic_recipe *r = get_alchemic_recipe(recipe_index);
+    int di;
+    if(r == NULL || (r->flags & ALCHEMIC_RECIPE_KNOWN) || !(r->flags & ALCHEMIC_RECIPE_DISCOVERY)) {
+        return FALSE;
+    }
+    r->flags = (r->flags | ALCHEMIC_RECIPE_KNOWN);
+    for(di = 0; di < MAX_ALCHEMIC_RECIPES; di++) {
+        if(recipe_disco[di] == (recipe_index + ALCHEMIC_DISCO_OFFSET)) {
+            impossible("Discovered alchemic formula twice: %d", recipe_index);
+        }
+        if(recipe_disco[di] == ALCHEMIC_DISCO_EMPTY) {
+            recipe_disco[di] = (recipe_index + ALCHEMIC_DISCO_OFFSET);
+            break;
+        }
+    }
+    use_skill(P_ALCHEMY, 1);
+    exercise(A_WIS, TRUE);
+    return TRUE;
+}
+
+boolean discover_random_recipe(int target_output) {
+    int ri;
+    int si = 0;
+    struct alchemic_recipe *r = NULL;
+    uint16 sample[ALCHEMIC_DISCO_SAMPLE];
+    (void) memset((genericptr_t) &sample, ALCHEMIC_DISCO_EMPTY, sizeof sample);
+    for(ri = 0; ri <= last_assigned_recipe && si < ALCHEMIC_DISCO_SAMPLE; ri++) {
+        r = get_alchemic_recipe(ri);
+        if((target_output == STRANGE_OBJECT) || (target_output == r->output)) {
+            if(r->flags == (ALCHEMIC_RECIPE_ASSIGNED | ALCHEMIC_RECIPE_DISCOVERY)) {
+                sample[si] = ri + ALCHEMIC_DISCO_OFFSET;
+                si++;
+            }
+        }
+    }
+    if(si == 0) {
+        if (target_output == STRANGE_OBJECT) {
+            return FALSE;
+        } else {
+            return discover_random_recipe(STRANGE_OBJECT);
+        }
+    } else {
+        return discover_recipe(sample[rn2(si)] - ALCHEMIC_DISCO_OFFSET);
+    }
+}
+
+/* display a list of discovered alchemic recipes; return their count */
+int
+disp_alchemic_recipe_discoveries(
+    winid tmpwin) /* supplied by dodiscover(); type is NHW_TEXT */
+{
+    int i;
+    char buf[BUFSZ];
+    struct alchemic_recipe *r;
+    for (i = 0; i < MAX_ALCHEMIC_RECIPES; i++) {
+        if (recipe_disco[i] == ALCHEMIC_DISCO_EMPTY)
+            break; /* empty slot implies end of list */
+        if (tmpwin == WIN_ERR)
+            continue; /* for WIN_ERR, we just count */
+
+        if (i == 0)
+            putstr(tmpwin, iflags.menu_headings.attr, "Alchemic Recipes");
+
+        r = get_alchemic_recipe(recipe_disco[i] - ALCHEMIC_DISCO_OFFSET);
+        Sprintf(buf, "  %s + %s = %s",
+                    alchemic_typename(r->input0),
+                    alchemic_typename(r->input1),
+                    alchemic_typename(r->output)
+                );
+        putstr(tmpwin, 0, buf);
+    }
+    return i;
+}
+
+int
+use_conical_flask(struct obj *flask)
+{
+    uchar here = levl[u.ux][u.uy].typ;
+    boolean at_pool = is_pool(u.ux, u.uy),
+            at_fountain = IS_FOUNTAIN(here), at_sink = IS_SINK(here),
+            at_puddle = IS_PUDDLE(here),
+            at_here = (at_pool || at_fountain || at_sink || at_puddle);
+    char c = '\0';
+    char qbuf[QBUFSZ];
+    struct obj *potion1;
+    struct obj *potion2;
+    short mixture;
+
+    if(Blind) {
+        pline("You wouldn't be able to see the result");
+        return ECMD_OK;
+    }
+    pline("Alchemic tests require a source of water.");
+    if(!at_here) {
+        if (carrying(POT_WATER) && objects[POT_WATER].oc_name_known) {
+            pline("Better not waste bottled water for that.");
+        }
+        return ECMD_OK;
+    }
+    if (!can_reach_floor(FALSE)) {
+        You("can't reach the water.");
+        return ECMD_OK;
+    }
+
+    Sprintf(qbuf, "Use %s for the test?",
+        (at_fountain ? "water from the fountain" : "the water below you")
+    );
+    c = yn_function(qbuf, ynqchars, 'q', TRUE);
+    if(c != 'y') {
+        return ECMD_CANCEL;
+    }
+    pline("You fill the %s with water.", xname(flask));
+    potion1 = getobj("sample first", drink_ok, GETOBJ_NOFLAGS);
+    if (!potion1)
+        return ECMD_CANCEL;
+    potion2 = getobj("sample second", drink_ok, GETOBJ_NOFLAGS);
+    if (!potion2)
+        return ECMD_CANCEL;
+    if (potion1->otyp == potion2->otyp) {
+        pline("Those are the same kind of potion!");
+        return ECMD_CANCEL;
+    }
+    pline("You pour a drop of each potion into the %s.", xname(flask));
+    mixture = mixtype(potion1, potion2);
+    if(mixture == STRANGE_OBJECT) {
+        pline("As you swirl the flask, nothing interesting happens.");
+    } else {
+        pline("As you swirl the flask, the mixture looks %s.",
+            hcolor(OBJ_DESCR(objects[mixture])));
+        if(discover_recipe(seek_alchemic_recipe(potion1->otyp, potion2->otyp))) {
+            pline("Eureka! You discovered a new alchemic formula!");
+        }
+    }
+    You("toss aside the contaminated water.");
+    return ECMD_TIME;
+}
 
 /* force `val' to be within valid range for intrinsic timeout value */
 staticfn long
@@ -1677,8 +1980,9 @@ potionhit(struct monst *mon, struct obj *obj, int how)
     int distance, tx, ty;
     struct obj *saddle = (struct obj *) 0;
     boolean hit_saddle = FALSE, your_fault = (how <= POTHIT_HERO_THROW);
+    boolean injection = (how == POTHIT_HERO_WEP || how == POTHIT_MONST_WEP);
 
-    if (isyou) {
+    if (isyou && !injection) {
         tx = u.ux, ty = u.uy;
         distance = 0;
         pline_The("%s crashes on your %s and breaks into shards.", botlnam,
@@ -1687,7 +1991,7 @@ potionhit(struct monst *mon, struct obj *obj, int how)
                (how == POTHIT_OTHER_THROW) ? "propelled potion" /* scatter */
                                            : "thrown potion",
                KILLED_BY_AN);
-    } else {
+    } else if (!injection) {
         tx = mon->mx, ty = mon->my;
         /* sometimes it hits the saddle */
         if (((mon->misc_worn_check & W_SADDLE)
@@ -1722,10 +2026,16 @@ potionhit(struct monst *mon, struct obj *obj, int how)
         }
         if (rn2(5) && mon->mhp > 1 && !hit_saddle)
             mon->mhp--;
+    } else if (isyou) {
+        tx = u.ux, ty = u.uy;
+        distance = distu(tx, ty);
+    } else {
+        tx = mon->mx, ty =mon->my;
+        distance = distu(tx, ty);
     }
 
     /* oil doesn't instantly evaporate; Neither does a saddle hit */
-    if (obj->otyp != POT_OIL && !hit_saddle && cansee(tx, ty))
+    if (!injection && obj->otyp != POT_OIL && !hit_saddle && cansee(tx, ty))
         pline("%s.", Tobjnam(obj, "evaporate"));
 
     if (isyou) {
@@ -1749,6 +2059,33 @@ potionhit(struct monst *mon, struct obj *obj, int how)
                 dmg = d(obj->cursed ? 2 : 1, obj->blessed ? 4 : 8);
                 losehp(Maybe_Half_Phys(dmg), "potion of acid", KILLED_BY_AN);
             }
+            break;
+        case POT_GAIN_LEVEL:
+            if (!obj->cursed) {
+                pluslvl(FALSE);
+                /* blessed potions place you at a random spot in the
+                middle of the new level instead of the low point */
+                if (obj->blessed)
+                    u.uexp = rndexp(TRUE);
+                break;
+            }
+            if ((ledger_no(&u.uz) == 1 && u.uhave.amulet)
+                || Can_rise_up(u.ux, u.uy, &u.uz)) {
+                if (ledger_no(&u.uz) == 1) {
+                    You("rise up, through the %s!", ceiling(u.ux, u.uy));
+                    schedule_goto(&earth_level, UTOTYPE_NONE, (char *) 0, (char *) 0);
+                } else {
+                    register int newlev = depth(&u.uz) - 1;
+                    d_level newlevel;
+                    get_level(&newlevel, newlev);
+                    if (on_level(&newlevel, &u.uz)) {
+                        break;
+                    } else
+                        You("rise up, through the %s!", ceiling(u.ux, u.uy));
+                    schedule_goto(&newlevel, UTOTYPE_NONE, (char *) 0, (char *) 0);
+                }
+            } else
+                You("have an uneasy feeling.");
             break;
         }
     } else if (hit_saddle && saddle) {
@@ -1846,7 +2183,7 @@ potionhit(struct monst *mon, struct obj *obj, int how)
                 /* really should be rnd(5) for consistency with players
                  * breathing potions, but...
                  */
-                paralyze_monst(mon, rnd(25));
+                paralyze_monst(mon, rnd(5));
             }
             break;
         case POT_SPEED:
@@ -1922,8 +2259,31 @@ potionhit(struct monst *mon, struct obj *obj, int how)
         case POT_POLYMORPH:
             (void) bhitm(mon, obj);
             break;
-        /*
         case POT_GAIN_LEVEL:
+            if (obj->cursed) {
+                if (Can_rise_up(mon->mx, mon->my, &u.uz)) {
+                    register int tolev = depth(&u.uz) - 1;
+                    d_level tolevel;
+                    get_level(&tolevel, tolev);
+                    if (on_level(&tolevel, &u.uz))
+                        break;
+                    if (canseemon(mon)) {
+                        pline("%s rises up, through the %s!", Monnam(mon),
+                            ceiling(mon->mx, mon->my));
+                    }
+                    migrate_to_level(mon, ledger_no(&tolevel), MIGR_RANDOM,
+                                    (coord *) 0);
+                    break;
+                } else if (canseemon(mon)) {
+                    pline("%s looks uneasy.", Monnam(mon));
+                    break;
+                }
+            }
+            if (canseemon(mon))
+                pline("%s seems more experienced.", Monnam(mon));
+            grow_up(mon, (struct monst *) 0);
+            break;
+        /*
         case POT_LEVITATION:
         case POT_FRUIT_JUICE:
         case POT_MONSTER_DETECTION:
@@ -1942,6 +2302,7 @@ potionhit(struct monst *mon, struct obj *obj, int how)
 
     /* Note: potionbreathe() does its own docall() */
     if ((distance == 0 || (distance < 3 && !rn2((1+ACURR(A_DEX))/2)))
+        && !injection
         && (!breathless(gy.youmonst.data) || haseyes(gy.youmonst.data)))
         potionbreathe(obj);
     else if (obj->dknown && cansee(tx, ty))
@@ -2152,93 +2513,25 @@ potionbreathe(struct obj *obj)
     return;
 }
 
-/* returns the potion type when o1 is dipped in o2 */
+/* returns the potion type when o0 is dipped in o1 */
 staticfn short
-mixtype(struct obj *o1, struct obj *o2)
+mixtype(struct obj *o0, struct obj *o1)
 {
-    int o1typ = o1->otyp, o2typ = o2->otyp;
-
-    /* cut down on the number of cases below */
-    if (o1->oclass == POTION_CLASS
-        && (o2typ == POT_GAIN_LEVEL || o2typ == POT_GAIN_ENERGY
-            || o2typ == POT_HEALING || o2typ == POT_EXTRA_HEALING
-            || o2typ == POT_FULL_HEALING || o2typ == POT_ENLIGHTENMENT
-            || o2typ == POT_FRUIT_JUICE)) {
-        /* swap o1 and o2 */
-        o1typ = o2->otyp;
-        o2typ = o1->otyp;
+    int recipe_index = seek_alchemic_recipe(o0->otyp, o1->otyp);
+    struct alchemic_recipe *r = get_alchemic_recipe(recipe_index);
+    boolean input0_artifact = (r && (r->input0 == o0->otyp)) ? o0->oartifact : o1->oartifact;
+    boolean input1_artifact = (r && (r->input1 == o1->otyp)) ? o1->oartifact : o0->oartifact;
+    if(r == NULL) {
+        return STRANGE_OBJECT;
+    } else if((r->flags & ALCHEMIC_RECIPE_ARTIFACT0) && !input0_artifact) {
+        return STRANGE_OBJECT;
+    } else if((r->flags & ALCHEMIC_RECIPE_ARTIFACT1) && !input1_artifact) {
+        return STRANGE_OBJECT;
+    } else if((r->flags & ALCHEMIC_RECIPE_DIFFICULT) && !alchemy_skill_check()) {
+        return STRANGE_OBJECT;
+    } else {
+        return r->output;
     }
-
-    switch (o1typ) {
-    case POT_HEALING:
-        if (o2typ == POT_SPEED)
-            return POT_EXTRA_HEALING;
-        /*FALLTHRU*/
-    case POT_EXTRA_HEALING:
-    case POT_FULL_HEALING:
-        if (o2typ == POT_GAIN_LEVEL || o2typ == POT_GAIN_ENERGY)
-            return (o1typ == POT_HEALING) ? POT_EXTRA_HEALING
-                   : (o1typ == POT_EXTRA_HEALING) ? POT_FULL_HEALING
-                     : POT_GAIN_ABILITY;
-        /*FALLTHRU*/
-    case UNICORN_HORN:
-        switch (o2typ) {
-        case POT_SICKNESS:
-            return POT_FRUIT_JUICE;
-        case POT_HALLUCINATION:
-        case POT_BLINDNESS:
-        case POT_CONFUSION:
-            return POT_WATER;
-        }
-        break;
-    case AMETHYST: /* "a-methyst" == "not intoxicated" */
-        if (o2typ == POT_BOOZE)
-            return POT_FRUIT_JUICE;
-        break;
-    case POT_GAIN_LEVEL:
-    case POT_GAIN_ENERGY:
-        switch (o2typ) {
-        case POT_CONFUSION:
-            return (rn2(3) ? POT_BOOZE : POT_ENLIGHTENMENT);
-        case POT_HEALING:
-            return POT_EXTRA_HEALING;
-        case POT_EXTRA_HEALING:
-            return POT_FULL_HEALING;
-        case POT_FULL_HEALING:
-            return POT_GAIN_ABILITY;
-        case POT_FRUIT_JUICE:
-            return POT_SEE_INVISIBLE;
-        case POT_BOOZE:
-            return POT_HALLUCINATION;
-        }
-        break;
-    case POT_FRUIT_JUICE:
-        switch (o2typ) {
-        case POT_SICKNESS:
-            return POT_SICKNESS;
-        case POT_ENLIGHTENMENT:
-        case POT_SPEED:
-            return POT_BOOZE;
-        case POT_GAIN_LEVEL:
-        case POT_GAIN_ENERGY:
-            return POT_SEE_INVISIBLE;
-        }
-        break;
-    case POT_ENLIGHTENMENT:
-        switch (o2typ) {
-        case POT_LEVITATION:
-            if (rn2(3))
-                return POT_GAIN_LEVEL;
-            break;
-        case POT_FRUIT_JUICE:
-            return POT_BOOZE;
-        case POT_BOOZE:
-            return POT_CONFUSION;
-        }
-        break;
-    }
-
-    return STRANGE_OBJECT;
 }
 
 /* getobj callback for object to be dipped (not the thing being dipped into,
@@ -2500,6 +2793,8 @@ potion_dip(struct obj *obj, struct obj *potion)
         return ECMD_TIME;
     } else if (obj->oclass == POTION_CLASS && obj->otyp != potion->otyp) {
         int amt = (int) obj->quan;
+        int old_otyp1 = obj->otyp;
+        int old_otyp2 = potion->otyp;
         boolean magic;
 
         mixture = mixtype(obj, potion);
@@ -2534,9 +2829,35 @@ potion_dip(struct obj *obj, struct obj *potion)
               thesimpleoname(potion));
         /* get rid of 'dippee' before potential perm_invent updates */
         useup(potion); /* now gone */
-        /* Mixing potions is dangerous...
-           KMH, balance patch -- acid is particularly unstable */
-        if (obj->cursed || obj->otyp == POT_ACID || !rn2(10)) {
+
+        if (mixture != STRANGE_OBJECT) {
+            obj->blessed = obj->cursed = obj->bknown = 0;
+            if (Blind || Hallucination)
+                obj->dknown = 0;
+            obj->otyp = mixture;
+            obj->odiluted = (obj->otyp != POT_WATER);
+            if (obj->otyp == POT_WATER && !Hallucination) {
+                pline_The("mixture bubbles%s.", Blind ? "" : ", then clears");
+            } else if (!Blind) {
+                pline_The("mixture looks %s.",
+                          hcolor(OBJ_DESCR(objects[obj->otyp])));
+                if(discover_recipe(seek_alchemic_recipe(old_otyp1, old_otyp2))) {
+                    pline("Eureka! You discovered a new alchemic formula!");
+                }
+            }
+
+            /* this is required when 'obj' was split off from a bigger stack,
+               so that 'obj' will now be assigned its own inventory slot;
+               it has a side-effect of merging 'obj' into another compatible
+               stack if there is one, so we do it even when no split has
+               been made in order to get the merge result for both cases;
+               as a consequence, mixing while Fumbling drops the mixture */
+            freeinv(obj);
+            hold_potion(obj, "You drop %s!", doname(obj), (const char *) 0);
+            return ECMD_TIME;
+        } else if (obj->cursed || obj->otyp == POT_ACID || !alchemy_skill_check()) {
+            /* Mixing potions is dangerous...
+               KMH, balance patch -- acid is particularly unstable */
             /* it would be better to use up the whole stack in advance
                of the message, but we can't because we need to keep it
                around for potionbreathe() [and we can't set obj->in_use
@@ -2551,58 +2872,12 @@ potion_dip(struct obj *obj, struct obj *potion)
             losehp(amt + rnd(9), /* not physical damage */
                    "alchemic blast", KILLED_BY_AN);
             return ECMD_TIME;
-        }
-
-        obj->blessed = obj->cursed = obj->bknown = 0;
-        if (Blind || Hallucination)
-            obj->dknown = 0;
-
-        if (mixture != STRANGE_OBJECT) {
-            obj->otyp = mixture;
         } else {
-            struct obj *otmp;
-
-            switch (obj->odiluted ? 1 : rnd(8)) {
-            case 1:
-                obj->otyp = POT_WATER;
-                break;
-            case 2:
-            case 3:
-                obj->otyp = POT_SICKNESS;
-                break;
-            case 4:
-                otmp = mkobj(POTION_CLASS, FALSE);
-                obj->otyp = otmp->otyp;
-                /* oil uses obj->age field differently from other potions */
-                if (obj->otyp == POT_OIL || otmp->otyp == POT_OIL)
-                    fixup_oil(obj, otmp);
-                obfree(otmp, (struct obj *) 0);
-                break;
-            default:
-                useupall(obj);
-                pline_The("mixture %sevaporates.",
-                          !Blind ? "glows brightly and " : "");
-                return ECMD_TIME;
-            }
+            useupall(obj);
+            pline_The("mixture %sevaporates.",
+                      !Blind ? "glows brightly and " : "");
+            return ECMD_TIME;
         }
-        obj->odiluted = (obj->otyp != POT_WATER);
-
-        if (obj->otyp == POT_WATER && !Hallucination) {
-            pline_The("mixture bubbles%s.", Blind ? "" : ", then clears");
-        } else if (!Blind) {
-            pline_The("mixture looks %s.",
-                      hcolor(OBJ_DESCR(objects[obj->otyp])));
-        }
-
-        /* this is required when 'obj' was split off from a bigger stack,
-           so that 'obj' will now be assigned its own inventory slot;
-           it has a side-effect of merging 'obj' into another compatible
-           stack if there is one, so we do it even when no split has
-           been made in order to get the merge result for both cases;
-           as a consequence, mixing while Fumbling drops the mixture */
-        freeinv(obj);
-        hold_potion(obj, "You drop %s!", doname(obj), (const char *) 0);
-        return ECMD_TIME;
     }
 
     if (potion->otyp == POT_ACID && obj->otyp == CORPSE
@@ -2624,7 +2899,9 @@ potion_dip(struct obj *obj, struct obj *potion)
     }
 
     if (is_poisonable(obj)) {
-        if (potion->otyp == POT_SICKNESS && !obj->opoisoned) {
+        if (potion->otyp != POT_HEALING && potion->otyp != POT_EXTRA_HEALING
+            && potion->otyp != POT_FULL_HEALING && potion->otyp != POT_ACID 
+            && !obj->opoisoned) {
             char buf[BUFSZ];
 
             if (potion->quan > 1L)
@@ -2632,7 +2909,7 @@ potion_dip(struct obj *obj, struct obj *potion)
             else
                 Strcpy(buf, The(xname(potion)));
             pline("%s forms a coating on %s.", buf, the(xname(obj)));
-            obj->opoisoned = TRUE;
+            obj->opoisoned = potion->otyp;
             goto poof;
         } else if (obj->opoisoned && (potion->otyp == POT_HEALING
                                       || potion->otyp == POT_EXTRA_HEALING

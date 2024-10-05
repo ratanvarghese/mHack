@@ -26,6 +26,7 @@ staticfn boolean bane_applies(const struct artifact *, struct monst *)
 staticfn int spec_applies(const struct artifact *, struct monst *)
                                                                  NONNULLARG12;
 staticfn int invoke_ok(struct obj *);
+staticfn int transmute_ok(struct obj *);
 staticfn void nothing_special(struct obj *) NONNULLARG1;
 staticfn int arti_invoke(struct obj *);
 staticfn boolean Mb_hit(struct monst * magr, struct monst *mdef,
@@ -666,6 +667,8 @@ set_artifact_intrinsic(struct obj *otmp, boolean on, long wp_mask)
         mask = &EFire_resistance;
     else if (dtyp == AD_COLD)
         mask = &ECold_resistance;
+    else if (dtyp == AD_ACID)
+        mask = &EAcid_resistance;
     else if (dtyp == AD_ELEC)
         mask = &EShock_resistance;
     else if (dtyp == AD_MAGM)
@@ -818,6 +821,13 @@ set_artifact_intrinsic(struct obj *otmp, boolean on, long wp_mask)
         else {
             Gold_touch &= ~wp_mask;
             EHunger |= wp_mask;
+        }
+    }
+    if (spfx & SPFX_PCTRL) {
+        if (on) {
+            EPolymorph_control |= wp_mask;
+        } else {
+            EPolymorph_control &= ~wp_mask;
         }
     }
 
@@ -979,6 +989,8 @@ spec_applies(const struct artifact *weap, struct monst *mtmp)
             return !(yours ? Fire_resistance : resists_fire(mtmp));
         case AD_COLD:
             return !(yours ? Cold_resistance : resists_cold(mtmp));
+        case AD_ACID:
+            return !(yours ? Acid_resistance : resists_acid(mtmp));
         case AD_ELEC:
             return !(yours ? Shock_resistance : resists_elec(mtmp));
         case AD_MAGM:
@@ -1448,6 +1460,14 @@ artifact_hit(
         }
         return realizes_damage;
     }
+    if (attacks(AD_ACID, otmp)) {
+        if (realizes_damage) {
+            pline_The("sizzling hose %s %s%c",
+                      !gs.spec_dbon_applies ? "hits" : "melts", hittee,
+                      !gs.spec_dbon_applies ? '.' : '!');
+        }
+        return realizes_damage;
+    }
     if (attacks(AD_ELEC, otmp)) {
         if (realizes_damage)
             pline_The("massive hammer hits%s %s%c",
@@ -1691,6 +1711,23 @@ invoke_ok(struct obj *obj)
     if (obj->otyp == CRYSTAL_BALL)
         return GETOBJ_SUGGEST;
 
+    return GETOBJ_EXCLUDE;
+}
+
+/* getobj callback for object to be transmuted */
+staticfn int
+transmute_ok(struct obj *obj)
+{
+    int new_material;
+    if (!obj)
+        return GETOBJ_EXCLUDE;
+    if (obj->oartifact)
+        return GETOBJ_EXCLUDE;
+    for(new_material = 1; new_material < NUM_MATERIAL_TYPES; new_material++) {
+        if(obj->material != new_material && !valid_obj_material(obj, new_material)) {
+            return GETOBJ_SUGGEST;
+        }
+    }
     return GETOBJ_EXCLUDE;
 }
 
@@ -2011,6 +2048,20 @@ arti_invoke(struct obj *obj)
                 obj->age = svm.moves;
             }
             break;
+        case TRANSMUTE: {
+            struct obj *otmp = getobj("transmute", transmute_ok, GETOBJ_PROMPT);
+            if (!otmp) {
+                obj->age = 0;
+                return ECMD_CANCEL;
+            }
+            if(warp_material(otmp, TRUE, select_new_material(otmp))) {
+                pline("Your %s warp%s!", simpleonames(otmp), otmp->quan == 1 ? "s" : "");
+            } else {
+                nothing_special(obj);
+                return ECMD_TIME;
+            }
+            break;
+        }
         default:
             impossible("Unknown invoke power %d.", oart->inv_prop);
             break;
@@ -2164,6 +2215,7 @@ abil_to_adtyp(long *abil)
     } abil2adtyp[] = {
         { &EFire_resistance, AD_FIRE },
         { &ECold_resistance, AD_COLD },
+        { &EAcid_resistance, AD_ACID },
         { &EShock_resistance, AD_ELEC },
         { &EAntimagic, AD_MAGM },
         { &EDisint_resistance, AD_DISN },

@@ -443,6 +443,7 @@ extern struct nomakedefs_s nomakedefs;
 
 #ifndef MAX_MSG_HISTORY
 #define MAX_MSG_HISTORY 128 /* max # of lines in msg_history */
+
 #endif
 
 #include "color.h"

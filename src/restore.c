@@ -676,6 +676,7 @@ restgamestate(NHFILE *nhfp)
         Mread(nhfp->fd, svs.spl_book, (MAXSPELL + 1) * sizeof (struct spell));
     }
     restore_artifacts(nhfp);
+    restore_alchemic_recipes(nhfp);
     restore_oracles(nhfp);
     if (nhfp->structlevel) {
         Mread(nhfp->fd, svp.pl_character, sizeof svp.pl_character);

@@ -1086,6 +1086,12 @@ domonnoise(struct monst *mtmp)
                             ? "complains about unpleasant dungeon conditions."
                             : "asks you about the One Ring.";
                 break;
+            case PM_QUANTUM_MECHANIC:
+                pline_msg = "discusses electrons in a vapor of mercury.";
+                break;
+            case PM_GENETIC_ENGINEER:
+                pline_msg = "discusses the colors of pea flowers.";
+                break;
             case PM_ARCHEOLOGIST:
                 pline_msg =
                 "describes a recent article in \"Spelunker Today\" magazine.";

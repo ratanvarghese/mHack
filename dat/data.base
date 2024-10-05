@@ -87,6 +87,7 @@ agate*
 	rock.
 		[ The Columbia Encyclopedia, Sixth Edition ]
 alchemy
+alchemist
 	By and large, the only skill the alchemists of Ankh-Morpork had
 	discovered so far was the ability to turn gold into less gold.
 		[ Moving Pictures, by Terry Pratchett ]
@@ -3591,6 +3592,26 @@ shield of reflection
 	cut off her head and gave it to Minerva, who fixed it in the
 	middle of her Aegis.
 		[ Bulfinch's Mythology, by Thomas Bulfinch ]
+maria*
+	Called by many names throughout the centuries - the divine
+	Maria, Maria the Copt, or Maria the prophetess to name but
+	a few - she was credited with different writings by
+	Graeco-Egyptian, Byzantine, Arabic, and Latin alchemical
+	authors, who also attributed various technical innovations
+	to her. Zosimus of Panopolis (third to fourth centuries)
+	counted the woman among the Jews who openly wrote about
+	the alchemical art. He cites a Treatise on Furnaces ascribed
+	to Maria, which Zosimus extensively used as a reference
+	work for the description of different alchemical devices: in
+	particular, an alembic called tribikos, namely a still with
+	three reception vases and the kerotakis, an instrument where
+	metallic leaves were exposed to the vapors of dyeing substances.
+	Byzantine manuscripts preserve illustrations of these pieces of
+	equipment and the drawing of a kerotakis was interpreted by the
+	French chemist Marcelin Berthelot as an early reference to the
+	so-called bain-marie, even though this technical term never
+	occurs in Byzantine alchemical treatises.
+		[ Maria's Practica in Early Modern Alchemy, by Matteo Martelli ]
 melon
 	"What is it, Umbopa, son of a fool?" I shouted in Zulu.
 	"It is food and water, Macumazahn," and again he waved the
@@ -5367,6 +5388,14 @@ sting
 	"I will give you a name," he said to it, "and I shall call
 	you Sting."
 		[ The Hobbit, by J.R.R. Tolkien ]
+*stone of philosopher*
+*philosopher* stone
+	A simple rock, red as blood, which promised to turn pain
+	into delight, war into victory, and death into life. It was
+	a thinking person's dream, reason conquering all. And it was
+	in deference to this that it was called the Philosopher's
+	Stone.
+		[ Fullmetal Alchemist, Episode 1.19, "The Truth behind Truths" ]
 stormbringer
 	There were sounds in the distance, incongruent with the
 	sounds of even this nameless, timeless sea: thin sounds,
@@ -5428,6 +5457,14 @@ tengu
 	belligerent tengu were supposed to have been man's first
 	instructors in the use of arms.
 	  [ Mythical Beasts, by Deirdre Headon (The Leprechaun Library) ]
+teo
+trini
+tom
+	What if we accept our own weakness as humans to make a choice
+	and we anchor the resolution in some inanimate object to feel
+	relieved of the burden of taking charge of our own destiny?
+	  [ A World Without... Decisions (Un Mundo Sin... Decisiones),
+	    written by Matias Sinay and Chavo Saraintaris ]
 thoth
 	The Egyptian god of the moon and wisdom, Thoth is the patron
 	deity of scribes and of knowledge, including scientific,
@@ -5738,6 +5775,26 @@ tyr
 	search of prey.  They are tremendously strong; muscles bulge
 	beneath their thick, scaly hides and their powerful arms and
 	legs all end in great claws.
+unbioctium
+	Nomenclature of Elements of Atomic Numbers greater than 100
+
+	1. The name is derived directly from the atomic number of
+	the element using the following numerical roots:
+		0 = nil   3 = tri    6 = hex    9 = enn
+		1 = un    4 = quad   7 = sept
+		2 = bi    5 = pent   8 = oct
+	2. The roots are put together in the order of the digits
+	which make up the atomic number and terminated by 'ium' to
+	spell out the name. The final 'n' of 'enn' is elided when it
+	occurs before 'nil', and the final 'i' of 'bi' and of 'tri'
+	when it occurs before 'ium'.
+	3. The symbol of the element is composed of the initial
+	letters of the numerical roots which make up the name.
+	4. The root 'un' is pronounced with a long 'u', to rhyme
+	with 'moon'. In the element names each root is to be
+	pronounced separately.
+		[ Recommendations for the Naming of Elements
+		  of Atomic Numbers Greater Than 100, by J. Chatt ]
 *unicorn
 unicorn horn
 	Men have always sought the elusive unicorn, for the single
@@ -6192,6 +6249,28 @@ zruty
 # because they'll have matched entries above.  The usual three letter role
 # designation plus " ranks" should always find the set for that role.
 #
+alc* ranks
+alchemist
+bottle cleaner
+lab assistant
+brewer
+concoctor
+experimenter
+analytic chemist
+theoretic chemist
+discoverer
+elementalist
+	Alchemist ranks
+	  title             level
+	Bottle Cleaner     1 to 2
+	Lab Assistant      3 to 5
+	Brewer             6 to 9
+	Concotor          10 to 13
+	Experimenter      14 to 17
+	Analytic Chemist  18 to 21
+	Theoretic Chemist 22 to 25
+	Discoverer        26 to 29
+	Elementalist         30
 arc* ranks
 archeologist
 digger

@@ -161,6 +161,14 @@ mk_mplayer(struct permonst *ptr, coordxy x, coordxy y, boolean special)
             if (rn2(2))
                 weapon = BULLWHIP;
             break;
+        case PM_ALCHEMIST:
+            if (rn2(2))
+                weapon = UNICORN_HORN;
+            if (armor == YELLOW_DRAGON_SCALE_MAIL || armor == GREEN_DRAGON_SCALE_MAIL) {
+                armor = SILVER_DRAGON_SCALE_MAIL;
+            }
+            cloak = ALCHEMY_SMOCK;
+            break;
         case PM_BARBARIAN:
             if (rn2(2)) {
                 weapon = rn2(2) ? TWO_HANDED_SWORD : BATTLE_AXE;

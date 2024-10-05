@@ -1180,7 +1180,7 @@ break_armor(void)
                 useup(otmp);
             }
         }
-        if (uarmu) {
+        if ((otmp = uarmu) != 0) {
             if (otmp->material == SLIME) {
                 Your("shirt expands to fit you.");
             } else {

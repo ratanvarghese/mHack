@@ -900,10 +900,12 @@ TOOL("magic lamp",        "lamp", 0, 0, 1, 0, 15, 20, 50, COPPER, CLR_YELLOW,
 /* other tools */
 TOOL("expensive camera",    NoDes, 1, 0, 0, 1, 15, 12,200, PLASTIC, CLR_BLACK,
                                                             EXPENSIVE_CAMERA),
-TOOL("mirror",   "looking glass", 0, 0, 0, 0, 45, 13, 10, GLASS, HI_SILVER,
+TOOL("mirror",   "looking glass", 0, 0, 0, 0, 40, 13, 10, GLASS, HI_SILVER,
                                                                 MIRROR),
 TOOL("crystal ball", "glass orb", 0, 0, 1, 1, 15,150, 60, GLASS, HI_GLASS,
                                                                 CRYSTAL_BALL),
+TOOL("conical flask",      NoDes, 0, 0, 0, 0,  5, 13, 30, GLASS, HI_GLASS,
+                                                                CONICAL_FLASK),
 /* eyewear - tools which can be worn on the face; (!mrg, !chg, !mgc)
    worn lenses don't confer the Blinded property, blindfolds and towels do;
    wet towel can be used as a weapon but is not a weptool and uses obj->spe
@@ -1088,6 +1090,7 @@ FOOD("tin",                  75,  0, 10, 1, METAL,   0, HI_METAL, TIN),
            power, POTION_CLASS, prob, 0, 20, cost, 0, 0, 0, 0, 10, color, sn)
 POTION("gain ability",           "ruby",  1, 0, 40, 300, CLR_RED,
                                                         POT_GAIN_ABILITY),
+MARKER(FIRST_ALCHEMIC_POTION, POT_GAIN_ABILITY)
 POTION("restore ability",        "pink",  1, 0, 40, 100, CLR_BRIGHT_MAGENTA,
                                                         POT_RESTORE_ABILITY),
 POTION("confusion",            "orange",  1, CONFUSION, 40, 100, CLR_ORANGE,
@@ -1136,10 +1139,12 @@ POTION("acid",                  "white",  0, 0, 10, 250, CLR_WHITE,
                                                         POT_ACID),
 POTION("oil",                   "murky",  0, 0, 30, 250, CLR_BROWN,
                                                         POT_OIL),
+MARKER(LAST_ALCHEMIC_POTION, POT_OIL)
 /* fixed description
  */
 POTION("water",                 "clear",  0, 0, 80, 100, CLR_CYAN,
                                                         POT_WATER),
+MARKER(LAST_POTION, POT_WATER)
 #undef POTION
 
 /* scrolls ... */
@@ -1166,7 +1171,7 @@ SCROLL("taming",                   "PRIRUTSENIE",  1,  15, 200,
                                                         SCR_TAMING),
 SCROLL("genocide",                  "ELBIB YLOH",  1,  15, 300,
                                                         SCR_GENOCIDE),
-SCROLL("light",                 "VERR YED HORRE",  1,  90,  50,
+SCROLL("light",                 "VERR YED HORRE",  1,  80,  50,
                                                         SCR_LIGHT),
 SCROLL("teleportation",        "VENZAR BORGAVVE",  1,  55, 100,
                                                         SCR_TELEPORTATION),
@@ -1186,6 +1191,8 @@ SCROLL("earth",                          "KIRJE",  1,  18, 200,
                                                         SCR_EARTH),
 SCROLL("punishment",            "VE FORBRYDERNE",  1,  15, 300,
                                                         SCR_PUNISHMENT),
+SCROLL("alchemy",               "CIRLE ESNOHPLA",  1,  10, 300,
+                                                        SCR_ALCHEMY),
 SCROLL("charging",                "HACKEM MUCHE",  1,  15, 300,
                                                         SCR_CHARGING),
 SCROLL("stinking cloud",             "VELOX NEB",  1,  15, 300,
