@@ -820,7 +820,7 @@ set_artifact_intrinsic(struct obj *otmp, boolean on, long wp_mask)
         }
         else {
             Gold_touch &= ~wp_mask;
-            EHunger |= wp_mask;
+            EHunger &= ~wp_mask;
         }
     }
     if (spfx & SPFX_PCTRL) {
