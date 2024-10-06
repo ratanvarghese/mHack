@@ -2459,7 +2459,7 @@ breakobj(
     boolean explosion = FALSE;
 
     if (is_crackable(obj)) /* if erodeproof, erode_obj() will say so */
-        return (erode_obj(obj, armor_simple_name(obj), ERODE_CRACK,
+        return (erode_obj(obj, simple_typename(obj->otyp), ERODE_CRACK,
                           EF_DESTROY | EF_VERBOSE) == ER_DESTROYED);
 
     switch (obj->oclass == POTION_CLASS ? POT_WATER : obj->otyp) {
@@ -2621,66 +2621,6 @@ breakmsg(struct obj *obj, boolean in_view)
         break;
     }
 }
-
-/* Possibly destroy a glass object by its use in melee or thrown combat.
- * Return TRUE if destroyed.
- * Separate logic from breakobj because we are not unconditionally breaking the
- * object, and we also need to make sure it's removed from the inventory
- * properly. */
-staticfn boolean
-break_glass_obj(struct obj* obj)
-{
-    if (!breaktest(obj) || rn2(6))
-        return FALSE;
-    /* now we are definitely breaking it */
-
-    boolean your_fault = !svc.context.mon_moving;
-
-    /* remove its worn flags */
-    long unwornmask = obj->owornmask;
-    if (!unwornmask) {
-        impossible("breaking non-equipped glass obj?");
-        return FALSE;
-    }
-    if (carried(obj)) { /* hero's item */
-        if (obj->quan == 1L) {
-            if (obj == uwep) {
-                gu.unweapon = TRUE;
-            }
-            setworn(NULL, unwornmask);
-        }
-        update_inventory();
-    } else if (mcarried(obj)) { /* monster's item */
-        if (obj->quan == 1L) {
-            struct monst* mon = obj->ocarry;
-            mon->misc_worn_check &= ~unwornmask;
-            if (unwornmask & W_WEP) {
-                setmnotwielded(mon, obj);
-                possibly_unwield(mon, FALSE);
-            } else if (unwornmask & W_ARMG) {
-                mselftouch(mon, NULL, TRUE);
-            }
-            /* shouldn't really be needed but... */
-            update_mon_extrinsics(mon, obj, FALSE, FALSE);
-        }
-    } else {
-        impossible("breaking glass obj in melee but not in inventory?");
-        return FALSE;
-    }
-
-    if (obj->quan == 1L) {
-        obj->owornmask = 0;
-        pline("%s breaks into pieces!", upstart(yname(obj)));
-        obj_extract_self(obj); /* it's being destroyed */
-    } else {
-        pline("One of %s breaks into pieces!", yname(obj));
-    }
-    breakobj(obj, obj->ox, obj->oy, your_fault, TRUE);
-    if (carried(obj))
-        update_inventory();
-    return TRUE;
-}
-
 
 staticfn int
 throw_gold(struct obj *obj)

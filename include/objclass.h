@@ -197,8 +197,9 @@ extern NEARDATA struct objdescr obj_descr[NUM_OBJECTS + 1];
 /* is_flammable(otmp), is_rottable(otmp) in mkobj.c */
 #define is_rustprone(otmp) (otmp->material == IRON || otmp->material == COLD_IRON)
 #define is_crackable(otmp) \
-    (objects[(otmp)->otyp].oc_material == GLASS         \
-     && (otmp)->oclass == ARMOR_CLASS) /* erosion_matters() */
+    (otmp->material == GLASS              \
+     && ((otmp)->oclass == ARMOR_CLASS    \
+        || objects[(otmp)->otyp].oc_material != GLASS)) /* erosion_matters() */
 /* secondary damage: rot/acid/acid */
 #define is_corrodeable(otmp) \
     (otmp->material == COPPER || otmp->material == IRON)

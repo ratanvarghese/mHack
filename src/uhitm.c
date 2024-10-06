@@ -1032,10 +1032,10 @@ hmon_hitmon_weapon_melee(
      * this at the end so that other stuff doesn't have to check obj
      * && obj->whatever all the time */
     if (hmd->hand_to_hand) {
-        break_glass_obj(obj);
+        hero_breaks(obj, u.ux, u.uy, BRK_BY_HERO | BRK_FROM_INV | BRK_MELEE);
         mon_armor = some_armor(mon);
         if(mon_armor) {
-            break_glass_obj(mon_armor);
+            hero_breaks(mon_armor, mon->mx, mon->my, BRK_BY_HERO | BRK_MELEE);
         }
     }
 
@@ -3984,10 +3984,10 @@ mhitm_ad_phys(
                     mhm->hitflags |= M_ATTK_HIT;
                 }
                 /* glass breakage from the attack */
-                break_glass_obj(MON_WEP(magr));
+                breaks(MON_WEP(magr), magr->mx, magr->my);
                 your_armor = some_armor(&gy.youmonst);
                 if(your_armor) {
-                    break_glass_obj(your_armor);
+                    breaks(your_armor, gy.youmonst.mx, gy.youmonst.my);
                 }
                 if (!mhm->damage)
                     return;

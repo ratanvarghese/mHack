@@ -784,7 +784,6 @@ extern void endmultishot(boolean);
 extern void hitfloor(struct obj *, boolean) NONNULLARG1;
 extern boolean hurtle_jump(genericptr_t, coordxy, coordxy) NONNULLARG1;
 extern boolean hurtle_step(genericptr_t, coordxy, coordxy) NONNULLARG1;
-extern boolean break_glass_obj(struct obj *) NONNULLARG1;
 extern boolean will_hurtle(struct monst *, coordxy, coordxy) NONNULLARG1;
 extern void hurtle(int, int, int, boolean);
 extern void mhurtle(struct monst *, int, int, int) NONNULLARG1;
