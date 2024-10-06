@@ -46,7 +46,7 @@ staticfn void makerooms(void);
 staticfn boolean door_into_nonjoined(coordxy, coordxy);
 staticfn boolean finddpos(coord *, coordxy, coordxy, coordxy, coordxy);
 
-#define create_vault() create_room(-1, -1, 2, 2, -1, -1, VAULT, TRUE)
+#define create_vault() create_room(-1, -1, 2, 2, -1, -1, VAULT, TRUE, FALSE)
 #define init_vault() gv.vault_x = -1
 #define do_vault() (gv.vault_x != -1)
 
@@ -323,7 +323,7 @@ makerooms(void)
                         || (svn.nroom >= (MAXNROFROOMS / 6))))
                     break;
             } else {
-                if (!create_room(-1, -1, -1, -1, -1, -1, OROOM, -1))
+                if (!create_room(-1, -1, -1, -1, -1, -1, OROOM, -1, FALSE))
                     break;;
             }
         }

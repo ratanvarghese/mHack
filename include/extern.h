@@ -784,7 +784,6 @@ extern void endmultishot(boolean);
 extern void hitfloor(struct obj *, boolean) NONNULLARG1;
 extern boolean hurtle_jump(genericptr_t, coordxy, coordxy) NONNULLARG1;
 extern boolean hurtle_step(genericptr_t, coordxy, coordxy) NONNULLARG1;
-extern boolean break_glass_obj(struct obj *) NONNULLARG1;
 extern boolean will_hurtle(struct monst *, coordxy, coordxy) NONNULLARG1;
 extern void hurtle(int, int, int, boolean);
 extern void mhurtle(struct monst *, int, int, int) NONNULLARG1;
@@ -2963,7 +2962,7 @@ extern void flip_level(int, boolean);
 extern void flip_level_rnd(int, boolean);
 extern boolean check_room(coordxy *, coordxy *, coordxy *, coordxy *, boolean) NONNULLPTRS;
 extern boolean create_room(coordxy, coordxy, coordxy, coordxy,
-                           coordxy, coordxy, xint16, xint16);
+                           coordxy, coordxy, xint16, xint16, boolean);
 extern boolean dig_corridor(coord *, coord *, boolean, schar, schar) NONNULLARG12;
 extern void fill_special_room(struct mkroom *) NO_NNARGS;
 extern void wallify_map(coordxy, coordxy, coordxy, coordxy);
