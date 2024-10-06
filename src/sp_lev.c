@@ -45,7 +45,7 @@ staticfn void get_room_loc(coordxy *, coordxy *, struct mkroom *);
 staticfn void get_free_room_loc(coordxy *, coordxy *, struct mkroom *,
                               packed_coord);
 staticfn boolean create_subroom(struct mkroom *, coordxy, coordxy, coordxy,
-                              coordxy, xint16, xint16);
+                              coordxy, xint16, xint16, boolean);
 staticfn void create_door(room_door *, struct mkroom *);
 staticfn void create_trap(spltrap *, struct mkroom *);
 staticfn int noncoalignment(aligntyp);
@@ -1463,7 +1463,8 @@ create_room(
     coordxy x, coordxy y,
     coordxy w, coordxy h,
     coordxy xal, coordxy yal,
-    xint16 rtype, xint16 rlit)
+    xint16 rtype, xint16 rlit,
+    boolean special_nowall)
 {
     coordxy xabs = 0, yabs = 0;
     int wtmp, htmp, xaltmp, yaltmp, xtmp, ytmp;
@@ -1627,7 +1628,7 @@ create_room(
     if (!vault) {
         gs.smeq[svn.nroom] = svn.nroom;
         add_room(xabs, yabs, xabs + wtmp - 1, yabs + htmp - 1, rlit, rtype,
-                 FALSE);
+                 special_nowall);
     } else {
         svr.rooms[svn.nroom].lx = xabs;
         svr.rooms[svn.nroom].ly = yabs;
@@ -1644,7 +1645,8 @@ create_subroom(
     struct mkroom *proom,
     coordxy x, coordxy y,
     coordxy w, coordxy h,
-    xint16 rtype, xint16 rlit)
+    xint16 rtype, xint16 rlit,
+    boolean special_nowall)
 {
     coordxy width, height;
 
@@ -1677,7 +1679,7 @@ create_subroom(
         rtype = OROOM;
     rlit = litstate_rnd(rlit);
     add_subroom(proom, proom->lx + x, proom->ly + y, proom->lx + x + w - 1,
-                proom->ly + y + h - 1, rlit, rtype, FALSE);
+                proom->ly + y + h - 1, rlit, rtype, special_nowall);
     return TRUE;
 }
 
@@ -2780,11 +2782,11 @@ build_room(room *r, struct mkroom *mkr)
 
     if (mkr) {
         aroom = &gs.subrooms[gn.nsubroom];
-        okroom = create_subroom(mkr, r->x, r->y, r->w, r->h, rtype, r->rlit);
+        okroom = create_subroom(mkr, r->x, r->y, r->w, r->h, rtype, r->rlit, r->special_nowall);
     } else {
         aroom = &svr.rooms[svn.nroom];
         okroom = create_room(r->x, r->y, r->w, r->h, r->xalign, r->yalign,
-                             rtype, r->rlit);
+                             rtype, r->rlit, r->special_nowall);
     }
 
     if (okroom) {
@@ -4018,6 +4020,7 @@ lspo_room(lua_State *L)
         tmproom.needfill = get_table_int_opt(L, "filled",
                                              gi.in_mk_themerooms ? 0 : 1);
         tmproom.joined = get_table_boolean_opt(L, "joined", TRUE);
+        tmproom.special_nowall = get_table_boolean_opt(L, "special_nowall", FALSE);
 
         if (!gc.coder->failed_room[gc.coder->n_subroom - 1]) {
             tmpcr = build_room(&tmproom, gc.coder->croom);

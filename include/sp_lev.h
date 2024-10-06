@@ -193,6 +193,7 @@ typedef struct _room {
     xint16 xalign, yalign;
     xint16 rtype, chance, rlit, needfill;
     boolean joined;
+    boolean special_nowall;
 } room;
 
 struct mapfragment {

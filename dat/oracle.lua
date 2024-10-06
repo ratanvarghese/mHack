@@ -33,22 +33,13 @@ local content_classic = function()
     des.monster();
 end
 
--- From xNetHack
+-- From xNetHack, adjusted to use a room
 local content_elemental = function()
-    -- Make a square ring of pools around the Oracle, 2 spaces out
-    local ring = selection.new()
-    ring = selection.rect(3,2,7,6)
-    -- Remove one pool orthogonal to the Oracle so she is reachable
-    notpool = { {5,2},{3,4},{7,4},{5,6} }
-    shuffle(notpool)
-    ring:set(notpool[1][1], notpool[1][2], 0)
-    des.terrain({ selection=ring, typ="}", lit=1 })
-
     -- The 4 fountains are on the outside corners
-    des.feature("fountain", 2,1)
-    des.feature("fountain", 8,1)
-    des.feature("fountain", 2,7)
-    des.feature("fountain", 8,7)
+    des.feature("fountain", 1,1)
+    des.feature("fountain", 9,1)
+    des.feature("fountain", 1,7)
+    des.feature("fountain", 9,7)
 
     -- statues of the 4 elements - appropriately neutral
     local statuelocs = { {5,0},{5,8},{0,4},{10,4} }
@@ -58,13 +49,25 @@ local content_elemental = function()
     des.object({ id = "statue", coord = statuelocs[3], montype = "fire elemental", historic = 1 })
     des.object({ id = "statue", coord = statuelocs[4], montype = "air elemental", historic = 1 })
 
-    des.monster("Oracle", 5, 4)
+    des.room({ type = "delphi", lit = 1, x=3,y=2, w=5,h=5,special_nowall=true, contents = function()
+                -- Make a square ring of pools around the Oracle, 2 spaces out
+                local ring = selection.new()
+                ring = selection.rect(0,0,4,4)
+                -- Remove one pool orthogonal to the Oracle so she is reachable
+                notpool = { {2,0,"north"},{2,4,"south"},{0,2,"east"},{4,2,"west"} }
+                shuffle(notpool)
+                ring:set(notpool[1][1], notpool[1][2], 0)
+                des.terrain({ selection=ring, typ="}", lit=1 })
+
+                des.monster("Oracle", 2, 2);
+             end
+    });
 
     des.monster()
     des.monster()
 end
 
--- From xNetHack
+-- From xNetHack, adjusted to use a room
 local content_shark = function()
     -- Make a squarish ring of pools around the Oracle, 3 spaces out
     local ring = selection.rect(2,1,8,7)
@@ -77,13 +80,12 @@ local content_shark = function()
     -- Close off three of the four passages into the center; there are also only
     -- three fountains; make sure that no fountain is aligned with the open square
     local orthopool = { {5,1},{2,4},{8,4},{5,7} }
-    local fountain = { {5,2},{3,4},{7,4},{5,6} }
+    local orthofountain = { {1,0},{0,1},{2,1},{1,2} }
     local dir = math.random(1, #orthopool)
     for i=1,#orthopool do
       if i == dir then
          ring:set(orthopool[i][1], orthopool[i][2], 0)
-      else
-         des.feature("fountain", fountain[i][1], fountain[i][2])
+         table.remove(orthofountain,i)
       end
     end
 
@@ -91,10 +93,10 @@ local content_shark = function()
     des.terrain({ selection=ring, typ="}", lit=1 })
 
     -- four trees
-    des.feature("tree", 3,2)
-    des.feature("tree", 3,6)
-    des.feature("tree", 7,2)
-    des.feature("tree", 7,6)
+    des.feature("tree", 2,1)
+    des.feature("tree", 2,7)
+    des.feature("tree", 8,1)
+    des.feature("tree", 8,7)
 
     local statuelocs = { {0,0},{10,0},{0,8},{10,8} }
     shuffle(statuelocs)
@@ -103,7 +105,13 @@ local content_shark = function()
     des.object({ id = "statue", coord = statuelocs[3], montype = "shark", historic = 1 })
     des.object({ id = "statue", coord = statuelocs[4], montype = "water nymph", historic = 1 })
 
-    des.monster("Oracle", 5, 4)
+    des.room({ type = "delphi", lit = 1, x=4,y=3, w=3,h=3, special_nowall=true, contents = function()
+                for i,p in ipairs(orthofountain) do
+                    des.feature("fountain", p[1], p[2])
+                end
+                des.monster("Oracle", 1, 1);
+             end
+    });
 
     des.monster()
     des.monster()
@@ -111,16 +119,14 @@ end
 
 -- I hope you like woodchucks
 local content_woodchuck = function()
-    -- Make a square ring of trees around the Oracle, 2 spaces out
-    local ring = selection.new()
-    ring = selection.rect(3,2,7,6)
-    -- Remove all pools orthogonal to the Oracle so she is reachable
-    notpool = { {5,2},{3,4},{7,4},{5,6} }
-    ring:set(notpool[1][1], notpool[1][2], 0)
-    ring:set(notpool[2][1], notpool[2][2], 0)
-    ring:set(notpool[3][1], notpool[3][2], 0)
-    ring:set(notpool[4][1], notpool[4][2], 0)
-    des.terrain({ selection=ring, typ="T", lit=1 })
+    local tree_list = {
+        {3,1}, {4,1}, {6,1}, {7,1},
+        {2,2}, {2,3}, {2,5}, {2,6},
+        {3,7}, {4,7}, {6,7}, {7,7},
+        {8,2}, {8,3}, {8,5}, {8,6} }
+    for i,p in ipairs(tree_list) do
+        des.feature("tree", p[1],p[2])
+    end
 
     -- The 4 fountains are on the outside corners
     des.feature("fountain", 2,1)
@@ -133,12 +139,11 @@ local content_woodchuck = function()
     des.object({ id = "statue", x = 0, y = 8, montype = "woodchuck", historic = true });
     des.object({ id = "statue", x =10, y = 0, montype = "woodchuck", historic = true });
     des.object({ id = "statue", x =10, y = 8, montype = "woodchuck", historic = true });
-    des.object({ id = "statue", x = 5, y = 1, montype = "woodchuck", historic = true });
-    des.object({ id = "statue", x = 5, y = 7, montype = "woodchuck", historic = true });
-    des.object({ id = "statue", x = 2, y = 4, montype = "woodchuck", historic = true });
-    des.object({ id = "statue", x = 8, y = 4, montype = "woodchuck", historic = true });
 
-    des.monster("Oracle", 5, 4)
+    des.room({ type = "delphi", lit = 1, x=4,y=3, w=3,h=3, special_nowall=true, contents = function()
+                des.monster("Oracle", 1, 1);
+             end
+    });
 
     des.monster('woodchuck')
     des.monster()
@@ -173,12 +178,12 @@ local content_quadruped  = function()
     des.monster();
 end
 
--- From myths ancient and modern
+-- From modern myths
 local content_seers = function()
-    des.terrain(selection.line(5,1, 2,4), '}')
-    des.terrain(selection.line(5,1, 8,4), '}')
-    des.terrain(selection.line(2,4, 5,7), '}')
-    des.terrain(selection.line(8,4, 5,7), '}')
+    des.terrain(selection.line(4,1, 6,1), '}')
+    des.terrain(selection.line(4,7, 6,7), '}')
+    des.terrain(selection.line(2,3, 2,5), '}')
+    des.terrain(selection.line(8,3, 8,5), '}')
 
     des.feature("fountain", 2,1)
     des.feature("fountain", 8,1)
@@ -186,11 +191,14 @@ local content_seers = function()
     des.feature("fountain", 8,7)
 
     des.object({ id = "statue", x = 0, y = 0, montype = "high priest", name="Meshe", historic = true });
-    des.object({ id = "statue", x = 0, y = 8, montype = "high priest", name="Seldon", historic = true });
+    des.object({ id = "statue", x = 0, y = 8, montype = "archeologist", name="Seldon", historic = true });
     des.object({ id = "statue", x =10, y = 0, montype = "knight", name="Atreides", historic = true });
-    des.object({ id = "statue", x =10, y = 8, montype = "high priest", name="Tiresias", historic = true });
+    des.object({ id = "statue", x =10, y = 8, montype = "alchemist", name="Brown", historic = true });
 
-    des.monster("Oracle", 5, 4)
+    des.room({ type = "delphi", lit = 1, x=3,y=2, w=5,h=5, special_nowall=true, contents = function()
+                des.monster("Oracle", 2, 2);
+             end
+    });
 
     des.monster();
     des.monster();
