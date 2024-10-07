@@ -182,6 +182,9 @@ static NEARDATA struct artifact artilist[] = {
     A("Snickersnee", KATANA, SPFX_RESTR, 0, 0, PHYS(0, 8), NO_DFNS, NO_CARY,
       0, A_LAWFUL, PM_SAMURAI, NON_PM, 1200L, NO_COLOR, SNICKERSNEE),
 
+    A("Silvertongue", DAGGER, SPFX_RESTR, 0, 0, PHYS(0, 6), NO_DFNS, NO_CARY,
+      0, A_LAWFUL, PM_LEGISLATOR, NON_PM, 1000L, NO_COLOR, SILVERTONGUE),
+
     /* Sunsword emits light when wielded (handled in the core rather than
        via artifact fields), but that light has no particular color */
     A("Sunsword", LONG_SWORD, (SPFX_RESTR | SPFX_DFLAG2 | SPFX_HALRES), 0, M2_UNDEAD,
@@ -234,6 +237,11 @@ static NEARDATA struct artifact artilist[] = {
       (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL | SPFX_SPEAK), SPFX_ESP, 0,
       NO_ATTK, NO_DFNS, CARY(AD_MAGM), 0, A_LAWFUL, PM_KNIGHT, NON_PM, 1500L,
       NO_COLOR, MAGIC_MIRROR_OF_MERLIN),
+
+    A("The Stylus of Gracchus", MAGIC_MARKER,
+      (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL), 0, 0,
+      NO_ATTK, NO_DFNS, NO_CARY, 0, A_LAWFUL, PM_LEGISLATOR, NON_PM, 1500L,
+      NO_COLOR, STYLUS_OF_GRACCHUS),
 
     A("The Crown of Midas", DUNCE_CAP,
       (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL | SPFX_GOLD), 0, 0,

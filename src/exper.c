@@ -31,6 +31,7 @@ enermod(int en)
         return (2 * en);
     case PM_HEALER:
     case PM_KNIGHT:
+    case PM_LEGISLATOR:
         return ((3 * en) / 2);
     case PM_BARBARIAN:
     case PM_VALKYRIE:

@@ -269,6 +269,46 @@ const struct Role roles[NUM_ROLES+1] = {
       A_WIS,
       SPE_TURN_UNDEAD,
       -4 },
+    { { "Legislator", 0 },
+      { { "Magistrate", 0 },
+        { "Quaestor", 0 },
+        { "Aedile", 0 },
+        { "Praetor", 0 },
+        { "Propraetor", 0 },
+        { "Consul", 0 },
+        { "Censor", 0 },
+        { "Princips Senatus", 0 },
+        { "Dictator", 0 } },
+      "Mercury", "_Venus", "Mars", /* Roman/planets */
+      "Leg",
+      "the Temple of Jupiter Stator",
+      "the Road to Faesulae",
+      PM_LEGISLATOR,
+      NON_PM,
+      PM_CICERO,
+      PM_PATRICIAN,
+      PM_CATILINE,
+      PM_VAMPIRE,
+      PM_MOUNTAIN_CENTAUR,
+      S_VAMPIRE,
+      S_CENTAUR,
+      ART_STYLUS_OF_GRACCHUS,
+      MH_HUMAN | ROLE_MALE | ROLE_FEMALE | ROLE_LAWFUL,
+      /* Str Int Wis Dex Con Cha */
+      { 7, 8, 7, 7, 7, 8 },
+      { 15, 25, 10, 15, 10, 25 },
+      /* Init   Lower  Higher */
+      { 12, 0, 0, 8, 1, 0 }, /* Hit points */
+      { 4, 3, 0, 2, 0, 2 },
+      10, /* Energy */
+      0,
+      3,
+      -2,
+      2,
+      10,
+      A_INT,
+      SPE_SLOW_MONSTER,
+      -4 },
     { { "Monk", 0 },
       { { "Candidate", 0 },
         { "Novice", 0 },
@@ -2191,6 +2231,8 @@ Hello(struct monst *mtmp)
     switch (Role_switch) {
     case PM_KNIGHT:
         return "Salutations"; /* Olde English */
+    case PM_LEGISLATOR:
+        return "Ave"; /* Latin */
     case PM_SAMURAI:
         return (mtmp && mtmp->data == &mons[PM_SHOPKEEPER])
                     ? "Irasshaimase"
@@ -2214,6 +2256,8 @@ Goodbye(void)
     switch (Role_switch) {
     case PM_KNIGHT:
         return "Fare thee well"; /* Olde English */
+    case PM_LEGISLATOR:
+        return "Vale"; /* Latin */
     case PM_SAMURAI:
         return "Sayonara"; /* Japanese */
     case PM_TOURIST:
