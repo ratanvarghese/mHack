@@ -456,7 +456,7 @@ const struct Role roles[NUM_ROLES+1] = {
         { "Archer", 0 },
         { "Sharpshooter", 0 },
         { "Marksman", "Markswoman" } },
-      "Mercury", "_Venus", "Mars", /* Roman/planets */
+      "Taurus", "Sagittarius", "Ursa Major", /* Constellations */
       "Ran",
       "Orion's camp",
       "the cave of the wumpus",
