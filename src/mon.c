@@ -453,6 +453,9 @@ genus(int mndx, int mode)
     case PM_STUDENT:
         mndx = mode ? PM_ARCHEOLOGIST : PM_HUMAN;
         break;
+    case PM_CHEMIST:
+        mndx = mode ? PM_ALCHEMIST : PM_HUMAN;
+        break;
     case PM_CHIEFTAIN:
         mndx = mode ? PM_BARBARIAN : PM_HUMAN;
         break;

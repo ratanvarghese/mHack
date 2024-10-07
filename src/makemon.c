@@ -273,8 +273,10 @@ m_initweap(struct monst *mtmp)
             /* quest "guardians" */
             switch (mm) {
             case PM_STUDENT:
+            case PM_CHEMIST:
             case PM_ATTENDANT:
             case PM_ABBOT:
+            case PM_TRADER:
             case PM_ACOLYTE:
             case PM_GUIDE:
             case PM_APPRENTICE:

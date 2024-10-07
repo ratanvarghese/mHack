@@ -126,7 +126,7 @@ local fakewiz_player = { halign = "center", valign = "center", map = [[
    local pmon = { "wizard", "valkyrie", "tourist",
               "samurai", "rogue", "ranger", "priestess",
               "priest", "merchant", "monk", "knight", "healer",
-              "cavewoman", "caveman", "barbarian",
+              "cavewoman", "caveman", "barbarian", "alchemist",
               "archeologist" }
    shuffle(pmon)
    des.monster(pmon[1],04,04)

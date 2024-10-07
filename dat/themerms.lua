@@ -145,11 +145,11 @@ themeroom_fills = {
    function(rm)
       local mon = { "apprentice", "warrior", "ninja", "thug",
                     "hunter", "acolyte", "trader", "abbot", "page",
-                    "attendant", "neanderthal", "chieftain",
+                    "attendant", "neanderthal", "chieftain", "chemist",
                     "student", "wizard", "valkyrie", "tourist",
                     "samurai", "rogue", "ranger", "priestess",
                     "priest", "merchant", "monk", "knight", "healer",
-                    "cavewoman", "caveman", "barbarian",
+                    "cavewoman", "caveman", "barbarian", "alchemist",
                     "archeologist" };
       local idx = math.random(#mon);
       for i = 1, d(5,5) do
