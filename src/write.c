@@ -292,7 +292,11 @@ dowrite(struct obj *pen)
 
     /* we're really going to write now, so calculate cost
      */
-    actualcost = rn1(basecost / 2, basecost / 2);
+    if(Role_if(PM_LEGISLATOR)) {
+        actualcost = basecost / 2;
+    } else {
+        actualcost = rn1(basecost / 2, basecost / 2);
+    }
     curseval = bcsign(pen) + bcsign(paper);
     exercise(A_WIS, TRUE);
     /* dry out marker */

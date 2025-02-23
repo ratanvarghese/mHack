@@ -107,14 +107,16 @@ static struct trobj Knight[] = {
     { 0, 0, 0, 0, 0 }
 };
 static struct trobj Legislator[] = {
-    { ATHAME, 0, WEAPON_CLASS, 1, UNDEF_BLESS },
+    { DAGGER, 0, WEAPON_CLASS, 1, UNDEF_BLESS },
     { ROBE, 0, ARMOR_CLASS, 1, UNDEF_BLESS },
     { LOW_BOOTS, 0, ARMOR_CLASS, 1, UNDEF_BLESS },
     { SCR_IDENTIFY, 0, SCROLL_CLASS, 1, 1 },
     { SCR_TAMING, 0, SCROLL_CLASS, 3, 0 },
-    { UNDEF_TYP, 0, SCROLL_CLASS, 6, UNDEF_BLESS },
-    { UNDEF_TYP, UNDEF_SPE, SPBOOK_CLASS, 2, UNDEF_BLESS },
-    { MAGIC_MARKER, 90, TOOL_CLASS, 1, 0 }, /* actually spe = 89 + d4 */
+    { UNDEF_TYP, 0, SCROLL_CLASS, 3, UNDEF_BLESS },
+    { SPE_CONFUSE_MONSTER, UNDEF_SPE, SPBOOK_CLASS, 1, UNDEF_BLESS },
+    { SPE_SLOW_MONSTER, UNDEF_SPE, SPBOOK_CLASS, 1, UNDEF_BLESS },
+    { MIRROR, 0, TOOL_CLASS, 1, UNDEF_BLESS },
+    { MAGIC_MARKER, 120, TOOL_CLASS, 1, 0 }, /* actually spe = 119 + d4 */
     { 0, 0, 0, 0, 0 }
 };
 static struct trobj Merchant[] = {

@@ -279,28 +279,27 @@ const struct Role roles[NUM_ROLES+1] = {
         { "Censor", 0 },
         { "Princips Senatus", 0 },
         { "Dictator", 0 } },
-      "Mercury", "_Venus", "Mars", /* Roman/planets */
+      "Jupiter", "_Venus", "Mars", /* Roman/planets */
       "Leg",
       "the Temple of Jupiter Stator",
-      "the Road to Faesulae",
+      "the Aurelian Road",
       PM_LEGISLATOR,
       NON_PM,
       PM_CICERO,
       PM_PATRICIAN,
       PM_CATILINE,
       PM_VAMPIRE,
-      PM_MOUNTAIN_CENTAUR,
+      PM_WEREWOLF,
       S_VAMPIRE,
-      S_CENTAUR,
+      S_DOG,
       ART_STYLUS_OF_GRACCHUS,
       MH_HUMAN | ROLE_MALE | ROLE_FEMALE | ROLE_LAWFUL,
       /* Str Int Wis Dex Con Cha */
-      { 7, 8, 7, 7, 7, 8 },
-      { 15, 25, 10, 15, 10, 25 },
-      /* Init   Lower  Higher */
-      { 12, 0, 0, 8, 1, 0 }, /* Hit points */
-      { 4, 3, 0, 2, 0, 2 },
-      10, /* Energy */
+      { 6, 8, 7, 7, 7, 9 },
+      { 10, 20, 20, 10, 10, 30 },
+      { 9, 0, 0, 9, 0, 0 }, /* Hit points */
+      { 1, 4, 0, 1, 0, 2 },
+      11, /* Energy */
       0,
       3,
       -2,
