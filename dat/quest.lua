@@ -1553,7 +1553,7 @@ may be the last time you stand before %l.]],
          -- Against Catiline, speech 2, chapter 4
          -- written by M. Tullius Cicero, translated by C. D. Yonge
          -- http://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A1999.02.0019%3Atext%3DCatil.%3Aspeech%3D2%3Achapter%3D4
-         synopsis = "[%ni conspired to destroy the Republic and must be severely punished.]",
+         synopsis = "[%n conspired to destroy the Republic and must be severely punished.]",
          output = "text",
          text = [["You should all see that a conspiracy has been openly formed against
 the republic; unless, indeed, there be any one who
