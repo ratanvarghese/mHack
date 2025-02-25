@@ -116,7 +116,7 @@ static struct trobj Legislator[] = {
     { SPE_CONFUSE_MONSTER, UNDEF_SPE, SPBOOK_CLASS, 1, UNDEF_BLESS },
     { SPE_SLOW_MONSTER, UNDEF_SPE, SPBOOK_CLASS, 1, UNDEF_BLESS },
     { MIRROR, 0, TOOL_CLASS, 1, UNDEF_BLESS },
-    { MAGIC_MARKER, 120, TOOL_CLASS, 1, 0 }, /* actually spe = 119 + d4 */
+    { MAGIC_MARKER, 100, TOOL_CLASS, 1, 0 }, /* intentionally many charges */
     { 0, 0, 0, 0, 0 }
 };
 static struct trobj Merchant[] = {
@@ -427,18 +427,13 @@ static const struct def_skill Skill_K[] = {
 };
 static const struct def_skill Skill_L[] = {
     { P_DAGGER, P_EXPERT },
-    { P_KNIFE, P_SKILLED },
-    { P_AXE, P_BASIC },
-    { P_PICK_AXE, P_SKILLED },
-    { P_SHORT_SWORD, P_EXPERT },
-    { P_LONG_SWORD, P_BASIC },
-    { P_SABER, P_BASIC },
-    { P_CLUB, P_SKILLED },
+    { P_KNIFE, P_EXPERT },
+    { P_PICK_AXE, P_BASIC },
+    { P_SHORT_SWORD, P_SKILLED },
+    { P_CLUB, P_BASIC },
     { P_SPEAR, P_EXPERT },
-    { P_BOW, P_BASIC },
-    { P_CROSSBOW, P_BASIC },
     { P_SLING, P_BASIC },
-    { P_DART, P_BASIC },
+    { P_DART, P_SKILLED },
     { P_WHIP, P_BASIC },
     { P_ENCHANTMENT_SPELL, P_EXPERT },
     { P_RIDING, P_BASIC },

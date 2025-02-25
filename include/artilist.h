@@ -240,7 +240,7 @@ static NEARDATA struct artifact artilist[] = {
 
     A("The Stylus of Gracchus", MAGIC_MARKER,
       (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL), 0, 0,
-      NO_ATTK, NO_DFNS, NO_CARY, 0, A_LAWFUL, PM_LEGISLATOR, NON_PM, 1500L,
+      NO_ATTK, NO_DFNS, NO_CARY, CONFLICT, A_LAWFUL, PM_LEGISLATOR, NON_PM, 1500L,
       NO_COLOR, STYLUS_OF_GRACCHUS),
 
     A("The Crown of Midas", DUNCE_CAP,
