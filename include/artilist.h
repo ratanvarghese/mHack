@@ -182,9 +182,6 @@ static NEARDATA struct artifact artilist[] = {
     A("Snickersnee", KATANA, SPFX_RESTR, 0, 0, PHYS(0, 8), NO_DFNS, NO_CARY,
       0, A_LAWFUL, PM_SAMURAI, NON_PM, 1200L, NO_COLOR, SNICKERSNEE),
 
-    A("Silvertongue", DAGGER, SPFX_RESTR, 0, 0, PHYS(0, 6), NO_DFNS, NO_CARY,
-      0, A_LAWFUL, PM_LEGISLATOR, NON_PM, 1000L, NO_COLOR, SILVERTONGUE),
-
     /* Sunsword emits light when wielded (handled in the core rather than
        via artifact fields), but that light has no particular color */
     A("Sunsword", LONG_SWORD, (SPFX_RESTR | SPFX_DFLAG2 | SPFX_HALRES), 0, M2_UNDEAD,
