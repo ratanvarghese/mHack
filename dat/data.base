@@ -834,6 +834,18 @@ kitten
 	yellow and white, none was missing.  Very sleek and fat did
 	the cats appear, and sonorous with purring content.
 		[ The Cats of Ulthar, by H.P. Lovecraft ]
+catiline
+	When, O Catiline, do you mean to cease abusing our patience?
+	How long is that madness of yours still to mock us? When is
+	there to be an end of that unbridled audacity of yours,
+	swaggering about as it does now? Do not the nightly guards
+	placed on the Palatine Hill - do not the watches posted throughout
+	the city - does not the alarm of the people, and the union of
+	all good men - does not the precaution taken of assembling the
+	senate in this most defensible place - do not the looks and
+	countenances of this venerable body here present, have any
+	effect upon you? Do you not feel that your plans are detected?
+		[ First Oration Against Cataline, M. Tullius Cicero ]
 # this one doesn't work very well for dwarven and gnomish cavemen
 cave dweller
 cave*man
@@ -966,6 +978,23 @@ chromatic dragon
 tiamat
 	Tiamat is said to be the mother of evil dragonkind.  She is
 	extremely vain.
+cicero
+	Cicero was a Roman statesman, lawyer, scholar, and writer
+	who vainly tried to uphold republican principles in the final
+	civil wars that destroyed the Roman Republic. His writings
+	include books of rhetoric, orations, philosophical and
+	political treatises, and letters.
+		[ Encyclopedia Britannica, 2024 ]
+	I cannot now forget that this is my country, that I am the
+	consul of these citizens; that I must either live with them,
+	or die for them. There is no guard at the gate, no one plotting
+	against their path; if any one wishes to go, he can provide for
+	himself; but if any one stirs in the city, and if I detect not
+	only any action, but any attempt or design against the country,
+	he shall feel that there are in this city vigilant consuls, eminent
+	magistrates, a brave senate, arms, and prisons; which our ancestors
+	appointed as the avengers of nefarious and convicted crimes.
+		[ Second Oration Against Cataline, M. Tullius Cicero ]
 citrine*
 	A pale yellow variety of crystalline quartz resembling topaz.
 clay golem
@@ -2940,6 +2969,22 @@ jubilex
 	he is a slime-like creature who swallows other creatures
 	alive, spits acidic secretions, and causes disease in his
 	victims which can be almost instantly fatal.
+jupiter
+jove
+	Again, why never hurtles Jupiter
+	A bolt upon the lands nor pours abroad
+	Clap upon clap, when skies are cloudless all?
+	Or, say, doth he, so soon as ever the clouds
+	Have come thereunder, then into the same
+	Descend in person, that from thence he may
+	Near-by decide upon the stroke of shaft?
+	And, lastly, why, with devastating bolt
+	Shakes he asunder holy shrines of gods
+	And his own thrones of splendour, and to-breaks
+	The well-wrought idols of divinities,
+	And robs of glory his own images
+	By wound of violence?
+		[ On the Nature of Things, Lucretius ]
 # historically (according to wikipedia...), C-ration was heavier but
 # provided more nutrition, and required some form of tin opener;
 # in nethack they weigh the same and K-ration provides more nutrition?
@@ -3220,6 +3265,27 @@ leash
 	eye.  They walked side by side with great dignity, only
 	putting the Dearlys on the leash to lead them over crossings.
 		[ The Hundred and One Dalmatians, by Dodie Smith ]
+legislator
+politician
+rhetorician
+senator
+	POLITICIAN, n.  An eel in the fundamental mud upon which
+	the superstructure of organized society is reared.  When
+	he wriggles he mistakes the agitation of his tail for the
+	trembling of the edifice. As compared with the statesman,
+	he suffers the disadvantage of being alive.
+		[ The Devil's Dictionary, by Ambrose Bierce ]
+	I say that if a rhetorician and a physician were to go to
+	any city, and had there to argue in the Ecclesia or any
+	other assembly as to which of them should be elected
+	state-physician, the physician would have no chance; but he
+	who could speak would be chosen if he wished; and in a
+	contest with a man of any other profession the rhetorician
+	more than any one would have the power of getting himself
+	chosen, for he can speak more persuasively to the multitude
+	than any of them, and on any subject. Such is the nature and
+	power of the art of rhetoric!
+		[ Gorgias, by Plato ]
 lembas*
 	In the morning, as they were beginning to pack their slender
 	goods, Elves that could speak their tongue came to them and
@@ -4866,6 +4932,16 @@ saddle
 	Things are in the saddle,
 	And ride mankind.
 		[ Ode, by Ralph Waldo Emerson ]
+sagittarius
+	Sagittarius is depicted in the sky as a centaur, with the body
+	and four legs of a horse but the upper torso of a man. He is
+	shown wearing a cloak and drawing a bow, aimed in the direction
+	of the neighbouring scorpion, Scorpius. Aratus spoke of the Archer
+	(Toxotes), and his Bow, (Toxon), as though they were separate
+	constellations. Most likely this is because the stars of the bow
+	and arrow are the most distinctive part of the figure. They form
+	the asterism that we now know as the Teapot.
+		[ Star Tales, by Ian Ridpath ]
 sake
 	Japanese rice wine.
 salamander
@@ -5492,6 +5568,14 @@ susano*o
 		[ Encyclopedia of Gods, by Michael Jordan ]
 tanko
 	Samurai plate armor of the Yamato period (AD 300 - 710).
+taurus
+	Taurus is a distinctive constellation, with star-tipped horns
+	and a head defined by a V-shaped group of stars. Two Greek
+	bull-myths were associated with Taurus. Usually it was said to
+	represent Zeus in the disguise he adopted for another of his
+	extramarital affairs, this time as the bull that carried away
+	Europa, daughter of King Agenor of Phoenicia.
+		[ Star Tales, by Ian Ridpath ]
 tengu
 	The tengu was the most troublesome creature of Japanese
 	legend.  Part bird and part man, with red beak for a nose
@@ -5878,6 +5962,15 @@ white-handed shield
 	of a black field; on the front of their iron helms was set an
 	S-rune, wrought of some white metal.
 		[ The Two Towers, by J.R.R. Tolkien ]
+ursa major
+	Undoubtedly the most familiar star pattern in the entire sky is
+	the seven stars that make up the shape popularly termed the Plough
+	or Big Dipper, part of the third-largest constellation, Ursa Major,
+	the Great Bear. The seven stars form the rump and tail of the bear,
+	while the rest of the animal is comprised of fainter stars. Its Greek
+	name in the Almagest was Arktos Megale; Ursa Major is the Latin
+	equivalent.
+		[ Star Tales, by Ian Ridpath ]
 valkyrie
 * valkyrie
 	The Valkyries were the thirteen choosers of the slain, the
@@ -6435,6 +6528,27 @@ paladin
 	Seignieur,
 	 Dame            26 to 29
 	Paladin             30
+leg* ranks
+magistrate
+quaestor
+aedile
+praetor
+propraetor
+consul
+censor
+princips senatus
+dictator
+	Legislator ranks
+	  title            level
+	Magistrate        1 to 2
+	Quaestor          3 to 5
+	Aedile            6 to 9
+	Praetor          10 to 13
+	Propraetor       14 to 17
+	Consul           18 to 21
+	Censor           22 to 25
+	Princips Senatus 26 to 29
+	Dictator            30
 mer* ranks
 peddler
 vendor

@@ -106,6 +106,19 @@ static struct trobj Knight[] = {
     { CARROT, 0, FOOD_CLASS, 10, 0 },
     { 0, 0, 0, 0, 0 }
 };
+static struct trobj Legislator[] = {
+    { DAGGER, 0, WEAPON_CLASS, 1, UNDEF_BLESS },
+    { ROBE, 0, ARMOR_CLASS, 1, UNDEF_BLESS },
+    { LOW_BOOTS, 0, ARMOR_CLASS, 1, UNDEF_BLESS },
+    { SCR_IDENTIFY, 0, SCROLL_CLASS, 1, 1 },
+    { SCR_TAMING, 0, SCROLL_CLASS, 3, 0 },
+    { UNDEF_TYP, 0, SCROLL_CLASS, 3, UNDEF_BLESS },
+    { SPE_CONFUSE_MONSTER, UNDEF_SPE, SPBOOK_CLASS, 1, UNDEF_BLESS },
+    { SPE_SLOW_MONSTER, UNDEF_SPE, SPBOOK_CLASS, 1, UNDEF_BLESS },
+    { MIRROR, 0, TOOL_CLASS, 1, UNDEF_BLESS },
+    { MAGIC_MARKER, 100, TOOL_CLASS, 1, 0 }, /* intentionally many charges */
+    { 0, 0, 0, 0, 0 }
+};
 static struct trobj Merchant[] = {
     { AMULET_OF_GUARDING, 0, AMULET_CLASS, 1, UNDEF_BLESS },
     { WAR_HAMMER, 0, WEAPON_CLASS, 1, UNDEF_BLESS},
@@ -410,6 +423,24 @@ static const struct def_skill Skill_K[] = {
     { P_TWO_WEAPON_COMBAT, P_SKILLED },
     { P_BARE_HANDED_COMBAT, P_EXPERT },
     { P_WAND, P_SKILLED },
+    { P_NONE, 0 }
+};
+static const struct def_skill Skill_L[] = {
+    { P_DAGGER, P_EXPERT },
+    { P_KNIFE, P_EXPERT },
+    { P_PICK_AXE, P_BASIC },
+    { P_SHORT_SWORD, P_SKILLED },
+    { P_CLUB, P_BASIC },
+    { P_SPEAR, P_EXPERT },
+    { P_SLING, P_BASIC },
+    { P_DART, P_SKILLED },
+    { P_WHIP, P_BASIC },
+    { P_ENCHANTMENT_SPELL, P_EXPERT },
+    { P_RIDING, P_BASIC },
+    { P_TWO_WEAPON_COMBAT, P_BASIC },
+    { P_BARE_HANDED_COMBAT, P_BASIC },
+    { P_WAND, P_SKILLED },
+    { P_BRIBERY, P_SKILLED },
     { P_NONE, 0 }
 };
 static const struct def_skill Skill_Mer[] = {
@@ -772,6 +803,11 @@ u_init_role(void)
         HJumping |= FROMOUTSIDE;
         skill_init(Skill_K);
         break;
+    case PM_LEGISLATOR:
+        ini_inv(Legislator);
+        knows_object(RIN_CONFLICT);
+        skill_init(Skill_L);
+        break;
     case PM_MERCHANT:
         u.umoney0 = (30 * rn1(100, 1)) + 1000;
         ini_inv(Merchant);
@@ -1111,6 +1147,9 @@ restricted_spell_discipline(int otyp)
     case PM_KNIGHT:
         skills = Skill_K;
         break;
+    case PM_LEGISLATOR:
+        skills = Skill_L;
+        break;
     case PM_MERCHANT:
         skills = Skill_Mer;
         break;
@@ -1189,6 +1228,9 @@ ini_inv_mkobj_filter(int oclass, boolean got_level1_spellbook)
            || (otyp == SCR_ENCHANT_WEAPON && Role_if(PM_MONK))
            /* wizard patch -- they already have one */
            || (otyp == SPE_FORCE_BOLT && Role_if(PM_WIZARD))
+           /* Legislators already get these scrolls */
+           || (otyp == SCR_IDENTIFY && Role_if(PM_LEGISLATOR))
+           || (otyp == SCR_TAMING && Role_if(PM_LEGISLATOR))
            /* Merchants already get these rings */
            || (otyp == RIN_INCREASE_DAMAGE && Role_if(PM_MERCHANT))
            || (otyp == RIN_INCREASE_ACCURACY && Role_if(PM_MERCHANT))

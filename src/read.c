@@ -843,11 +843,16 @@ recharge(struct obj *obj, int curse_bless)
                 stripspe(obj);
             } else if (rechrg && obj->otyp == MAGIC_MARKER) {
                 /* previously recharged */
-                obj->recharged = 1; /* override increment done above */
-                if (obj->spe < 3)
-                    Your("marker seems permanently dried out.");
-                else
-                    pline1(nothing_happens);
+                if(obj->oartifact) {
+                    obj->spe = 15;
+                    p_glow2(obj, NH_WHITE);
+                } else {
+                    obj->recharged = 1; /* override increment done above */
+                    if (obj->spe < 3)
+                        Your("marker seems permanently dried out.");
+                    else
+                        pline1(nothing_happens);
+                }
             } else if (is_blessed) {
                 n = rn1(16, 15); /* 15..30 */
                 if (obj->spe + n <= 50)

@@ -65,6 +65,7 @@ staticfn void propagate_chain_lightning(struct chain_lightning_queue *,
  *      Cav are ignorant to magic
  *      Hea are very aware of healing magic through medical research
  *      Kni are moderately aware of healing from Paladin training
+ *      Leg use magic for propaganda.
  *      Mer are moderately aware of magic from appraising products.
  *      Mon use magic to attack and defend in lieu of weapons and armor
  *      Pri are very aware of healing magic through theological research
@@ -87,6 +88,7 @@ staticfn void propagate_chain_lightning(struct chain_lightning_queue *,
  *      Cav born to dig (SPE_DIG)
  *      Hea to heal (SPE_CURE_SICKNESS)
  *      Kni to turn back evil (SPE_TURN_UNDEAD)
+ *      Leg to filibuster (SPE_SLOW_MONSTER)
  *      Mer to house their wares (SPE_WIZARD_LOCK)
  *      Mon to preserve their abilities (SPE_RESTORE_ABILITY)
  *      Pri to bless (SPE_REMOVE_CURSE)

@@ -203,6 +203,14 @@ mk_mplayer(struct permonst *ptr, coordxy x, coordxy y, boolean special)
             if (rn2(2))
                 armor = rnd_class(PLATE_MAIL, CHAIN_MAIL);
             break;
+        case PM_LEGISLATOR:
+            if (rn2(2))
+                weapon = rn2(2) ? DAGGER : SPEAR;
+            if (rn2(4))
+                cloak = ROBE;
+            if (rn2(4))
+                helm = rn2(2) ? HELM_OF_BRILLIANCE : HELM_OF_TELEPATHY;
+            break;
         case PM_MERCHANT:
             /* Stick to defaults */
             break;

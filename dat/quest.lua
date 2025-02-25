@@ -1547,6 +1547,309 @@ may be the last time you stand before %l.]],
          text = "\"Well met, %p.  How goeth thy search for the Amulet of Yendor?\"",
       },
    },
+   Leg = {
+      -- Some of these are actually from Cicero's speeches and writing
+      assignquest = {
+         -- Against Catiline, speech 2, chapter 4
+         -- written by M. Tullius Cicero, translated by C. D. Yonge
+         -- http://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A1999.02.0019%3Atext%3DCatil.%3Aspeech%3D2%3Achapter%3D4
+         synopsis = "[%n conspired to destroy the Republic and must be severely punished.]",
+         output = "text",
+         text = [["You should all see that a conspiracy has been openly formed against
+the republic; unless, indeed, there be any one who
+thinks that those who are like %n do not agree with
+%n. There is not any longer room for lenity; the business
+itself demands severity. One thing, even now, I will grant, let
+them depart, let them be gone. Let them not suffer the unhappy
+%n to pine away for want of them. I will tell them the
+road. He went by the Aurelian road. If they make haste, they
+will catch him by the evening. O happy republic, if it can
+cast forth these dregs of the republic! Even now, when %n
+alone is got rid of; the republic seems to me relieved and
+refreshed; for what evil or wickedness can be devised or
+imagined which he did not conceive? What prisoner, what
+gladiator, what thief; what assassin, what parricide, what forger
+of wills, what cheat, what debauchee, what spendthrift, what
+adulterer, what abandoned woman, what corrupter of youth,
+what profligate, what scoundrel can be found in all Italy, who
+does not avow that he has been on terms of intimacy with
+%n? What murder has been committed for years without
+him? What nefarious act of infamy that has not been done by
+him?"]]
+      },
+      badalign = {
+         -- De Officiis, Book 3, Section 30
+         -- written by M. Tullius Cicero, translated by Walter Miller
+         -- https://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A2007.01.0048%3Abook%3Dpos%3D3%3Asection%3D30
+         synopsis = "[Atone for your misdeeds: injustice is fatal to social life and fellowship]",
+         output = "text",
+         text = [[%l sighs with disappointment and tells you to atone for your misdeeds,
+explaining that:
+
+"For a man to take something from his neighbour and to profit by his
+neighbour's loss is more contrary to Nature than is death or poverty
+or pain or anything else that can affect either our person or our
+property. For, in the first place, injustice is fatal to social life
+and fellowship between man and man. For, if we are so disposed that
+each, to gain some personal profit, will defraud or injure his neighbour,
+then those bonds of human society, which are most in accord with Nature's
+laws, must of necessity be broken."]]
+      },
+      badlevel = {
+         -- De Officiis, Book 2, Section 43
+         -- written by M. Tullius Cicero, translated by Walter Miller
+         -- https://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A2007.01.0048%3Abook%3D2%3Asection%3D43
+         synopsis = "[Strive to be what you wish to be thought to be: gain the rank of %Ra]",
+         output = "text",
+         text = [[%l tells you to return when you are %Ra, explaining that:
+
+"As Socrates used to express it so admirably, 'the
+nearest way to glory - a short cut, as it were - is to strive to
+be what you wish to be thought to be.' For if anyone thinks that he
+can win lasting glory by pretence, by empty show, by
+hypocritical talk and looks, he is very much mistaken. True
+glory strikes deep root and spreads its branches wide;
+but all pretences soon fall to the ground like fragile flowers,
+and nothing counterfeit can be lasting."]]
+      },
+      discourage = {
+         "\"I am not evil, %l is slandering me for political gain.\"",
+         "\"Join me, and we can liberate Rome together!\"",
+         "\"While the plebians drown in poverty, %l lets the rich hoard their wealth.\"",
+         "\"If you leave now, I will ensure all your debts are cancelled.\"",
+         "\"You don't have to be a tool in the hands of %l.\"",
+         "\"I am the true consul of Rome, so obey your leader!\"",
+         "\"If you insist on striking me, I am not a traitor for striking back.\"",
+         "\"%l is nothing more than a squatter. And what does that make you?\"",
+         "\"They call me a public enemy. But I am doing what the public truly needs.\"",
+         "\"The Republic is dying, and only we can save it. Join me!\"",
+      },
+      encourage = {
+          --Against Catiline, speech 1, edited to not address Catiline directly
+         "\"O tempora, o mores!\"",
+         "\"When will %n cease abusing our patience?\"",
+         "\"How long is that madness of %n still to mock us?\"",
+         "\"When is there to be an end to that unbridled audacity of %n?\"",
+         "\"There has now for many years been no crime committed, but by %n.\"",
+         "\"Shall we, who are consuls, tolerate %n, openly desirous to destroy the whole world?\"",
+         "\"How often already has that dagger been wrested from %ns hands?\"",
+         -- De Officiis, Book 2, Section 46
+         -- written by M. Tullius Cicero, translated by Walter Miller
+         -- https://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A2007.01.0048%3Abook%3D2%3Asection%3D46
+         "\"Brain-work is far more important than mere hand-work.\"",
+         -- De Officiis, Book 1, Section 41
+         -- written by M. Tullius Cicero, translated by Walter Miller
+         -- https://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A2007.01.0048%3Abook%3D1%3Asection%3D41
+         "\"Fraud seems to belong to the cunning fox, force to the lion; both are wholly unworthy of man.\"",
+         -- De Officiis, Book 1, Section 43
+         -- written by M. Tullius Cicero, translated by Walter Miller
+         -- https://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A2007.01.0048%3Abook%3D1%3Asection%3D43
+         "\"Nothing is generous, if it is not at the same time just.\"",
+      },
+      firsttime = {
+         synopsis = "[You have reached %H but the doors are boarded up.]",
+         output = "text",
+         text = [[You are instantly transported back to %H
+in Rome. But all is not well in the eternal city. The doors are
+boarded up, and the streets are nearly empty. Where are the
+workers, the caravans, the traders. And where are your fellow
+%cP?
+
+The only people walking nearby are soldiers. No! That cannot be!
+It's illegal to carry weapons in the pomerium! Something is
+rotten in the Roman Republic, and mercenaries of the disease
+have spotted you!]],
+      },
+      goal_first = {
+         synopsis = "[You stand at the walls of %ns fortified camp]",
+         output = "text",
+         text = [[You stand at the walls of %ns fortified camp. You hear
+the sounds of soldiers marching and shouting. You tense up.
+The traitors of the Republic are preparing for the destruction
+of civilization.]]
+      },
+      goal_next = {
+         text = "You are back at %ns fortified camp."
+      },
+      gotit = {
+         synopsis = "[Power flows through you as you touch %o]",
+         output = "text",
+         text = [[An overwhelming power flows through you as you touch
+%o. But who is truly deserving of this power? You
+feel compelled to return to %l and discuss the ethical
+implications of using something so potent.]]
+      },
+      guardtalk_after = {
+         "\"Ave, %p. How goes your quest?\"",
+         "\"Now that %n is defeated, perhaps the eternal city can find peace.\"",
+         "\"I heard there is a triumvirate forming in the Senate.\"",
+         "\"%l once told me that to live is to think.\"",
+         "\"You missed Pompey's third triumph? It was quite the show!\"",
+      },
+      guardtalk_before = {
+         "\"Ave, %p. Good to see you again.\"",
+         "\"%n has left the eternal city, but plots against us still.\"",
+         "\"I heard there is a triumvirate forming in the Senate.\"",
+         "\"Here is Rhodes, jump here!\"",
+         "\"You missed Pompey's third triumph? It was quite the show!\"",
+      },
+      hasamulet = {
+         synopsis = "[The gods have our good qualities, so go offer the Amulet to %d.]",
+         output = "text",
+         -- De Natura Deorum ("On the Nature of the Gods") Book 2
+         -- written by M. Tullius Cicero, translated by Charles Duke Yonge
+         -- https://en.wikisource.org/wiki/On_the_Nature_of_the_Gods_(Yonge)/Book_2
+         text = [[%l tells you to go to the Astral Plane and offer the Amulet to %d.
+You appear a bit doubtful that %d should have it, so %l
+quotes his friend Balbus:
+
+"The same reason, the same verity, the same law, which ordains good
+and prohibits evil, exists in the Gods as it does in men. From them,
+consequently, we have prudence and understanding, for which reason
+our ancestors erected temples to the Mind, Faith, Virtue, and Concord.
+Shall we not then allow the Gods to have these perfections, since we
+worship the sacred and august images of them? But if understanding,
+faith, virtue, and concord reside in human kind, how could they come
+on earth, unless from heaven? And if we are possessed of wisdom, reason,
+and prudence, the Gods must have the same qualities in a greater degree;
+and not only have them, but employ them in the best and greatest works.
+The universe is the best and greatest work; therefore it must be governed
+by the wisdom and providence of the Gods."]]
+      },
+      killed_nemesis = {
+         synopsis = "[%nC curses %l as %nh dies.]",
+         output = "text",
+         text = [[As %n sinks to the ground, blood gushing from %nj open mouth, %nh
+curses %l:
+
+    "You have ruined my life %l! But by the gods, I shall torment you
+    for eternity, when your slander finally sends you to the underworld!"
+
+As %nj knees collapse, %n looks with dread at the sky, then finally falls over dead.]],
+      },
+      leader_first = {
+         -- Against Catiline, speech 1, chapter 11, slightly edited
+         -- written by M. Tullius Cicero, translated by C. D. Yonge, with some subsequent edits
+         -- http://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A1999.02.0019%3Atext%3DCatil.%3Aspeech%3D2%3Achapter%3D11
+         synopsis = "[%lC checks whether you are ready to save Republic.]",
+         output = "text",
+         text = [["Welcome back, %p. It is excellent to see you again, but alas, a great
+conflict has broken out in the Republic.
+
+On the one side are fighting modesty, on the other wantonness;
+on the one chastity, on the other uncleanness;
+on the one honesty, on the other fraud;
+on the one piety, on the other wickedness;
+on the one consistency, on the other insanity;
+on the one honour, on the other baseness;
+on the one continence, on the other lust;
+in short, equity, temperance, fortitude, prudence, all the virtues contend against
+iniquity with luxury, against indolence, against rashness, against all the vices;
+lastly, abundance contends against destitution,
+good plans against baffled designs,
+wisdom against madness,
+well-founded hope against universal despair.
+
+Are you ready, %p, to lead Rome to victory in this war?"]],
+      },
+      leader_last = {
+         -- Against Catiline, speech 1, chapter 7
+         -- written by M. Tullius Cicero, translated by C. D. Yonge
+         -- http://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A1999.02.0019%3Atext%3DCatil.%3Aspeech%3D1%3Achapter%3D7
+         synopsis = "[Everyone hates and fears you, you must leave.]",
+         output = "text",
+         text = [["On my honour, if my slaves feared me as all your fellow-citizens
+fear you, I should think I must leave my house. Do not you think
+you should leave the city? If I saw that I was even undeservedly
+so suspected and bated by my fellow-citizens, I would rather flee
+from their sight than be gazed at by the hostile eyes of every one.
+And do you, who, from the consciousness of your wickedness, know
+that the hatred of all men is just and has been long due to you,
+hesitate to avoid the sight and presence of those men whose minds
+and senses you offend? If your parents feared and hated you, and if
+you could by no means pacify them, you would, I think, depart
+somewhere out of their sight. Now, your country, which is the
+common parent of all of us, hates and fears you, and has no other
+opinion of you, than that you are meditating parricide in her case;
+and will you neither feel awe of her authority, nor deference for
+her judgment, nor fear of her power?"]],
+      },
+      leader_next = {
+         text = "\"Welcome again, %p. I hope you are ready now.\"",
+      },
+      leader_other = {
+         text = "\"Once again, you stand among the Senate %p. Are you ready now?\"",
+      },
+      locate_first = {
+         synopsis = "[You have reached %i.]",
+         output = "text",
+         text = [[You emerge upon %i. Tall trees reach towards the sky, like arms of shadow
+trying to grab the sun. %ns fortified camp cannot be far - and neither
+can %ns soldiers.]],
+      },
+      locate_next = {
+         text = "Again, you stand upon %i.",
+      },
+      nemesis_first = {
+         synopsis = "[%nC demands that you leave and betray %l.]",
+         output = "text",
+         text = [["So, %l has manipulated another %r into attacking me. Trust me, %r,
+your associate %l is a liar and traitor to the Republic, dragging my name
+into the mud for political gain. Attack me and I will defend myself as much
+as necessary. But leave, and I will reward you once I restore the Republic."]],
+      },
+      nemesis_next = {
+         text = "\"%r, leave me be. %l is tricking you into a fight you cannot win.\"",
+      },
+      nemesis_other = {
+         text = "\"You can still turn back, %r. You can tear apart %ls web of lies.\"",
+      },
+      nemesis_wantsit = {
+         text = [["You dare steal %o from me? Give it back, and I may show you mercy."]],
+      },
+      nexttime = {
+         text = "Once again you stand at %H.",
+      },
+      offeredit = {
+         -- On the Responses of the Haruspices, section 41
+         -- written by M. Tullius Cicero, translated by C. D. Yonge
+         -- http://www.perseus.tufts.edu/hopper/text.jsp?doc=Perseus%3Atext%3A1999.02.0020%3Atext%3DHar.%3Asection%3D41
+         synopsis = "[Keep %o with you, and take it away from %H.]",
+         output = "text",
+         text = [[%l tells you to keep %o and take it away from %H, explaining that:
+
+    "Tiberius Gracchus overturned the constitution of the state,
+    a man of such great force of character, and eloquence, and
+    dignity, that he fell short in no respect of the surpassing
+    and eminent virtue of his father, and of his grandfather,
+    Africanus, except in the fact of his revolting from the senate.
+    Caius Gracchus followed in his steps. How great was his genius!
+    How great his energy! How impetuous his eloquence! So that all men
+    grieved that all those good qualities and accomplishments were not
+    joined to a better disposition and to better intentions."]],
+      },
+      offeredit2 = {
+         -- De Officiis, Book 2, Section 43
+         -- written by M. Tullius Cicero, translated by Walter Miller
+         -- https://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A2007.01.0048%3Abook%3D2%3Asection%3D43
+         synopsis = "[%l dislikes %o. Take it with you to %Z and find the Amulet.]",
+         output = "text",
+         text = [[%l sneers at %o, and tells you to take it back to
+%Z the way you came, explaining that:
+
+         "Tiberius Gracchus, Publius's son, will be held in honour as long
+         as the memory of Rome shall endure; but his sons were not approved
+         by patriots while they lived, and since they are dead they are
+         numbered among those whose murder was justifiable.]],
+      },
+      othertime = {
+         text = [[Again, you stand at %H.  You vaguely sense that this
+may be the last time you stand before %l.]],
+      },
+      posthanks = {
+         text = "\"Ave, %p.  How goes your search for the Amulet of Yendor?\"",
+      },
+   },
    Mer = {
       assignquest = {
          synopsis = "[Travel to %i, and continue to %ns palace. Defeat %ni and secure %o.]",

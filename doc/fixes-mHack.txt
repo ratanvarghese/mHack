@@ -21,6 +21,7 @@ Hallucination no longer prevents offering the Amulet of Yendor.
 Grayswandir no longer grants hallucination resistance.
 Sunword grants hallucination resistance when wielded.
 The Heart of Ahriman grants hallucination resistance when carried.
+The Ranger pantheon is changed to Taurus, Sagittarius and Ursa Major.
 
 Fixes to Post-X.X.X Problems that Were Exposed Via git Repository
 ------------------------------------------------------------------
@@ -124,6 +125,17 @@ Added the Stone of Philosophers
 	When carried, the Stone of Philosophers grants acid resistance and polymorph
 	control. When invoked, it can change the material of a carried object, similar
 	to a transmuter.
+Added Legislator role.
+	Legislators are skilled rhetoricians and writers, capable of swaying the masses
+	to gain a political edge. They prefer to fight with words than with blades, and
+	arrive in the dungeon with pamphlets, books and a pen.
+	Legislators are always lawful humans.
+	Their special spell is slow monsters.
+	On the Legislator quest, Cicero tasks the player with fighting Catiline for the
+	Stylus of Gracchus, a lawful magic marker.
+Added the Stylus of Gracchus
+	It can be invoked to cause conflict. It can be recharged an unlimited number of
+	times, but after the second recharge it does not hold much ink.
 
 Platform- and/or Interface-Specific New Features
 ------------------------------------------------
