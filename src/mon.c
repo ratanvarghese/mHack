@@ -468,7 +468,7 @@ genus(int mndx, int mode)
     case PM_PAGE:
         mndx = mode ? PM_KNIGHT : PM_HUMAN;
         break;
-    case PM_PATRICIAN:
+    case PM_SENATOR:
         mndx = mode ? PM_LEGISLATOR : PM_HUMAN;
         break;
     case PM_TRADER:
@@ -909,7 +909,7 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_SCORPIUS: case PM_MASTER_ASSASSIN: case PM_ASHIKAGA_TAKAUJI:
     case PM_LORD_SURTUR: case PM_DARK_ONE: case PM_STUDENT: case PM_CHEMIST:
     case PM_CHIEFTAIN: case PM_NEANDERTHAL: case PM_ATTENDANT:
-    case PM_PAGE: case PM_PATRICIAN: case PM_TRADER:
+    case PM_PAGE: case PM_SENATOR: case PM_TRADER:
     case PM_ABBOT: case PM_ACOLYTE: case PM_HUNTER:
     case PM_THUG: case PM_NINJA: case PM_ROSHI: case PM_GUIDE:
     case PM_WARRIOR: case PM_APPRENTICE:

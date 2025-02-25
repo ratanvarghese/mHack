@@ -286,7 +286,7 @@ const struct Role roles[NUM_ROLES+1] = {
       PM_LEGISLATOR,
       NON_PM,
       PM_CICERO,
-      PM_PATRICIAN,
+      PM_SENATOR,
       PM_CATILINE,
       PM_VAMPIRE,
       PM_WEREWOLF,

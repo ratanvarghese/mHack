@@ -324,7 +324,7 @@ m_initweap(struct monst *mtmp)
                 (void) mongets(mtmp, CLUB);
                 (void) mongets(mtmp, LIGHT_ARMOR);
                 break;
-            case PM_PATRICIAN:
+            case PM_SENATOR:
                 (void) mongets(mtmp, rn2(3) ? DAGGER : KNIFE);
                 (void) mongets(mtmp, PLAIN_CLOAK);
                 (void) mongets(mtmp, LOW_BOOTS);

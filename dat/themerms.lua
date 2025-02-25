@@ -144,7 +144,7 @@ themeroom_fills = {
    -- Massacre
    function(rm)
       local mon = { "apprentice", "warrior", "ninja", "thug",
-                    "hunter", "acolyte", "trader", "abbot", "patrician", "page",
+                    "hunter", "acolyte", "trader", "abbot", "senator", "page",
                     "attendant", "neanderthal", "chieftain", "chemist",
                     "student", "wizard", "valkyrie", "tourist",
                     "samurai", "rogue", "ranger", "priestess",
