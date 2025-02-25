@@ -1758,25 +1758,21 @@ Are you ready, %p, to lead Rome to victory in this war?"]],
          -- http://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A1999.02.0019%3Atext%3DCatil.%3Aspeech%3D1%3Achapter%3D7
          synopsis = "[Everyone hates and fears you, you must leave.]",
          output = "text",
-         text = [["Is it nothing that at your arrival all those seats were vacated?
-That all the men of consular rank, who had often been marked out
-by you for slaughter, the very moment you sat down, left that
-part of the benches bare and vacant? With what feelings do you
-think you ought to bear this? On my honour, if my slaves feared
-me as all your fellow-citizens fear you, I should think I must
-leave my house. Do not you think you should leave the city? If I
-saw that I was even undeservedly so suspected and bated by my
-fellow-citizens, I would rather flee from their sight than be
-gazed at by the hostile eyes of every one. And do you, who, from
-the consciousness of your wickedness, know that the hatred of all
-men is just and has been long due to you, hesitate to avoid the
-sight and presence of those men whose minds and senses you offend?
-If your parents feared and hated you, and if you could by no means
-pacify them, you would, I think, depart somewhere out of their sight.
-Now, your country, which is the common parent of all of us, hates
-and fears you, and has no other opinion of you, than that you are
-meditating parricide in her case; and will you neither feel awe of
-her authority, nor deference for her judgment, nor fear of her power?"]],
+         text = [["On my honour, if my slaves feared me as all your fellow-citizens
+fear you, I should think I must leave my house. Do not you think
+you should leave the city? If I saw that I was even undeservedly
+so suspected and bated by my fellow-citizens, I would rather flee
+from their sight than be gazed at by the hostile eyes of every one.
+And do you, who, from the consciousness of your wickedness, know
+that the hatred of all men is just and has been long due to you,
+hesitate to avoid the sight and presence of those men whose minds
+and senses you offend? If your parents feared and hated you, and if
+you could by no means pacify them, you would, I think, depart
+somewhere out of their sight. Now, your country, which is the
+common parent of all of us, hates and fears you, and has no other
+opinion of you, than that you are meditating parricide in her case;
+and will you neither feel awe of her authority, nor deference for
+her judgment, nor fear of her power?"]],
       },
       leader_next = {
          text = "\"Welcome again, %p. I hope you are ready now.\"",
