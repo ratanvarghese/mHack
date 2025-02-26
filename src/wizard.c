@@ -135,9 +135,6 @@ mon_has_special(struct monst *mtmp)
  *      The strategy section decides *what* the monster is going
  *      to attempt, the tactics section implements the decision.
  */
-#define STRAT(w, x, y, typ)                            \
-    ((unsigned long) (w) | ((unsigned long) (x) << 16) \
-     | ((unsigned long) (y) << 8) | (unsigned long) (typ))
 
 #define M_Wants(mask) (mtmp->data->mflags3 & (mask))
 
@@ -247,17 +244,25 @@ target_on(int mask, struct monst *mtmp)
 
     otyp = which_arti(mask);
     if (!mon_has_arti(mtmp, otyp)) {
-        if (you_have(mask))
-            return STRAT(STRAT_PLAYER, u.ux, u.uy, mask);
-        else if ((otmp = on_ground(otyp)))
-            return STRAT(STRAT_GROUND, otmp->ox, otmp->oy, mask);
-        else if ((mtmp2 = other_mon_has_arti(mtmp, otyp)) != 0
+        if (you_have(mask)) {
+            mtmp->mgoal.x = u.ux;
+            mtmp->mgoal.y = u.uy;
+            return (STRAT_PLAYER | mask);
+        } else if ((otmp = on_ground(otyp))) {
+            mtmp->mgoal.x = otmp->ox;
+            mtmp->mgoal.y = otmp->oy;
+            return (STRAT_GROUND | mask);
+        } else if ((mtmp2 = other_mon_has_arti(mtmp, otyp)) != 0
                  /* when seeking the Amulet, avoid targeting the Wizard
                     or temple priests (to protect Moloch's high priest) */
                  && (otyp != AMULET_OF_YENDOR
-                     || (!mtmp2->iswiz && !inhistemple(mtmp2))))
-            return STRAT(STRAT_MONSTR, mtmp2->mx, mtmp2->my, mask);
+                     || (!mtmp2->iswiz && !inhistemple(mtmp2)))) {
+            mtmp->mgoal.x = mtmp2->mx;
+            mtmp->mgoal.y = mtmp2->my;
+            return (STRAT_MONSTR | mask);
+        }
     }
+    mtmp->mgoal.x = mtmp->mgoal.y = 0;
     return (unsigned long) STRAT_NONE;
 }
 
@@ -284,8 +289,8 @@ strategy(struct monst *mtmp)
     case 1: /* the wiz is less cautious */
         if (mtmp->data != &mons[PM_WIZARD_OF_YENDOR])
             return (unsigned long) STRAT_HEAL;
-    /* else fall through */
-
+        FALLTHROUGH;
+        /* FALLTHRU */
     case 2:
         dstrat = STRAT_HEAL;
         break;
@@ -396,9 +401,10 @@ tactics(struct monst *mtmp)
         /* if you're not around, cast healing spells */
         if (distu(mx, my) > (BOLT_LIM * BOLT_LIM))
             if (mtmp->mhp <= mtmp->mhpmax - 8) {
-                mtmp->mhp += rnd(8);
+                healmon(mtmp, rnd(8), 0);
                 return 1;
             }
+        FALLTHROUGH;
         /*FALLTHRU*/
 
     case STRAT_NONE: /* harass */
@@ -409,7 +415,7 @@ tactics(struct monst *mtmp)
     default: /* kill, maim, pillage! */
     {
         long where = (strat & STRAT_STRATMASK);
-        coordxy tx = STRAT_GOALX(strat), ty = STRAT_GOALY(strat);
+        coordxy tx = mtmp->mgoal.x, ty = mtmp->mgoal.y;
         int targ = (int) (strat & STRAT_GOAL);
         struct obj *otmp;
 

@@ -1,4 +1,4 @@
-/* NetHack 3.7	dungeon.c	$NHDT-Date: 1715203022 2024/05/08 21:17:02 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.222 $ */
+/* NetHack 3.7	dungeon.c	$NHDT-Date: 1737343478 2025/01/19 19:24:38 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.228 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2012. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -38,7 +38,8 @@ staticfn void Fread(genericptr_t, int, int, dlb *);
 staticfn xint16 dname_to_dnum(const char *);
 staticfn int find_branch(const char *, struct proto_dungeon *);
 staticfn xint16 parent_dnum(const char *, struct proto_dungeon *);
-staticfn int level_range(xint16, int, int, int, struct proto_dungeon *, int *);
+staticfn int level_range(xint16, int, int, int, struct proto_dungeon *,
+                         int *);
 staticfn xint16 parent_dlevel(const char *, struct proto_dungeon *);
 staticfn int correct_branch_type(struct tmpbranch *);
 staticfn branch *add_branch(int, int, struct proto_dungeon *);
@@ -1006,7 +1007,8 @@ init_dungeon_dungeons(
     int dgn_base, dgn_range, dgn_align, dgn_entry, dgn_chance, dgn_flags;
 
     dgn_name = get_table_str(L, "name");
-    dgn_bonetag = get_table_str_opt(L, "bonetag", emptystr); /* TODO: single char or "none" */
+    /* TODO: accept single char or "none" for bonetag */
+    dgn_bonetag = get_table_str_opt(L, "bonetag", emptystr);
     dgn_protoname = get_table_str_opt(L, "protofile", emptystr);
     dgn_base = get_table_int(L, "base");
     dgn_range = get_table_int_opt(L, "range", 0);
@@ -1059,10 +1061,12 @@ init_dungeon_dungeons(
     pd->tmpdungeon[dngidx].chance = dgn_chance;
     pd->tmpdungeon[dngidx].entry_lev = dgn_entry;
 
-    Strcpy(svd.dungeons[dngidx].fill_lvl, dgn_fill); /* FIXME: fill_lvl len */
-    Strcpy(svd.dungeons[dngidx].dname, dgn_name); /* FIXME: dname length */
-    Strcpy(svd.dungeons[dngidx].proto, dgn_protoname); /* FIXME: proto length */
-    Strcpy(svd.dungeons[dngidx].themerms, dgn_themerms); /* FIXME: length */
+    /* FIXME: these should have length checks */
+    Strcpy(svd.dungeons[dngidx].fill_lvl, dgn_fill);
+    Strcpy(svd.dungeons[dngidx].dname, dgn_name);
+    Strcpy(svd.dungeons[dngidx].proto, dgn_protoname);
+    Strcpy(svd.dungeons[dngidx].themerms, dgn_themerms);
+    /* FIXME: accept "none", convert that to '\0' */
     svd.dungeons[dngidx].boneid = *dgn_bonetag ? *dgn_bonetag : 0;
     free((genericptr) dgn_fill);
     /* free((genericptr) dgn_protoname); -- stored in pd.tmpdungeon[] */
@@ -1079,8 +1083,9 @@ init_dungeon_dungeons(
         svd.dungeons[dngidx].depth_start = 1;
         svd.dungeons[dngidx].dunlev_ureached = 1;
     } else {
-        svd.dungeons[dngidx].ledger_start = svd.dungeons[dngidx - 1].ledger_start
-            + svd.dungeons[dngidx - 1].num_dunlevs;
+        svd.dungeons[dngidx].ledger_start
+            = svd.dungeons[dngidx - 1].ledger_start
+              + svd.dungeons[dngidx - 1].num_dunlevs;
         svd.dungeons[dngidx].dunlev_ureached = 0;
     }
 
@@ -1148,10 +1153,11 @@ fixup_level_locations(void)
                     if (on_level(&br->end2, &knox_level))
                         break;
 
-                if (br)
+                if (br) {
                     br->end1.dnum = svn.n_dgns;
-                /* adjust the branch's position on the list */
-                insert_branch(br, TRUE);
+                    /* adjust the branch's position on the list */
+                    insert_branch(br, TRUE);
+                }
             }
         }
     }
@@ -1403,8 +1409,8 @@ ledger_to_dnum(xint16 ledgerno)
     /* find i such that (i->base + 1) <= ledgerno <= (i->base + i->count) */
     for (i = 0; i < svn.n_dgns; i++)
         if (svd.dungeons[i].ledger_start < ledgerno
-            && (ledgerno
-                <= svd.dungeons[i].ledger_start + svd.dungeons[i].num_dunlevs))
+            && ledgerno <= (svd.dungeons[i].ledger_start
+                            + svd.dungeons[i].num_dunlevs))
             return i;
 
     panic("level number out of range [ledger_to_dnum(%d)]", (int) ledgerno);
@@ -1475,7 +1481,7 @@ builds_up(d_level *lev)
     branch *br;
     if (dptr->num_dunlevs > 1)
         return (boolean) (dptr->entry_lev == dptr->num_dunlevs);
-    /* else, single-level branch; find the branch connection that connects this
+    /* else, single-level branch; find branch connection that connects this
      * dungeon from a parent dungeon and determine whether it builds up from
      * that */
     for (br = svb.branches; br; br = br->next) {
@@ -1983,7 +1989,7 @@ boolean
 Invocation_lev(d_level *lev)
 {
     return (boolean) (In_hell(lev)
-                    && lev->dlevel == svd.dungeons[lev->dnum].num_dunlevs - 1);
+                   && lev->dlevel == svd.dungeons[lev->dnum].num_dunlevs - 1);
 }
 
 /* use instead of depth() wherever a degree of difficulty is made
@@ -2109,7 +2115,7 @@ lev_by_name(const char *nam)
             /* either wizard mode or else seen and not forgotten;
                note: used to be '(flags & (FORGOTTEN|VISITED)) == VISITED'
                back when amnesia could cause levels to be forgotten */
-            && (wizard || (svl.level_info[idx].flags & (VISITED)) == VISITED)) {
+            && (wizard || (svl.level_info[idx].flags & VISITED) == VISITED)) {
             lev = depth(&dlev);
         }
     } else { /* not a specific level; try branch names */
@@ -2121,9 +2127,10 @@ lev_by_name(const char *nam)
         if (idx >= 0) {
             idxtoo = (idx >> 8) & 0x00FF;
             idx &= 0x00FF;
-            /* either wizard mode, or else _both_ sides of branch seen */
-            if (wizard || (((svl.level_info[idx].flags & (VISITED)) == VISITED)
-                           && ((svl.level_info[idxtoo].flags & (VISITED))
+            /* either wizard mode, or else _both_ sides of branch seen; */
+            /* (flags & VISITED)==VISITED: see comment about amnesia above */
+            if (wizard || (((svl.level_info[idx].flags & VISITED) == VISITED)
+                           && ((svl.level_info[idxtoo].flags & VISITED)
                                == VISITED))) {
                 if (ledger_to_dnum(idxtoo) == u.uz.dnum)
                     idx = idxtoo;
@@ -2174,7 +2181,7 @@ tport_menu(
     char *entry,
     struct lchoice *lchoices,
     d_level *lvl_p,
-    boolean unreachable)
+    boolean cannotreach)
 {
     char tmpbuf[BUFSZ];
     anything any;
@@ -2184,7 +2191,7 @@ tport_menu(
     lchoices->dgn[lchoices->idx] = lvl_p->dnum;
     lchoices->playerlev[lchoices->idx] = depth(lvl_p);
     any = cg.zeroany;
-    if (unreachable) {
+    if (cannotreach) {
         /* not selectable, but still consumes next menuletter;
            prepend padding in place of missing menu selector */
         Sprintf(tmpbuf, "    %s", entry);
@@ -2591,7 +2598,8 @@ load_exclusions(NHFILE *nhfp)
     while (nez-- > 0) {
         ez = (struct exclusion_zone *) alloc(sizeof *ez);
         if (nhfp->structlevel) {
-            mread(nhfp->fd, (genericptr_t) &ez->zonetype, sizeof ez->zonetype);
+            mread(nhfp->fd, (genericptr_t) &ez->zonetype,
+                  sizeof ez->zonetype);
             mread(nhfp->fd, (genericptr_t) &ez->lx, sizeof ez->lx);
             mread(nhfp->fd, (genericptr_t) &ez->ly, sizeof ez->ly);
             mread(nhfp->fd, (genericptr_t) &ez->hx, sizeof ez->hx);
@@ -2745,7 +2753,7 @@ overview_stats(
     char buf[BUFSZ], hdrbuf[QBUFSZ];
     long ocount, osize, bcount, bsize, acount, asize;
     struct cemetery *ce;
-    mapseen *mptr = find_mapseen(&u.uz);
+    mapseen *mptr;
 
     ocount = bcount = acount = osize = bsize = asize = 0L;
     for (mptr = svm.mapseenchn; mptr; mptr = mptr->next) {
@@ -2783,7 +2791,7 @@ RESTORE_WARNING_FORMAT_NONLITERAL
 
 /* Remove all mapseen objects for a particular dnum.
  * Useful during quest expulsion to remove quest levels.
- * [No longer deleted, just marked as unreachable.  #overview will
+ * [No longer deleted, just marked as notreachable.  #overview will
  * ignore such levels, end of game disclosure will include them.]
  */
 void
@@ -2795,7 +2803,7 @@ remdun_mapseen(int dnum)
     while ((mptr = *mptraddr) != 0) {
         if (mptr->lev.dnum == dnum) {
 #if 1 /* use this... */
-            mptr->flags.unreachable = 1;
+            mptr->flags.notreachable = 1;
         }
 #else /* old deletion code */
             *mptraddr = mptr->next;
@@ -2832,11 +2840,13 @@ init_mapseen(d_level *lev)
     init->lev.dlevel = lev->dlevel;
 
     /* walk until we get to the place where we should insert init */
-    for (mptr = svm.mapseenchn, prev = 0; mptr; prev = mptr, mptr = mptr->next)
+    for (mptr = svm.mapseenchn, prev = 0; mptr;
+         prev = mptr, mptr = mptr->next) {
         if (mptr->lev.dnum > init->lev.dnum
             || (mptr->lev.dnum == init->lev.dnum
                 && mptr->lev.dlevel > init->lev.dlevel))
             break;
+    }
     if (!prev) {
         init->next = svm.mapseenchn;
         svm.mapseenchn = init;
@@ -2858,7 +2868,7 @@ interest_mapseen(mapseen *mptr)
 {
     if (on_level(&u.uz, &mptr->lev))
         return TRUE;
-    if (mptr->flags.unreachable || mptr->flags.forgot)
+    if (mptr->flags.notreachable || mptr->flags.forgot)
         return FALSE;
     /* when in tutorial, show all tutorial levels visited whether interesting
        or not and don't show any other levels; when outside tutorial, don't
@@ -2885,7 +2895,7 @@ interest_mapseen(mapseen *mptr)
         return TRUE;
     /* when in the endgame, list all endgame levels visited, whether they
        have annotations or not, so that #overview doesn't become extremely
-       sparse once the rest of the dungeon has been flagged as unreachable */
+       sparse once the rest of the dungeon has been flagged as notreachable */
     if (In_endgame(&u.uz))
         return (boolean) In_endgame(&mptr->lev);
     /* level is of interest if it has non-zero feature count or known bones
@@ -3035,6 +3045,7 @@ count_feat_lastseentyp(
         }
         if (is_drawbridge_wall(x, y) < 0)
             break;
+        FALLTHROUGH;
         /*FALLTHRU*/
     case DBWALL:
     case DRAWBRIDGE_DOWN:
@@ -3071,17 +3082,17 @@ recalc_mapseen(void)
     /* reset all features; mptr->feat.* = 0; */
     (void) memset((genericptr_t) &mptr->feat, 0, sizeof mptr->feat);
     /* reset most flags; some level-specific ones are left as-is */
-    if (mptr->flags.unreachable) {
-        mptr->flags.unreachable = 0; /* reached it; Eye of the Aethiopica? */
+    if (mptr->flags.notreachable) {
+        mptr->flags.notreachable = 0; /* reached it; Eye of the Aethiopica? */
         if (In_quest(&u.uz)) {
             mapseen *mptrtmp = svm.mapseenchn;
 
-            /* when quest was unreachable due to ejection and portal removal,
+            /* when quest was notreachable due to ejection and portal removal,
                getting back to it via arti-invoke should revive annotation
                data for all quest levels, not just the one we're on now */
             do {
                 if (mptrtmp->lev.dnum == mptr->lev.dnum)
-                    mptrtmp->flags.unreachable = 0;
+                    mptrtmp->flags.notreachable = 0;
                 mptrtmp = mptrtmp->next;
             } while (mptrtmp);
         }
@@ -3237,7 +3248,8 @@ recalc_mapseen(void)
 }
 
 /*ARGUSED*/
-/* valley and sanctum levels get automatic annotation once temple is entered */
+/* valley and sanctum levels get automatic annotation once their temple
+   is entered */
 void
 mapseen_temple(
     struct monst *priest UNUSED) /* not used; might be useful someday */
@@ -3623,7 +3635,7 @@ print_mapseen(
         Sprintf(buf, "%sA primitive area.", PREFIX);
     } else if (on_level(&mptr->lev, &qstart_level)) {
         Sprintf(buf, "%sHome%s.", PREFIX,
-                mptr->flags.unreachable ? " (no way back...)" : "");
+                mptr->flags.notreachable ? " (no way back...)" : "");
         if (u.uevent.qcompleted)
             Sprintf(buf, "%sCompleted quest for %s.", PREFIX, ldrname());
         else if (mptr->flags.questing)

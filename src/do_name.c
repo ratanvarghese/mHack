@@ -1,4 +1,4 @@
-/* NetHack 3.7	do_name.c	$NHDT-Date: 1720895738 2024/07/13 18:35:38 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.320 $ */
+/* NetHack 3.7	do_name.c	$NHDT-Date: 1737013431 2025/01/15 23:43:51 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.326 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Pasi Kallinen, 2018. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -273,7 +273,7 @@ do_mgivenname(void)
             verbalize("I'm %s, not %s.", shkname(mtmp), buf);
         }
     } else if (mtmp->ispriest || mtmp->isminion || mtmp->isshk
-               || mtmp->data == &mons[PM_GHOST]) {
+               || mtmp->data == &mons[PM_GHOST] || has_ebones(mtmp)) {
         if (!alreadynamed(mtmp, monnambuf, buf))
             pline("%s will not accept the name %s.", upstart(monnambuf), buf);
     } else {
@@ -470,6 +470,7 @@ objtyp_is_callable(int i)
            determine which one was the real one */
         if (i == AMULET_OF_YENDOR || i == FAKE_AMULET_OF_YENDOR)
             break; /* return FALSE */
+        FALLTHROUGH;
         /*FALLTHRU*/
     case SCROLL_CLASS:
     case POTION_CLASS:
@@ -777,7 +778,7 @@ namefloorobj(void)
     }
     if (fakeobj) {
         obj->where = OBJ_FREE; /* object_from_map() sets it to OBJ_FLOOR */
-        dealloc_obj(obj);
+        dealloc_obj(obj); /* has no contents */
     }
 }
 
@@ -805,12 +806,12 @@ rndghostname(void)
  * x_monnam is the generic monster-naming function.
  *                seen        unseen       detected               named
  * mon_nam:     the newt        it      the invisible orc       Fido
- * noit_mon_nam:the newt (as if detected) the invisible orc     Fido
+ * noit_mon_nam:your newt (as if detected) your invisible orc   Fido
  * some_mon_nam:the newt    someone     the invisible orc       Fido
  *          or              something
  * l_monnam:    newt            it      invisible orc           dog called Fido
  * Monnam:      The newt        It      The invisible orc       Fido
- * noit_Monnam: The newt (as if detected) The invisible orc     Fido
+ * noit_Monnam: Your newt (as if detected) Your invisible orc   Fido
  * Some_Monnam: The newt    Someone     The invisible orc       Fido
  *          or              Something
  * Adjmonnam:   The poor newt   It      The poor invisible orc  The poor Fido
@@ -981,6 +982,10 @@ x_monnam(
     } else if (do_name && has_mgivenname(mtmp)) {
         char *name = MGIVENNAME(mtmp);
 
+#if 0
+      /* hardfought */
+      if (has_ebones(mtmp)) {
+#endif
         if (mdat == &mons[PM_GHOST]) {
             Sprintf(eos(buf), "%s ghost", s_suffix(name));
             name_at_start = TRUE;
@@ -1003,6 +1008,9 @@ x_monnam(
             Strcat(buf, name);
             name_at_start = TRUE;
         }
+#if 0 /* hardfought */
+      }
+#endif
     } else if (is_mplayer(mdat) && !In_endgame(&u.uz)) {
         char pbuf[BUFSZ];
 
@@ -1063,14 +1071,15 @@ mon_nam(struct monst *mtmp)
                     (has_mgivenname(mtmp)) ? SUPPRESS_SADDLE : 0, FALSE);
 }
 
-/* print the name as if mon_nam() was called, but assume that the player
- * can always see the monster--used for probing and for monsters aggravating
- * the player with a cursed potion of invisibility
- */
+/* print the name as if mon_nam() (y_monnam() if tame) was called, but
+   assume that the player can always see the monster--used for probing and
+   for monsters aggravating the player with a cursed potion of invisibility;
+   also used for pet moving "reluctantly" onto cursed object when that pet
+   can be seen either before or after it moves */
 char *
 noit_mon_nam(struct monst *mtmp)
 {
-    return x_monnam(mtmp, ARTICLE_THE, (char *) 0,
+    return x_monnam(mtmp, ARTICLE_YOUR, (char *) 0,
                     (has_mgivenname(mtmp) ? (SUPPRESS_SADDLE | SUPPRESS_IT)
                                           : SUPPRESS_IT),
                     FALSE);

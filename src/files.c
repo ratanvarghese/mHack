@@ -1,4 +1,4 @@
-/* NetHack 3.7	files.c	$NHDT-Date: 1717449127 2024/06/03 21:12:07 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.399 $ */
+/* NetHack 3.7	files.c	$NHDT-Date: 1737346561 2025/01/19 20:16:01 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.416 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Derek S. Ray, 2015. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -7,7 +7,6 @@
 
 #include "hack.h"
 #include "dlb.h"
-#include <ctype.h>
 
 #ifdef TTY_GRAPHICS
 #include "wintty.h" /* more() */
@@ -45,7 +44,6 @@ const
 #if defined(UNIX) && defined(SELECTSAVED)
 #include <sys/types.h>
 #include <dirent.h>
-#include <stdlib.h>
 #endif
 
 #if defined(UNIX) || defined(VMS) || !defined(NO_SIGNAL)
@@ -173,6 +171,7 @@ staticfn boolean cnf_line_catname(char *);
 #ifdef SYSCF
 staticfn boolean cnf_line_WIZARDS(char *);
 staticfn boolean cnf_line_SHELLERS(char *);
+staticfn boolean cnf_line_MSGHANDLER(char *);
 staticfn boolean cnf_line_EXPLORERS(char *);
 staticfn boolean cnf_line_DEBUGFILES(char *);
 staticfn boolean cnf_line_DUMPLOGFILE(char *);
@@ -230,10 +229,6 @@ staticfn void wizkit_addinv(struct obj *);
 boolean proc_wizkit_line(char *buf);
 void read_wizkit(void);  /* in extern.h; why here too? */
 staticfn FILE *fopen_sym_file(void);
-
-#ifdef SELF_RECOVER
-staticfn boolean copy_bytes(int, int);
-#endif
 staticfn NHFILE *viable_nhfile(NHFILE *);
 
 /* return a file's name without its path and optionally trailing 'type' */
@@ -318,7 +313,8 @@ fname_encode(
             (void) sprintf(op, "%c%02X", quotechar, *sp);
             op += 3;
             cnt += 3;
-        } else if ((strchr(legal, *sp) != 0) || (strchr(hexdigits, *sp) != 0)) {
+        } else if ((strchr(legal, *sp) != 0)
+                   || (strchr(hexdigits, *sp) != 0)) {
             *op++ = *sp;
             *op = '\0';
             cnt++;
@@ -352,7 +348,6 @@ fname_decode(char quotechar, char *s, char *callerbuf, int bufsz)
     sp = s;
     op = callerbuf;
     *op = '\0';
-    calc = 0;
 
     while (*sp) {
         /* Do we have room for one more character? */
@@ -722,11 +717,7 @@ clearlocks(void)
 staticfn int QSORTCALLBACK
 strcmp_wrap(const void *p, const void *q)
 {
-#if defined(UNIX) && defined(QT_GRAPHICS)
-    return strncasecmp(*(char **) p, *(char **) q, 16);
-#else
-    return strncmpi(*(char **) p, *(char **) q, 16);
-#endif
+    return strcmp(*(char **) p, *(char **) q);
 }
 #endif
 
@@ -965,8 +956,8 @@ set_savefile_name(boolean regularize_it)
 #endif
 #if defined(WIN32)
     if (regularize_it) {
-        static const char okchars[] =
-            "*ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-.";
+        static const char okchars[]
+            = "*ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-.";
         const char *legal = okchars;
 
         ++legal; /* skip '*' wildcard character */
@@ -992,7 +983,7 @@ set_savefile_name(boolean regularize_it)
     if (strlen(gs.SAVEF) < (SAVESIZE - 1))
         (void) strncat(gs.SAVEF, svp.plname, (SAVESIZE - strlen(gs.SAVEF)));
 #endif
-#if defined(MICRO) && !defined(VMS) && !defined(WIN32) && !defined(MSDOS)
+#if defined(MICRO) && !defined(WIN32) && !defined(MSDOS)
     if (strlen(gs.SAVEP) < (SAVESIZE - 1))
         Strcpy(gs.SAVEF, gs.SAVEP);
     else
@@ -1049,7 +1040,8 @@ set_savefile_name(boolean regularize_it)
     }
 #if (NH_DEVEL_STATUS != NH_STATUS_RELEASED)
     if (overflow)
-        impossible("set_savefile_name() couldn't complete without overflow %d",
+        impossible("set_savefile_name() couldn't complete"
+                   " without overflow %d",
                    overflow);
 #endif
 }
@@ -1103,6 +1095,7 @@ create_savefile(void)
         nhfp->mode = WRITING;
         if (program_state.in_self_recover || do_historical) {
             do_historical = TRUE;       /* force it */
+            nhUse(do_historical);
             nhfp->structlevel = TRUE;
             nhfp->fieldlevel = FALSE;
             nhfp->addinfo = FALSE;
@@ -1157,6 +1150,7 @@ open_savefile(void)
         nhfp->mode = READING;
         if (program_state.in_self_recover || do_historical) {
             do_historical = TRUE;       /* force it */
+            nhUse(do_historical);
             nhfp->structlevel = TRUE;
             nhfp->fieldlevel = FALSE;
             nhfp->addinfo = FALSE;
@@ -1254,9 +1248,12 @@ check_panic_save(void)
 #if defined(SELECTSAVED)
 
 char *
-plname_from_file(const char *filename, boolean without_wait_synch_per_file)
+plname_from_file(
+    const char *filename,
+    boolean without_wait_synch_per_file)
 {
-    NHFILE *nhfp = (NHFILE *) 0;
+    NHFILE *nhfp;
+    unsigned ln;
     char *result = 0;
 
     Strcpy(gs.SAVEF, filename);
@@ -1273,67 +1270,41 @@ plname_from_file(const char *filename, boolean without_wait_synch_per_file)
     nh_uncompress(gs.SAVEF);
     if ((nhfp = open_savefile()) != 0) {
         if (validate(nhfp, filename, without_wait_synch_per_file) == 0) {
-            char tplname[PL_NSIZ];
-
-            get_plname_from_file(nhfp, tplname);
-            result = dupstr(tplname);
+            /* room for "name+role+race+gend+algn X" where the space before
+               X is actually NUL and X is playmode: one of '-', 'X', or 'D' */
+            ln = (unsigned) PL_NSIZ_PLUS;
+            result = memset((genericptr_t) alloc(ln), '\0', ln);
+            get_plname_from_file(nhfp, result, FALSE);
         }
         close_nhfile(nhfp);
     }
     nh_compress(gs.SAVEF);
-
-    return result;
-#if 0
-/* --------- obsolete - used to be ifndef STORE_PLNAME_IN_FILE ----*/
-#if defined(UNIX) && defined(QT_GRAPHICS)
-    /* Name not stored in save file, so we have to extract it from
-       the filename, which loses information
-       (eg. "/", "_", and "." characters are lost. */
-    int k;
-    int uid;
-    char name[64]; /* more than PL_NSIZ */
-#ifdef COMPRESS_EXTENSION
-#define EXTSTR COMPRESS_EXTENSION
-#else
-#define EXTSTR ""
-#endif
-
-    if (sscanf(filename, "%*[^/]/%d%63[^.]" EXTSTR, &uid, name) == 2) {
-#undef EXTSTR
-        /* "_" most likely means " ", which certainly looks nicer */
-        for (k = 0; name[k]; k++)
-            if (name[k] == '_')
-                name[k] = ' ';
-        return dupstr(name);
-    } else
-#endif /* UNIX && QT_GRAPHICS */
-    {
-        return 0;
-    }
-/* --------- end of obsolete code ----*/
-#endif /* 0 - WAS STORE_PLNAME_IN_FILE*/
+    return result; /* file's plname[]+playmode value */
 }
 #endif /* defined(SELECTSAVED) */
 
 #define SUPPRESS_WAITSYNCH_PERFILE TRUE
 #define ALLOW_WAITSYNCH_PERFILE FALSE
 
+/* get list of saved games owned by current user */
 char **
 get_saved_games(void)
 {
+    char **result = NULL;
 #if defined(SELECTSAVED)
 #if defined(WIN32) || defined(UNIX)
     int n;
 #endif
     int j = 0;
-    char **result = 0;
 
 #ifdef WIN32
     {
         char *foundfile;
         const char *fq_save;
+#if 0
         const char *fq_new_save;
         const char *fq_old_save;
+#endif
         char **files = 0;
         int i, count_failures = 0;
 
@@ -1353,8 +1324,8 @@ get_saved_games(void)
         }
 
         if (n > 0) {
-            files = (char **) alloc((n + 1) * sizeof(char *)); /* at most */
-            (void) memset((genericptr_t) files, 0, (n + 1) * sizeof(char *));
+            files = (char **) alloc((n + 1) * sizeof (char *)); /* at most */
+            (void) memset((genericptr_t) files, 0, (n + 1) * sizeof (char *));
             if (findfirst((char *) fq_save)) {
                 i = 0;
                 do {
@@ -1364,13 +1335,19 @@ get_saved_games(void)
         }
 
         if (n > 0) {
-            result = (char **) alloc((n + 1) * sizeof(char *)); /* at most */
-            (void) memset((genericptr_t) result, 0, (n + 1) * sizeof(char *));
+            result = (char **) alloc((n + 1) * sizeof (char *)); /* at most */
+            (void) memset((genericptr_t) result, 0, (n + 1) * sizeof (char *));
             for(i = 0; i < n; i++) {
                 char *r;
                 r = plname_from_file(files[i], SUPPRESS_WAITSYNCH_PERFILE);
 
                 if (r) {
+                    /* this renaming of the savefile is not compatible
+                     * with 1f36b98b,  'selectsaved' extension from
+                     * Oct 10, 2024. Disable the renaming for the time
+                     * being.
+                     */
+#if 0
                     /* rename file if it is not named as expected */
                     Strcpy(svp.plname, r);
                     set_savefile_name(TRUE);
@@ -1380,7 +1357,7 @@ get_saved_games(void)
                     if (strcmp(fq_old_save, fq_new_save) != 0
                         && !file_exists(fq_new_save))
                         (void) rename(fq_old_save, fq_new_save);
-
+#endif
                     result[j++] = r;
                 } else {
                     count_failures++;
@@ -1392,7 +1369,7 @@ get_saved_games(void)
         if (count_failures)
             wait_synch();
     }
-#endif
+#endif /* WIN32 */
 #ifdef UNIX
     /* posixly correct version */
     int myuid = getuid();
@@ -1411,7 +1388,7 @@ get_saved_games(void)
             (void) memset((genericptr_t) result, 0, (n + 1) * sizeof(char *));
             for (i = 0, j = 0; i < n; i++) {
                 int uid;
-                char name[64]; /* more than PL_NSIZ */
+                char name[64]; /* more than PL_NSIZ+1 */
                 struct dirent *entry = readdir(dir);
 
                 if (!entry)
@@ -1432,7 +1409,7 @@ get_saved_games(void)
             closedir(dir);
         }
     }
-#endif
+#endif /* UNIX */
 #ifdef VMS
     Strcpy(svp.plname, "*");
     set_savefile_name(FALSE);
@@ -1442,14 +1419,14 @@ get_saved_games(void)
     if (j > 0) {
         if (j > 1)
             qsort(result, j, sizeof (char *), strcmp_wrap);
-        result[j] = 0;
-        return result;
+        result[j] = (char *) NULL;
     } else if (result) { /* could happen if save files are obsolete */
         free_saved_games(result);
+        result = (char **) NULL;
     }
 #endif /* SELECTSAVED */
 
-    return 0;
+    return result;
 }
 #undef SUPPRESS_WAITSYNCH_PERFILE
 #undef ALLOW_WAITSYNCH_PERFILE
@@ -1458,10 +1435,10 @@ void
 free_saved_games(char **saved)
 {
     if (saved) {
-        int i = 0;
+        int i;
 
-        while (saved[i])
-            free((genericptr_t) saved[i++]);
+        for (i = 0; saved[i]; ++i)
+            free((genericptr_t) saved[i]);
         free((genericptr_t) saved);
     }
 }
@@ -1946,7 +1923,8 @@ lock_file(const char *filename, int whichprefix,
 #ifdef USE_FCNTL
     lockfd = open(filename, O_RDWR);
     if (lockfd == -1) {
-        HUP raw_printf("Cannot open file %s.  Is NetHack installed correctly?",
+        HUP raw_printf("Cannot open file %s. "
+                       " Is NetHack installed correctly?",
                        filename);
         gn.nesting--;
         return FALSE;
@@ -1970,8 +1948,8 @@ lock_file(const char *filename, int whichprefix,
 
 #ifdef USE_FCNTL
         if (retryct--) {
-            HUP raw_printf(
-               "Waiting for release of fcntl lock on %s.  (%d retries left.)",
+            HUP raw_printf("Waiting for release of fcntl lock on %s. "
+                           " (%d retries left.)",
                            filename, retryct);
             sleep(1);
         } else {
@@ -1987,7 +1965,8 @@ lock_file(const char *filename, int whichprefix,
         switch (errnosv) { /* George Barbanis */
         case EEXIST:
             if (retryct--) {
-                HUP raw_printf("Waiting for access to %s.  (%d retries left).",
+                HUP raw_printf("Waiting for access to %s. "
+                               " (%d retries left).",
                                filename, retryct);
 #if defined(SYSV) || defined(ULTRIX) || defined(VMS)
                 (void)
@@ -2022,8 +2001,8 @@ lock_file(const char *filename, int whichprefix,
             /* take a wild guess at the underlying cause */
             HUP perror(lockname);
             HUP raw_printf("Cannot lock %s.", filename);
-            HUP raw_printf(
-  "(Perhaps you are running NetHack from inside the distribution package?).");
+            HUP raw_printf("(Perhaps you are running NetHack from"
+                           " inside the distribution package?).");
             gn.nesting--;
             return FALSE;
         default:
@@ -2174,8 +2153,8 @@ do_write_config_file(void)
         wait_synch();
         pline("Some settings are not saved!");
         wait_synch();
-        pline(
-           "All manual customization and comments are removed from the file!");
+        pline("All manual customization and comments are removed"
+              " from the file!");
         wait_synch();
     }
 #define overwrite_prompt "Overwrite config file %.*s?"
@@ -2534,7 +2513,8 @@ handle_config_section(char *buf)
         }
         if (*sect) { /* got a section name */
             gc.config_section_current = dupstr(sect);
-            debugpline1("set config section: '%s'", gc.config_section_current);
+            debugpline1("set config section: '%s'",
+                        gc.config_section_current);
         } else { /* empty section name => end of sections */
             free_config_sections();
             debugpline0("unset config section");
@@ -2785,6 +2765,15 @@ cnf_line_SHELLERS(char *bufp)
 }
 
 staticfn boolean
+cnf_line_MSGHANDLER(char *bufp)
+{
+    if (sysopt.msghandler)
+        free((genericptr_t) sysopt.msghandler);
+    sysopt.msghandler = dupstr(bufp);
+    return TRUE;
+}
+
+staticfn boolean
 cnf_line_EXPLORERS(char *bufp)
 {
     if (sysopt.explorers)
@@ -2981,8 +2970,8 @@ cnf_line_MAX_STATUENAME_RANK(char *bufp)
     int n = atoi(bufp);
 
     if (n < 1) {
-        config_error_add(
-               "Illegal value in MAX_STATUENAME_RANK (minimum is 1)");
+        config_error_add("Illegal value in MAX_STATUENAME_RANK"
+                         " (minimum is 1)");
         n = 10;
     }
     sysopt.tt_oname_maxrank = n;
@@ -2998,8 +2987,8 @@ cnf_line_LIVELOG(char *bufp)
     long L = strtol(bufp, NULL, 0);
 
     if (L < 0L || L > 0xffffL) {
-        config_error_add(
-              "Illegal value for LIVELOG (must be between 0 and 0xFFFF).");
+        config_error_add("Illegal value for LIVELOG"
+                         " (must be between 0 and 0xFFFF).");
         return 0;
     }
     sysopt.livelog = L;
@@ -3109,8 +3098,8 @@ cnf_line_PORTABLE_DEVICE_PATHS(char *bufp)
     int n = atoi(bufp);
 
     if (n < 0 || n > 1) {
-        config_error_add(
-                   "Illegal value in PORTABLE_DEVICE_PATHS (not 0,1)");
+        config_error_add("Illegal value in PORTABLE_DEVICE_PATHS"
+                         " (not 0 or 1)");
         n = 0;
     }
     sysopt.portable_device_paths = n;
@@ -3300,6 +3289,7 @@ static const struct match_config_line_stmt {
 #ifdef SYSCF
     CNFL_S(WIZARDS, 7),
     CNFL_S(SHELLERS, 8),
+    CNFL_S(MSGHANDLER, 9),
     CNFL_S(EXPLORERS, 7),
     CNFL_S(DEBUGFILES, 5),
     CNFL_S(DUMPLOGFILE, 7),
@@ -3733,7 +3723,8 @@ parse_conf_buf(struct _cnf_parser_state *p, boolean (*proc)(char *arg))
                 char *bufp = find_optparam(p->buf);
 
                 if (!bufp) {
-                    config_error_add("Format is CHOOSE=section1,section2,...");
+                    config_error_add("Format is CHOOSE=section1"
+                                     ",section2,...");
                     p->rv = FALSE;
                     free(p->buf), p->buf = (char *) 0;
                     return;
@@ -3915,8 +3906,8 @@ fopen_wizkit_file(void)
     else if (errno != ENOENT) {
         /* e.g., problems when setuid NetHack can't search home
          * directory restricted to user */
-        raw_printf("Couldn't open default gw.wizkit file %s (%d).", tmp_wizkit,
-                   errno);
+        raw_printf("Couldn't open default gw.wizkit file %s (%d).",
+                   tmp_wizkit, errno);
         wait_synch();
     }
 #endif
@@ -4047,7 +4038,7 @@ read_sym_file(int which_set)
             clear_symsetentry(which_set, TRUE);
         config_error_done();
 
-        /* If name was defined, it was invalid.  Then we're loading fallback */
+        /* If name was defined, it was invalid. Then we're loading fallback */
         if (gs.symset[which_set].name) {
             gs.symset[which_set].explicitly = FALSE;
             return 0;
@@ -4087,8 +4078,8 @@ check_recordfile(const char *dir UNUSED_if_not_OS2_CODEVIEW)
     if (fd >= 0) {
 #ifdef VMS /* must be stream-lf to use UPDATE_RECORD_IN_PLACE */
         if (!file_is_stmlf(fd)) {
-            raw_printf(
-                   "Warning: scoreboard file '%s' is not in stream_lf format",
+            raw_printf("Warning: scoreboard file '%s'"
+                       " is not in stream_lf format",
                        fq_record);
             wait_synch();
         }
@@ -4258,7 +4249,7 @@ recover_savefile(void)
     int processed[256];
     char savename[SAVESIZE], errbuf[BUFSZ], indicator;
     struct savefile_info sfi;
-    char tmpplbuf[PL_NSIZ];
+    char tmpplbuf[PL_NSIZ_PLUS];
     const char *savewrite_failure = (const char *) 0;
 
     for (lev = 0; lev < 256; lev++)
@@ -4280,16 +4271,18 @@ recover_savefile(void)
     }
     if (read(gnhfp->fd, (genericptr_t) &hpid, sizeof hpid) != sizeof hpid) {
         raw_printf("\n%s\n%s\n",
-            "Checkpoint data incompletely written or subsequently clobbered.",
+                   "Checkpoint data incompletely written"
+                   " or subsequently clobbered.",
                    "Recovery impossible.");
         close_nhfile(gnhfp);
         return FALSE;
     }
     if (read(gnhfp->fd, (genericptr_t) &savelev, sizeof(savelev))
         != sizeof(savelev)) {
-        raw_printf(
-         "\nCheckpointing was not in effect for %s -- recovery impossible.\n",
-                   gl.lock);
+        raw_printf("\n%s %s %s\n",
+                   "Checkpointing was not in effect for",
+                   gl.lock,
+                   "-- recovery impossible.");
         close_nhfile(gnhfp);
         return FALSE;
     }
@@ -4303,8 +4296,9 @@ recover_savefile(void)
             != sizeof version_data)
         || (read(gnhfp->fd, (genericptr_t) &sfi, sizeof sfi) != sizeof sfi)
         || (read(gnhfp->fd, (genericptr_t) &pltmpsiz, sizeof pltmpsiz)
-            != sizeof pltmpsiz) || (pltmpsiz > PL_NSIZ)
-        || (read(gnhfp->fd, (genericptr_t) &tmpplbuf, pltmpsiz) != pltmpsiz)) {
+            != sizeof pltmpsiz) || (pltmpsiz > PL_NSIZ_PLUS)
+        || (read(gnhfp->fd, (genericptr_t) &tmpplbuf, pltmpsiz)
+            != pltmpsiz)) {
         raw_printf("\nError reading %s -- can't recover.\n", gl.lock);
         close_nhfile(gnhfp);
         return FALSE;
@@ -4443,23 +4437,6 @@ recover_savefile(void)
     return TRUE;
 }
 
-boolean
-copy_bytes(int ifd, int ofd)
-{
-    char buf[BUFSIZ];
-    int nfrom, nto = 0;
-
-    do {
-        nfrom = read(ifd, buf, BUFSIZ);
-        /* read can return -1 */
-        if (nfrom >= 0 && nfrom <= BUFSIZ)
-            nto = write(ofd, buf, nfrom);
-        if (nto != nfrom || nfrom < 0)
-            return FALSE;
-    } while (nfrom == BUFSIZ);
-    return TRUE;
-}
-
 /* ----------  END INTERNAL RECOVER ----------- */
 #endif /*SELF_RECOVER*/
 
@@ -4499,12 +4476,41 @@ assure_syscf_file(void)
         close(fd);
         return;
     }
+    if (gd.deferred_showpaths)
+        do_deferred_showpaths(1);  /* does not return */
     raw_printf("Unable to open SYSCF_FILE.\n");
     exit(EXIT_FAILURE);
 }
 
 #endif /* SYSCF_FILE */
 #endif /* SYSCF */
+
+ATTRNORETURN void
+do_deferred_showpaths(int code)
+{
+    gd.deferred_showpaths = FALSE;
+    reveal_paths(code);
+
+    /* cleanup before heading to an exit */
+    freedynamicdata();
+    dlb_cleanup();
+    l_nhcore_done();
+
+#ifdef UNIX
+    after_opt_showpaths(gd.deferred_showpaths_dir);
+#else
+#ifndef WIN32
+#ifdef CHDIR
+    chdirx(gd.deferred_showpaths_dir, 0);
+#endif
+#endif
+#if defined(WIN32) || defined(MICRO) || defined(OS2)
+    nethack_exit(EXIT_SUCCESS);
+#else
+    exit(EXIT_SUCCESS);
+#endif
+#endif
+}
 
 #ifdef DEBUG
 /* used by debugpline() to decide whether to issue a message
@@ -4565,10 +4571,16 @@ debugcore(const char *filename, boolean wildcards)
 #endif
 #endif
 
+#define SYSCONFFILE "system configuration file"
+
 void
-reveal_paths(void)
+reveal_paths(int code)
 {
+#if defined(SYSCF)
+    boolean skip_sysopt = FALSE;
+#endif
     const char *fqn, *nodumpreason;
+
     char buf[BUFSZ];
 #if defined(SYSCF) || !defined(UNIX) || defined(DLB)
     const char *filep;
@@ -4602,7 +4614,8 @@ reveal_paths(void)
 #else
     buf[0] = '\0';
 #endif
-    raw_printf("%s system configuration file%s:", s_suffix(gamename), buf);
+    raw_printf("%s %s%s:", s_suffix(gamename),
+               SYSCONFFILE, buf);
 #ifdef SYSCF_FILE
     filep = SYSCF_FILE;
 #else
@@ -4614,6 +4627,11 @@ reveal_paths(void)
         filep = configfile;
     }
     raw_printf("    \"%s\"", filep);
+    if (code == 1) {
+        raw_printf("NOTE: The %s above is missing or inaccessible!",
+                   SYSCONFFILE);
+	skip_sysopt = TRUE;
+    }
 #else /* !SYSCF */
     raw_printf("No system configuration file.");
 #endif /* ?SYSCF */
@@ -4686,17 +4704,22 @@ reveal_paths(void)
 
     /* dumplog */
 
+    fqn = (char *) 0;
 #ifndef DUMPLOG
     nodumpreason = "not supported";
 #else
     nodumpreason = "disabled";
 #ifdef SYSCF
-    fqn = sysopt.dumplogfile;
+    if (!skip_sysopt) {
+        fqn = sysopt.dumplogfile;
+	if (!fqn)
+	    nodumpreason = "DUMPLOGFILE is not set in " SYSCONFFILE;
+    } else {
+        nodumpreason = SYSCONFFILE " is missing; no DUMPLOGFILE setting";
+    }
 #else  /* !SYSCF */
 #ifdef DUMPLOG_FILE
     fqn = DUMPLOG_FILE;
-#else
-    fqn = (char *) 0;
 #endif
 #endif /* ?SYSCF */
     if (fqn && *fqn) {
@@ -4704,22 +4727,27 @@ reveal_paths(void)
         (void) dump_fmtstr(fqn, buf, FALSE);
         buf[sizeof buf - sizeof "    \"\""] = '\0';
         raw_printf("    \"%s\"", buf);
-    } else
-#endif /* ?DUMPLOG */
+    } else {
         raw_printf("No end-of-game disclosure file (%s).", nodumpreason);
+    }
+#endif /* ?DUMPLOG */
 
+#ifdef SYSCF
 #ifdef WIN32
-    if (sysopt.portable_device_paths) {
-        const char *pd = get_portable_device();
+    if (!skip_sysopt) {
+        if (sysopt.portable_device_paths) {
+            const char *pd = get_portable_device();
 
-        /* an empty value for pd indicates that portable_device_paths
-           got set TRUE in a sysconf file other than the one containing
-           the executable; disregard it */
-        if (strlen(pd) > 0) {
-            raw_printf("portable_device_paths (set in sysconf):");
-            raw_printf("    \"%s\"", pd);
+            /* an empty value for pd indicates that portable_device_paths
+               got set TRUE in a sysconf file other than the one containing
+               the executable; disregard it */
+            if (strlen(pd) > 0) {
+                raw_printf("portable_device_paths (set in sysconf):");
+                raw_printf("    \"%s\"", pd);
+            }
         }
     }
+#endif
 #endif
 
     /* personal configuration file */
@@ -4778,6 +4806,12 @@ reveal_paths(void)
 #if defined(WIN32) && !defined(WIN32CON)
     wait_synch();
 #endif
+#ifndef DUMPLOG
+#ifdef SYSCF
+    nhUse(skip_sysopt);
+#endif
+    nhUse(nodumpreason);
+#endif
 }
 
 /* ----------  BEGIN TRIBUTE ----------- */
@@ -4832,7 +4866,8 @@ choose_passage(int passagecnt, /* total of available passages */
     res = (int) svc.context.novel.pasg[idx];
     /* move the last slot's passage index into the slot just used
        and reduce the number of passages available */
-    svc.context.novel.pasg[idx] = svc.context.novel.pasg[--svc.context.novel.count];
+    svc.context.novel.pasg[idx]
+                          = svc.context.novel.pasg[--svc.context.novel.count];
     return res;
 }
 

@@ -98,7 +98,7 @@ resetobjs(struct obj *ochain, boolean restore)
                                       result depends upon hero's location */
                                    && inside_shop(ox, oy)
                                    && *(p = in_rooms(ox, oy, SHOPBASE))
-                                   && tended_shop(&svr.rooms[*p - ROOMOFFSET]));
+                                 && tended_shop(&svr.rooms[*p - ROOMOFFSET]));
             }
         } else { /* saving */
             /* do not zero out o_ids for ghost levels anymore */
@@ -109,6 +109,7 @@ resetobjs(struct obj *ochain, boolean restore)
             otmp->rknown = 0;
             otmp->lknown = 0;
             otmp->cknown = 0;
+            otmp->tknown = 0;
             otmp->invlet = 0;
             otmp->no_charge = 0;
             otmp->how_lost = LOST_NONE;
@@ -451,6 +452,7 @@ savebones(int how, time_t when, struct obj *corpse)
     iter_mons(remove_mon_from_bones); /* send various unique monsters away, */
     dmonsfree();                      /* then discard dead or gone monsters */
 
+    forget_engravings(); /* next hero won't have read any engravings yet */
     /* mark all named fruits as nonexistent; if/when we come to instances
        of any of them we'll mark those as existing (using goodfruit()) */
     for (f = gf.ffruit; f; f = f->nextf)
@@ -507,10 +509,40 @@ savebones(int how, time_t when, struct obj *corpse)
             (void) obj_attach_mid(corpse, mtmp->m_id);
     }
     if (mtmp) {
+        int i;
+
         mtmp->m_lev = (u.ulevel ? u.ulevel : 1);
         mtmp->mhp = mtmp->mhpmax = u.uhpmax;
         mtmp->female = flags.female;
         mtmp->msleeping = 1;
+
+        if (!has_ebones(mtmp))
+            newebones(mtmp);
+        if (has_ebones(mtmp)) {
+            for (i = 0; i <= NUM_ROLES; ++i) {
+                if (!strcmp(gu.urole.name.m, roles[i].name.m)) {
+                    EBONES(mtmp)->role = i;
+                    break;
+                }
+                /* impossible("savebones: bad gu.urole.name.m \"%s\"",
+                              gu.urole.name.m); */
+            }
+            for (i = 0; i <= NUM_RACES; ++i) {
+                if (!strcmp(gu.urace.noun, races[i].noun)) {
+                    EBONES(mtmp)->race = i;
+                    break;
+                }
+                /* impossible("savebones: bad gu.urace.noun \"%s\"",
+                              gu.urace.noun); */
+            }
+            EBONES(mtmp)->oldalign = u.ualign;
+            EBONES(mtmp)->deathlevel = u.ulevel;
+            EBONES(mtmp)->luck = u.uluck; /* moreluck not included */
+            EBONES(mtmp)->mnum = Role_switch;
+            EBONES(mtmp)->female = flags.female;
+            EBONES(mtmp)->demigod = u.uevent.udemigod;
+            EBONES(mtmp)->crowned = u.uevent.uhand_of_elbereth;
+        }
     }
     for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
         set_ghostly_objlist(mtmp->minvent);
@@ -779,6 +811,30 @@ fix_ghostly_obj(struct obj *obj)
             break;
     }
     obj->ghostly = 0;
+}
+
+void
+newebones(struct monst *mtmp)
+{
+    if (!mtmp->mextra)
+        mtmp->mextra = newmextra();
+    if (!EBONES(mtmp)) {
+        EBONES(mtmp) = (struct ebones *) alloc(
+            sizeof (struct ebones));
+        (void) memset((genericptr_t) EBONES(mtmp), 0,
+                      sizeof (struct ebones));
+        EBONES(mtmp)->parentmid = mtmp->m_id;
+    }
+}
+
+/* this is not currently used */
+void
+free_ebones(struct monst *mtmp)
+{
+    if (mtmp->mextra && EBONES(mtmp)) {
+        free((genericptr_t) EBONES(mtmp));
+        EBONES(mtmp) = (struct ebones *) 0;
+    }
 }
 
 /*bones.c*/

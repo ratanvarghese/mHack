@@ -1,4 +1,4 @@
-/* NetHack 3.7	objnam.c	$NHDT-Date: 1711809641 2024/03/30 14:40:41 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.427 $ */
+/* NetHack 3.7	objnam.c	$NHDT-Date: 1737528848 2025/01/21 22:54:08 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.444 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2011. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -32,9 +32,9 @@ struct _readobjnam_data {
     char fruitbuf[BUFSZ];
 };
 
-staticfn char *strprepend(char *, const char *);
-staticfn char *nextobuf(void);
-staticfn void releaseobuf(char *);
+staticfn char *strprepend(char *, const char *) NONNULL NONNULLARG1;
+staticfn char *nextobuf(void) NONNULL;
+staticfn void releaseobuf(char *) NONNULLARG1;
 staticfn void xcalled(char *, int, const char *, const char *);
 staticfn char *xname_flags(struct obj *, unsigned);
 staticfn char *minimal_xname(struct obj *);
@@ -48,6 +48,7 @@ staticfn boolean badman(const char *, boolean);
 staticfn boolean wishymatch(const char *, const char *, boolean);
 staticfn short rnd_otyp_by_wpnskill(schar);
 staticfn short rnd_otyp_by_namedesc(const char *, char, int);
+staticfn void set_wallprop_from_str(char *) NONNULLARG1;
 staticfn struct obj *wizterrainwish(struct _readobjnam_data *);
 staticfn void dbterrainmesg(const char *, coordxy, coordxy) NONNULLARG1;
 staticfn void readobjnam_init(char *, struct _readobjnam_data *);
@@ -121,15 +122,16 @@ static const struct Jitem Japanese_items[] = {
 staticfn char *
 strprepend(char *s, const char *pref)
 {
+    char star_s = *s;
     int i = (int) strlen(pref);
 
     if (i > PREFIX) {
         impossible("PREFIX too short (for %d).", i);
         return s;
     }
-    s -= i;
-    (void) strncpy(s, pref, i); /* do not copy trailing 0 */
-    return s;
+    copynchars(s - i, pref, i + 1);
+    *s = star_s;
+    return s - i;
 }
 
 /* manage a pool of BUFSZ buffers, so callers don't have to */
@@ -723,6 +725,7 @@ xname_flags(
             /* else if (obj->opoisoned == POT_FILTH) Strcpy(buf, "filth-crusted "); */
             else Strcpy(buf, "potion-coated ");
         }
+        FALLTHROUGH;
         /*FALLTHRU*/
     case VENOM_CLASS:
     case TOOL_CLASS:
@@ -877,6 +880,9 @@ xname_flags(
                more robust because the default value for that overloaded
                field (obj->corpsenm) is NON_PM (-1) rather than 0 */
             Strcat(strcpy(buf, "next "), actualn); /* "next boulder" */
+            /* once "next boulder" occurs, subsequent messages should just
+               use ordinary "boulder" */
+            obj->next_boulder = 0;
         } else {
             Strcpy(buf, actualn); /* "boulder" or "statue" */
         }
@@ -1139,7 +1145,7 @@ minimal_xname(struct obj *obj)
     bareobj.material = objects[obj->otyp].oc_material;
 
     bufp = distant_name(&bareobj, xname);
-    /* undo forced setting of bareobj.blessed for cleric (preist[ess]);
+    /* undo forced setting of bareobj.blessed for cleric (priest[ess]);
        bufp is an obuf[] so a pointer into the middle of that is viable */
     if (!strncmp(bufp, "uncursed ", 9))
         bufp += 9;
@@ -1431,6 +1437,13 @@ doname_base(
             Strcat(prefix, "uncursed ");
     }
 
+    /* "a large trapped box" would perhaps be more correct; [no!]
+       what about ``(obj->tknown && !obj->otrapped)''? shouldn't that
+       yield "a non-trapped large box"? (not "an untrapped large box");
+       TODO: this should be ``(Is_box(obj) || obj->otyp == TIN) && ...''
+       but at present there's no way to set obj->tknown for tins */
+    if (Is_box(obj) && obj->otrapped && obj->tknown && obj->dknown)
+        Strcat(prefix,"trapped ");
     if (lknown && Is_box(obj)) {
         if (obj->obroken)
             /* 3.6.0 used "unlockable" here but that could be misunderstood
@@ -1489,6 +1502,7 @@ doname_base(
                     ConcatF1(bp, 1, ", %s lit)", arti_light_description(obj));
             }
         }
+        FALLTHROUGH;
         /*FALLTHRU*/
     case WEAPON_CLASS:
         if (ispoisoned) {
@@ -2488,6 +2502,22 @@ Ysimple_name2(struct obj *obj)
     return s;
 }
 
+    /*
+     * FIXME:
+     *  simpleonames(), ansimpleoname(), and thesimpleoname() need to
+     *  know the beginning of the obuf[] they use so that they can
+     *  guard against buffer overflow when pluralizing (is that an
+     *  actual word?) or inserting "an" or "the".
+     *
+     *  minimal_xname() returns a call to xname() which writes into
+     *  the middle of its obuf[] then backs up to accomodate a prefix,
+     *  so BUFSZ is not a reliable limit for the length of the result.
+     *
+     *  [Overflow likely moot.  Since the formatted object name has
+     *  user-supplied name suppressed, the length is sure to be short
+     *  enough to added plural suffix or "an" or "the" prefix.]
+     */
+
 /* "scroll" or "scrolls" */
 char *
 simpleonames(struct obj *obj)
@@ -2521,12 +2551,14 @@ ansimpleoname(struct obj *obj)
     if (objects[otyp].oc_unique && OBJ_NAME(objects[otyp])
         && !strcmp(simpleoname, OBJ_NAME(objects[otyp]))) {
         /* the() will allocate another obuf[]; we want to avoid using two */
-        Strcpy(simpleoname, obufp = the(simpleoname));
+        obufp = the(simpleoname);
+        Strcpy(simpleoname, obufp);
         releaseobuf(obufp);
     } else if (obj->quan == 1L) {
         /* simpleoname[] is singular if quan==1, plural otherwise;
            an() will allocate another obuf[]; we want to avoid using two */
-        Strcpy(simpleoname, obufp = an(simpleoname));
+        obufp = an(simpleoname);
+        Strcpy(simpleoname, obufp);
         releaseobuf(obufp);
     }
     return simpleoname;
@@ -2539,7 +2571,8 @@ thesimpleoname(struct obj *obj)
     char *obufp, *simpleoname = simpleonames(obj);
 
     /* the() will allocate another obuf[]; we want to avoid using two */
-    Strcpy(simpleoname, obufp = the(simpleoname));
+    obufp = the(simpleoname);
+    Strcpy(simpleoname, obufp);
     releaseobuf(obufp);
     return simpleoname;
 }
@@ -2590,7 +2623,7 @@ static const char wrpsym[] = { WAND_CLASS,   RING_CLASS,   POTION_CLASS,
 
 /* return form of the verb (input plural) if xname(otmp) were the subject */
 char *
-otense(struct obj* otmp,const char * verb)
+otense(struct obj *otmp, const char *verb)
 {
     char *buf;
 
@@ -3467,6 +3500,7 @@ static const struct alt_spellings {
     { "kelp", KELP_FROND },
     { "eucalyptus", EUCALYPTUS_LEAF },
     { "lembas", LEMBAS_WAFER },
+    { "tripe", TRIPE_RATION },
     { "cookie", FORTUNE_COOKIE },
     { "pie", CREAM_PIE },
     { "huge meatball", ENORMOUS_MEATBALL }, /* likely conflated name */
@@ -3596,6 +3630,21 @@ shiny_obj(char oclass)
     return (int) rnd_otyp_by_namedesc("shiny", oclass, 0);
 }
 
+/* set wall under hero undiggable/unphaseable from string */
+staticfn void
+set_wallprop_from_str(char *bp)
+{
+    int wall_prop = 0;
+
+    if (strstr(bp, "undiggable ") || strstr(bp, "nondiggable "))
+        wall_prop |= W_NONDIGGABLE;
+    if (strstr(bp, "unphaseable ") || strstr(bp, "nonpasswall "))
+        wall_prop |= W_NONPASSWALL;
+    /* |= because wall_info (aka flags) is overloaded with other stuff */
+    if (wall_prop)
+        levl[u.ux][u.uy].wall_info |= wall_prop;
+}
+
 /* in wizard mode, readobjnam() can accept wishes for traps and terrain */
 staticfn struct obj *
 wizterrainwish(struct _readobjnam_data *d)
@@ -3605,7 +3654,7 @@ wizterrainwish(struct _readobjnam_data *d)
     int trap;
     unsigned oldtyp, ltyp;
     coordxy x = u.ux, y = u.uy;
-    char *bp = d->bp, *p = d->p;
+    char *bp = d->bp, *p;
 
     for (trap = NO_TRAP + 1; trap < TRAPNUM; trap++) {
         struct trap *t;
@@ -3772,11 +3821,13 @@ wizterrainwish(struct _readobjnam_data *d)
     } else if (!BSTRCMPI(bp, p - 4, "tree")) {
         lev->typ = TREE;
         lev->looted = d->looted ? (TREE_LOOTED | TREE_SWARM) : 0;
+        set_wallprop_from_str(bp);
         pline("A tree.");
         madeterrain = TRUE;
     } else if (!BSTRCMPI(bp, p - 4, "bars")) {
         lev->typ = IRONBARS;
         lev->flags = 0;
+        set_wallprop_from_str(bp);
         /* [FIXME: if this isn't a wall or door location where 'horizontal'
             is already set up, that should be calculated for this spot.
             Unfortunately, it can be tricky; placing one in open space
@@ -3836,7 +3887,7 @@ wizterrainwish(struct _readobjnam_data *d)
                 lev->wall_info |= (old_wall_info & WM_MASK);
             /* set up trapped flag; open door states aren't eligible */
             if (d->trapped == 2 /* 2: wish includes explicit "untrapped" */
-                || secret /* secret doors can't trapped due to their use
+                || secret /* secret doors can't be trapped due to their use
                            * of both doormask and wall_info; those both
                            * overlay rm->flags and partially conflict */
                 || (lev->doormask & (D_LOCKED | D_CLOSED)) == 0)
@@ -3873,7 +3924,7 @@ wizterrainwish(struct _readobjnam_data *d)
             badterrain = TRUE;
         }
     } else if (!BSTRCMPI(bp, p - 4, "wall")
-                         && (bp == p - 4 || p[-4] == ' ')) {
+                         && (bp == p - 4 || p[-5] == ' ')) {
         schar wall = HWALL;
 
         if ((isok(u.ux, u.uy-1) && IS_WALL(levl[u.ux][u.uy-1].typ))
@@ -3881,6 +3932,8 @@ wizterrainwish(struct _readobjnam_data *d)
             wall = VWALL;
         madeterrain = TRUE;
         lev->typ = wall;
+        lev->flags = 0;
+        set_wallprop_from_str(bp);
         fix_wall_spines(max(0,u.ux-1), max(0,u.uy-1),
                         min(COLNO,u.ux+1), min(ROWNO,u.uy+1));
         pline("A wall.");
@@ -5217,7 +5270,8 @@ readobjnam(char *bp, struct obj *no_wish)
         break;
     case SLIME_MOLD:
         d.otmp->spe = d.ftype;
-    /* Fall through */
+        FALLTHROUGH;
+    /* FALLTHRU */
     case SKELETON_KEY:
     case CHEST:
     case LARGE_BOX:
@@ -5249,7 +5303,8 @@ readobjnam(char *bp, struct obj *no_wish)
     /* scroll of mail:  0: delivered in-game via external event (or randomly
        for fake mail); 1: from bones or wishing; 2: written with marker */
     case SCR_MAIL:
-        /*FALLTHRU*/
+        d.otmp->spe = 1;
+        break;
 #endif
     /* splash of venom:  0: normal, and transitory; 1: wishing */
     case ACID_VENOM:
@@ -5261,6 +5316,7 @@ readobjnam(char *bp, struct obj *no_wish)
             d.otmp->spe = (rn2(10) ? -1 : 0);
             break;
         }
+        FALLTHROUGH;
         /*FALLTHRU*/
     default:
         d.otmp->spe = d.spe;
@@ -5732,6 +5788,7 @@ safe_qbuf(
 
     lenlimit = QBUFSZ - 1;
     endp = qbuf + lenlimit;
+    assert(endp != NULL); /* workaround for static analyzer issue */
     /* sanity check, aimed mainly at paniclog (it's conceivable for
        the result of short_oname() to be shorter than the length of
        the last resort string, but we ignore that possibility here) */

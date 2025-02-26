@@ -1,4 +1,4 @@
-/* NetHack 3.7	decl.c	$NHDT-Date: 1720074480 2024/07/04 06:28:00 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.334 $ */
+/* NetHack 3.7	decl.c	$NHDT-Date: 1736530208 2025/01/10 09:30:08 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.341 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Michael Allison, 2009. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -340,6 +340,8 @@ static const struct instance_globals_d g_init_d = {
     /* pickup.c */
     FALSE, /* decor_fumble_override */
     FALSE, /* decor_levitate_override */
+    FALSE, /* deferred_showpaths */
+    NULL,  /* deferred_showpaths_dir  */
     TRUE, /* havestate*/
     IVMAGIC  /* d_magic to validate that structure layout has been preserved */
 };
@@ -853,6 +855,8 @@ static const struct instance_globals_w g_init_w = {
     /* decl.c */
     0, /* warn_obj_cnt */
     0L, /* wailmsg */
+    /* do_wear.c */
+    0U, /* wasinwater */
     /* symbols.c */
     DUMMY, /* warnsyms */
     /* files.c */
@@ -863,6 +867,7 @@ static const struct instance_globals_w g_init_w = {
     UNDEFINED_PTR, /* wportal */
     /* new */
     { wdmode_traditional, NO_COLOR },       /* wsettings */
+    0L,                                     /* were.c, allmain.c */
     TRUE, /* havestate*/
     IVMAGIC  /* w_magic to validate that structure layout has been preserved */
 };
@@ -967,7 +972,7 @@ static const struct instance_globals_saved_m init_svm = {
     /* dungeon.c */
     UNDEFINED_PTR,                       /* mapseenchn */
     /* decl.c */
-    1L,                                  /* moves; misnamed turn counter */
+    0L,                                  /* moves; misnamed turn counter */
     { UNDEFINED_VALUES }                 /* mvitals */
 };
 
@@ -1168,7 +1173,7 @@ decl_globals_init(void)
     gv.valuables[1].size = SIZE(ga.amulets);
     gv.valuables[2].list = NULL;
     gv.valuables[2].size = 0;
-    
+
 #if 0
     MAGICCHECK(g_init);
 #endif

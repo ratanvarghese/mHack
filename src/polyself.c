@@ -5,9 +5,9 @@
 /*
  * Polymorph self routine.
  *
- * Note:  the light source handling code assumes that both gy.youmonst.m_id
- * and gy.youmonst.mx will always remain 0 when it handles the case of the
- * player polymorphed into a light-emitting monster.
+ * Note:  the light source handling code assumes that gy.youmonst.m_id
+ * always remains 1 and gy.youmonst.mx will always remain 0 when it handles
+ * the case of the player polymorphed into a light-emitting monster.
  *
  * Transformation sequences:
  *              /-> polymon                 poly into monster form
@@ -41,6 +41,7 @@ set_uasmon(void)
     boolean was_vampshifter = valid_vampshiftform(gy.youmonst.cham, u.umonnum);
 
     set_mon_data(&gy.youmonst, mdat);
+    gy.youmonst.m_id = 1;
 
     if (Protection_from_shape_changers)
         gy.youmonst.cham = NON_PM;
@@ -103,6 +104,8 @@ set_uasmon(void)
     PROPSET(REGENERATION, regenerates(mdat));
     PROPSET(REFLECTING, (mdat == &mons[PM_SILVER_DRAGON]));
     PROPSET(BLINDED, !haseyes(mdat));
+    PROPSET(BLND_RES, (dmgtype_fromattack(mdat, AD_BLND, AT_EXPL)
+                       || dmgtype_fromattack(mdat, AD_BLND, AT_GAZE)));
 #undef PROPSET
 
     /* whether the player is flying/floating depends on their steed,
@@ -117,6 +120,8 @@ set_uasmon(void)
     if (VIA_WINDOWPORT())
         status_initialize(REASSESS_ONLY);
 #endif
+    /* we can reset this now, having just done what it is meant to trigger */
+    gw.were_changes = 0L;
 }
 
 /* Levitation overrides Flying; set or clear BFlying|I_SPECIAL */
@@ -383,7 +388,7 @@ newman(void)
         hpmax = u.ulevel; /* min of 1 HP per level */
     /* retain same proportion for current HP; u.uhp * hpmax / u.uhpmax */
     u.uhp = rounddiv((long) u.uhp * (long) hpmax, u.uhpmax);
-    u.uhpmax = hpmax;
+    setuhpmax(hpmax, TRUE); /* might reduce u.uhp */
     /*
      * Do the same for spell power.
      */
@@ -1136,6 +1141,15 @@ dropp(struct obj *obj)
     for (otmp = gi.invent; otmp; otmp = otmp->nobj) {
         if (otmp == obj) {
             dropx(obj);
+            /* Note that otmp->nobj is pointing at fobj now,
+             * as a result of:
+             * dropx() -> dropy() -> dropz() -> place_object(),
+             * and no longer pointing at the next obj in inventory.
+             * That would be an issue if this loop were allowed
+             * to continue, but the break statement that
+             * follows prevents the loop from continuing on with
+             * objects on the floor.
+             */
             break;
         }
     }
@@ -1468,6 +1482,7 @@ dospit(void)
             break;
         default:
             impossible("bad attack type in dospit");
+            FALLTHROUGH;
             /*FALLTHRU*/
         case AD_ACID:
             otmp = mksobj(ACID_VENOM, TRUE, FALSE);

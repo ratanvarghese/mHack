@@ -1,4 +1,4 @@
-/* NetHack 3.7	cmd.c	$NHDT-Date: 1717967336 2024/06/09 21:08:56 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.729 $ */
+/* NetHack 3.7	cmd.c	$NHDT-Date: 1736401574 2025/01/08 21:46:14 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.744 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2013. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -215,18 +215,30 @@ set_occupation(int (*fn)(void), const char *txt, cmdcount_nht xtime)
 void
 cmdq_print(int q)
 {
-    struct _cmd_queue *cq = gc.command_queue[q];
     char buf[QBUFSZ];
+    struct _cmd_queue *cq = gc.command_queue[q];
 
     pline("CQ:%i", q);
     while (cq) {
         switch (cq->typ) {
-        case CMDQ_KEY: pline("(key:%s)", key2txt(cq->key, buf)); break;
-        case CMDQ_EXTCMD: pline("(extcmd:#%s)", cq->ec_entry->ef_txt); break;
-        case CMDQ_DIR: pline("(dir:%i,%i,%i)", cq->dirx, cq->diry, cq->dirz); break;
-        case CMDQ_USER_INPUT: pline1("(userinput)"); break;
-        case CMDQ_INT: pline("(int:%i)", cq->intval); break;
-        default: pline("(ERROR:%i)",cq->typ); break;
+        case CMDQ_KEY:
+            pline("(key:%s)", key2txt(cq->key, buf));
+            break;
+        case CMDQ_EXTCMD:
+            pline("(extcmd:#%s)", cq->ec_entry->ef_txt);
+            break;
+        case CMDQ_DIR:
+            pline("(dir:%i,%i,%i)", cq->dirx, cq->diry, cq->dirz);
+            break;
+        case CMDQ_USER_INPUT:
+            pline("(userinput)");
+            break;
+        case CMDQ_INT:
+            pline("(int:%i)", cq->intval);
+            break;
+        default:
+            pline("(ERROR:%i)",cq->typ);
+            break;
         }
         cq = cq->next;
     }
@@ -793,7 +805,7 @@ extcmd_via_menu(void)
                              * ('w' in wizard mode) */
         /* -3: two line menu header, 1 line menu footer (for prompt) */
         one_per_line = (nchoices < ROWNO - 3);
-        accelerator = prevaccelerator = 0;
+        prevaccelerator = 0;
         acount = 0;
         for (i = 0; choices[i]; ++i) {
             accelerator = choices[i]->ef_txt[matchlevel];
@@ -878,7 +890,8 @@ domonability(void)
     char c = '\0';
 
     if (might_hide && webmaker(uptr)) {
-        c = yn_function("Hide [h] or spin a web [s]?", hidespinchars, 'q', TRUE);
+        c = yn_function("Hide [h] or spin a web [s]?",
+                        hidespinchars, 'q', TRUE);
         if (c == 'q' || c == '\033')
             return ECMD_OK;
     }
@@ -902,8 +915,13 @@ domonability(void)
         if (IS_FOUNTAIN(levl[u.ux][u.uy].typ)) {
             if (split_mon(&gy.youmonst, (struct monst *) 0))
                 dryup(u.ux, u.uy, TRUE);
-        } else
+        } else if (is_pool(u.ux, u.uy)) {
+            /* is_pool: might be wearing water walking boots or amulet of
+               magical breathing */
+            (void) split_mon(&gy.youmonst, (struct monst *) 0);
+        } else {
             There("is no fountain here.");
+        }
     } else if (is_unicorn(uptr)) {
         use_unicorn_horn((struct obj **) 0);
         return ECMD_TIME;
@@ -916,7 +934,7 @@ domonability(void)
     } else if (is_vampire(uptr) || is_vampshifter(&gy.youmonst)) {
         return dopoly();
     } else if (u.usteed && can_breathe(u.usteed->data)) {
-        (void) pet_ranged_attk(u.usteed);
+        (void) pet_ranged_attk(u.usteed, TRUE);
         return ECMD_TIME;
     } else if (Upolyd) {
         pline("Any special ability you may have is purely reflexive.");
@@ -2184,7 +2202,7 @@ handler_rebind_keys_add(boolean keyfirst)
             ec = &extcmdlist[i-1];
             cmdstr = ec->ef_txt;
         }
-bindit:
+ bindit:
         if (!key) {
             pline("Bind which key? ");
             key = pgetchar();
@@ -2200,7 +2218,8 @@ bindit:
                 pline("Changed key '%s' from \"%s\" to \"%s\".",
                       key2txt(key, buf2), prevec->ef_txt, cmdstr);
             } else if (!prevec) {
-                pline("Bound key '%s' to \"%s\".", key2txt(key, buf2), cmdstr);
+                pline("Bound key '%s' to \"%s\".",
+                      key2txt(key, buf2), cmdstr);
             }
         } else {
             pline("Key binding failed?!");
@@ -2217,8 +2236,7 @@ handler_rebind_keys(void)
     menu_item *picks = (menu_item *) 0;
     int clr = NO_COLOR;
 
-redo_rebind:
-
+ redo_rebind:
     win = create_nhwindow(NHW_MENU);
     start_menu(win, MENU_BEHAVE_STANDARD);
     any = cg.zeroany;
@@ -2248,6 +2266,73 @@ redo_rebind:
         }
         goto redo_rebind;
     }
+}
+
+void
+handler_change_autocompletions(void)
+{
+    winid win;
+    anything any;
+    int i, n;
+    menu_item *picks = (menu_item *) 0;
+    int clr = NO_COLOR;
+    struct ext_func_tab *ec;
+    char buf[BUFSZ];
+
+    win = create_nhwindow(NHW_MENU);
+    start_menu(win, MENU_BEHAVE_STANDARD);
+    any = cg.zeroany;
+
+    for (i = 0; i < extcmdlist_length; i++) {
+        ec = &extcmdlist[i];
+
+        if ((ec->flags & (INTERNALCMD|CMD_NOT_AVAILABLE)) != 0)
+            continue;
+        if (strlen(ec->ef_txt) < 2)
+            continue;
+
+        any.a_int = (i + 1);
+        Sprintf(buf, "%c %s: %s",
+                (ec->flags & AUTOCOMP_ADJ) ? '*' : ' ',
+                ec->ef_txt, ec->ef_desc);
+        add_menu(win, &nul_glyphinfo, &any, '\0', 0, ATR_NONE, clr, buf,
+                 (ec->flags & AUTOCOMPLETE)
+                 ? MENU_ITEMFLAGS_SELECTED :
+                 MENU_ITEMFLAGS_NONE);
+    }
+
+    end_menu(win, "Which commands autocomplete?");
+    n = select_menu(win, PICK_ANY, &picks);
+    if (n >= 0) {
+        int j;
+
+        for (i = 0; i < extcmdlist_length; i++) {
+            boolean setit = FALSE;
+
+            ec = &extcmdlist[i];
+
+            if ((ec->flags & (INTERNALCMD|CMD_NOT_AVAILABLE)) != 0)
+                continue;
+            if (strlen(ec->ef_txt) < 2)
+                continue;
+
+            Sprintf(buf, "%s", ec->ef_txt);
+
+            for (j = 0; j < n; ++j) {
+                if (ec == &extcmdlist[(picks[j].item.a_int - 1)]) {
+                    parseautocomplete(buf, TRUE);
+                    setit = TRUE;
+                    break;
+                }
+            }
+
+            if (!setit) {
+                parseautocomplete(buf, FALSE);
+            }
+        }
+    }
+
+    destroy_nhwindow(win);
 }
 
 /* find extended command entries matching findstr.
@@ -2956,8 +3041,12 @@ parseautocomplete(char *autocomplete, boolean condition)
     /* find and modify the extended command */
     for (efp = extcmdlist; efp->ef_txt; efp++) {
         if (!strcmp(autocomplete, efp->ef_txt)) {
-            if (condition == ((efp->flags & AUTOCOMPLETE) ? FALSE : TRUE))
-                efp->flags |= AUTOCOMP_ADJ;
+            if (condition == ((efp->flags & AUTOCOMPLETE) ? FALSE : TRUE)) {
+                if ((efp->flags & AUTOCOMP_ADJ))
+                    efp->flags &= ~AUTOCOMP_ADJ;
+                else
+                    efp->flags |= AUTOCOMP_ADJ;
+            }
             if (condition)
                 efp->flags |= AUTOCOMPLETE;
             else
@@ -2986,6 +3075,20 @@ all_options_autocomplete(strbuf_t *sbuf)
                     efp->ef_txt);
             strbuf_append(sbuf, buf);
         }
+}
+
+/* return the number of changed autocompletions */
+int
+count_autocompletions(void)
+{
+    struct ext_func_tab *efp;
+    int n = 0;
+
+    for (efp = extcmdlist; efp->ef_txt; efp++)
+        if ((efp->flags & AUTOCOMP_ADJ) != 0)
+            n++;
+
+    return n;
 }
 
 /* save&clear the mouse button actions, or restore the saved ones */
@@ -3373,11 +3476,11 @@ rhack(int key)
 
                     pline(
                 "The '%s' prefix should be followed by a movement command%s.",
-                          which, (up || down) ? " other than up or down" : "");
+                          which,
+                          (up || down) ? " other than up or down" : "");
                 }
                 res = ECMD_FAIL;
                 prefix_seen = 0;
-                was_m_prefix = FALSE;
             } else {
                 /* we discard 'const' because some compilers seem to have
                    trouble with the pointer passed to set_occupation() */
@@ -3424,7 +3527,6 @@ rhack(int key)
                         return;
                     }
                     prefix_seen = tlist;
-                    bad_command = FALSE;
                     cmdq_ec = NULL;
                     if (func == do_reqmenu)
                         was_m_prefix = TRUE;
@@ -3459,7 +3561,6 @@ rhack(int key)
                     return;
                 }
                 prefix_seen = 0;
-                was_m_prefix = FALSE;
             }
             /* it is possible to have a result of (ECMD_TIME|ECMD_CANCEL)
                [for example, using 'f'ire, manually filling quiver with
@@ -3490,9 +3591,10 @@ rhack(int key)
     }
 
     if (bad_command) {
-        Norep("Unknown command '%s'.", visctrl(key));
+        custompline(SUPPRESS_HISTORY, "Unknown command '%s'.", visctrl(key));
         cmdq_clear(CQ_CANNED);
         cmdq_clear(CQ_REPEAT);
+        iflags.sanity_no_check = iflags.sanity_check; /* skip sanity check */
     }
     /* didn't move */
     svc.context.move = FALSE;
@@ -3501,7 +3603,7 @@ rhack(int key)
 }
 
 /* convert an x,y pair into a direction code */
-coordxy
+int
 xytod(coordxy x, coordxy y)
 {
     int dd;
@@ -3622,7 +3724,8 @@ getdir(const char *s)
             if (!cmdq->dirz) {
                 dirsym = gc.Cmd.dirchars[xytod(cmdq->dirx, cmdq->diry)];
             } else {
-                dirsym = gc.Cmd.dirchars[(cmdq->dirz > 0) ? DIR_DOWN : DIR_UP];
+                dirsym = gc.Cmd.dirchars[(cmdq->dirz > 0) ? DIR_DOWN
+                                                          : DIR_UP];
             }
         } else if (cmdq->typ == CMDQ_KEY) {
             dirsym = cmdq->key;
@@ -3736,7 +3839,7 @@ getdir(const char *s)
                 did_help = help_dir((s && *s == '^') ? dirsym : '\0',
                                     gc.Cmd.spkeys[NHKF_ESC],
                                     help_requested ? (const char *) 0
-                                                   : "Invalid direction key!");
+                                    : "Invalid direction key!");
                 if (help_requested)
                     goto retry;
             }
@@ -4822,6 +4925,9 @@ end_of_input(void)
 #endif
     program_state.something_worth_saving = 0; /* don't save */
 #endif
+
+    if (In_tutorial(&u.uz))
+        program_state.something_worth_saving = 0; /* don't save in tutorial */
 
 #ifndef SAFERHANGUP
     if (!program_state.done_hup++)

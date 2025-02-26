@@ -1,4 +1,4 @@
-/* NetHack 3.7	sp_lev.c	$NHDT-Date: 1709921020 2024/03/08 18:03:40 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.359 $ */
+/* NetHack 3.7	sp_lev.c	$NHDT-Date: 1737610109 2025/01/22 21:28:29 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.373 $ */
 /*      Copyright (c) 1989 by Jean-Christophe Collet */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -55,7 +55,8 @@ staticfn unsigned int sp_amask_to_amask(unsigned int sp_amask);
 staticfn void create_monster(monster *, struct mkroom *);
 staticfn struct obj *create_object(object *, struct mkroom *);
 staticfn void create_altar(altar *, struct mkroom *);
-staticfn boolean search_door(struct mkroom *, coordxy *, coordxy *, xint16, int);
+staticfn boolean search_door(struct mkroom *, coordxy *, coordxy *, xint16,
+                             int) NONNULLPTRS;
 staticfn void create_corridor(corridor *);
 staticfn struct mkroom *build_room(room *, struct mkroom *);
 staticfn void light_region(region *);
@@ -102,7 +103,8 @@ staticfn void sel_set_ter(coordxy, coordxy, genericptr_t);
 staticfn void sel_set_door(coordxy, coordxy, genericptr_t);
 staticfn void sel_set_feature(coordxy, coordxy, genericptr_t);
 staticfn void levregion_add(lev_region *);
-staticfn void get_table_xy_or_coord(lua_State *, lua_Integer *, lua_Integer *);
+staticfn void get_table_xy_or_coord(lua_State *, lua_Integer *,
+                                    lua_Integer *) NONNULLPTRS;
 staticfn int get_table_region(lua_State *, const char *, lua_Integer *,
                         lua_Integer *, lua_Integer *, lua_Integer *, boolean);
 staticfn void set_wallprop_in_selection(lua_State *, int);
@@ -547,6 +549,7 @@ flip_level(
     timer_element *timer;
     boolean ball_active = FALSE, ball_fliparea = FALSE;
     stairway *stway;
+    struct exclusion_zone *ez;
 
     /* nothing to do unless (flp & 1) or (flp & 2) or both */
     if ((flp & 3) == 0)
@@ -868,6 +871,28 @@ flip_level(
             if (flp & 2)
                 tx = FlipX(tx);
             timer->arg.a_long = ((tx << 16) | ty);
+        }
+    }
+
+    /* exclusion zones */
+    for (ez = sve.exclusion_zones; ez; ez = ez->next) {
+        if (flp & 1) {
+            ez->ly = FlipY(ez->ly);
+            ez->hy = FlipY(ez->hy);
+            if (ez->ly > ez->hy) {
+                itmp = ez->ly;
+                ez->ly = ez->hy;
+                ez->hy = itmp;
+            }
+        }
+        if (flp & 2) {
+            ez->lx = FlipX(ez->lx);
+            ez->hx = FlipX(ez->hx);
+            if (ez->lx > ez->hx) {
+                itmp = ez->lx;
+                ez->lx = ez->hx;
+                ez->hx = itmp;
+            }
         }
     }
 
@@ -1267,7 +1292,7 @@ is_ok_location(coordxy x, coordxy y, getloc_flags_t humidity)
     if (humidity & ANY_LOC)
         return TRUE;
 
-    if ((humidity & SOLID) && IS_ROCK(typ))
+    if ((humidity & SOLID) && IS_OBSTRUCTED(typ))
         return TRUE;
 
     if ((humidity & (DRY|SPACELOC)) && SPACE_POS(typ)) {
@@ -1537,7 +1562,8 @@ create_room(
                    + rn2(hx - (lx > 0 ? lx : 3) - dx - xborder + 1);
             yabs = ly + (ly > 0 ? ylim : 2)
                    + rn2(hy - (ly > 0 ? ly : 2) - dy - yborder + 1);
-            if (ly == 0 && hy >= (ROWNO - 1) && (!svn.nroom || !rn2(svn.nroom))
+            if (ly == 0 && hy >= ROWNO - 1
+                && (!svn.nroom || !rn2(svn.nroom))
                 && (yabs + dy > ROWNO / 2)) {
                 yabs = rn1(3, 2);
                 if (svn.nroom < 4 && dy > 1)
@@ -1735,7 +1761,7 @@ create_door(room_door *dd, struct mkroom *broom)
             y = broom->ly - 1;
             x = broom->lx + ((dpos == -1) ? rn2(1 + broom->hx - broom->lx)
                                           : dpos);
-            if (!isok(x, y - 1) || IS_ROCK(levl[x][y - 1].typ))
+            if (!isok(x, y - 1) || IS_OBSTRUCTED(levl[x][y - 1].typ))
                 continue;
             break;
         case 1:
@@ -1744,7 +1770,7 @@ create_door(room_door *dd, struct mkroom *broom)
             y = broom->hy + 1;
             x = broom->lx + ((dpos == -1) ? rn2(1 + broom->hx - broom->lx)
                                           : dpos);
-            if (!isok(x, y + 1) || IS_ROCK(levl[x][y + 1].typ))
+            if (!isok(x, y + 1) || IS_OBSTRUCTED(levl[x][y + 1].typ))
                 continue;
             break;
         case 2:
@@ -1753,7 +1779,7 @@ create_door(room_door *dd, struct mkroom *broom)
             x = broom->lx - 1;
             y = broom->ly + ((dpos == -1) ? rn2(1 + broom->hy - broom->ly)
                                           : dpos);
-            if (!isok(x - 1, y) || IS_ROCK(levl[x - 1][y].typ))
+            if (!isok(x - 1, y) || IS_OBSTRUCTED(levl[x - 1][y].typ))
                 continue;
             break;
         case 3:
@@ -1762,7 +1788,7 @@ create_door(room_door *dd, struct mkroom *broom)
             x = broom->hx + 1;
             y = broom->ly + ((dpos == -1) ? rn2(1 + broom->hy - broom->ly)
                                           : dpos);
-            if (!isok(x + 1, y) || IS_ROCK(levl[x + 1][y].typ))
+            if (!isok(x + 1, y) || IS_OBSTRUCTED(levl[x + 1][y].typ))
                 continue;
             break;
         default:
@@ -2142,8 +2168,14 @@ create_monster(monster *m, struct mkroom *croom)
             if (vampshifted(mtmp) && m->appear != M_AP_MONSTER)
                 (void) newcham(mtmp, &mons[mtmp->cham], NO_NC_FLAGS);
         }
-        if (m->has_invent) {
+        if (!(m->has_invent & DEFAULT_INVENT)) {
+            /* guard against someone accidentally specifying e.g. quest nemesis
+             * with custom inventory that lacks Bell or quest artifact but
+             * forgetting to flag them as receiving their default inventory */
+            mdrop_special_objs(mtmp);
             discard_minvent(mtmp, TRUE);
+        }
+        if (m->has_invent & CUSTOM_INVENT) {
             invent_carrying_monster = mtmp;
         }
     }
@@ -2254,6 +2286,8 @@ create_object(object *o, struct mkroom *croom)
     }
     if (o->trapped == 0 || o->trapped == 1)
         otmp->otrapped = o->trapped;
+    if (o->trapped && (o->tknown == 0 || o->tknown == 1))
+        otmp->tknown = o->tknown;
     otmp->greased = o->greased ? 1 : 0;
 
     if (o->quan > 0 && objects[otmp->otyp].oc_merge) {
@@ -2276,7 +2310,7 @@ create_object(object *o, struct mkroom *croom)
                 ; /* ['otmp' remains on floor] */
             } else {
                 remove_object(otmp);
-                if (otmp->otyp == SADDLE)
+                if (otmp->otyp == SADDLE && can_saddle(invent_carrying_monster))
                     put_saddle_on_mon(otmp, invent_carrying_monster);
                 else
                     (void) mpickobj(invent_carrying_monster, otmp);
@@ -2500,9 +2534,8 @@ search_door(
         yy = croom->ly;
         break;
     default:
-        dx = dy = xx = yy = 0;
         panic("search_door: Bad wall!");
-        break;
+        /*NOTREACHED*/
     }
     while (xx <= croom->hx + 1 && yy <= croom->hy + 1) {
         if (IS_DOOR(levl[xx][yy].typ) || levl[xx][yy].typ == SDOOR) {
@@ -2915,7 +2948,12 @@ fill_empty_maze(void)
                             TRUE);
         }
         for (x = rnd((int) (12 * mapfact) / 100); x; x--) {
+            struct trap *ttmp;
+
             maze1xy(&mm, DRY);
+            if ((ttmp = t_at(mm.x, mm.y)) != 0
+                && (is_pit(ttmp->ttyp) || is_hole(ttmp->ttyp)))
+                continue;
             (void) mksobj_at(BOULDER, mm.x, mm.y, TRUE, FALSE);
         }
         for (x = rn2(2); x; x--) {
@@ -3203,7 +3241,7 @@ lspo_monster(lua_State *L)
     tmpmons.stunned = 0;
     tmpmons.confused = 0;
     tmpmons.seentraps = 0;
-    tmpmons.has_invent = 0;
+    tmpmons.has_invent = DEFAULT_INVENT;
     tmpmons.waiting = 0;
     tmpmons.mm_flags = NO_MM_FLAGS;
 
@@ -3251,6 +3289,7 @@ lspo_monster(lua_State *L)
                                 : (mgend == MALE) ? MALE : rn2(2);
         }
     } else {
+        int keep_default_invent = -1; /* -1 = unspecified */
         lcheck_param_table(L);
 
         tmpmons.peaceful = get_table_boolean_opt(L, "peaceful", BOOL_RANDOM);
@@ -3271,7 +3310,8 @@ lspo_monster(lua_State *L)
         tmpmons.confused = get_table_boolean_opt(L, "confused", FALSE);
         tmpmons.waiting = get_table_boolean_opt(L, "waiting", FALSE);
         tmpmons.seentraps = 0; /* TODO: list of trap names to bitfield */
-        tmpmons.has_invent = 0;
+        keep_default_invent =
+            get_table_boolean_opt(L, "keep_default_invent", -1);
 
         if (!get_table_boolean_opt(L, "tail", TRUE))
             tmpmons.mm_flags |= MM_NOTAIL;
@@ -3320,7 +3360,19 @@ lspo_monster(lua_State *L)
 
         lua_getfield(L, 1, "inventory");
         if (!lua_isnil(L, -1)) {
-            tmpmons.has_invent = 1;
+            /* overwrite DEFAULT_INVENT - most times inventory is specified,
+             * the monster should not get its species' default inventory. Only
+             * provide it if explicitly requested. */
+            tmpmons.has_invent = CUSTOM_INVENT;
+            if (keep_default_invent == TRUE)
+                tmpmons.has_invent |= DEFAULT_INVENT;
+        }
+        else {
+            /* if keep_default_invent was not specified (-1), keep has_invent as
+             * DEFAULT_INVENT and provide the species' default inventory.
+             * But if it was explicitly set to false, provide *no* inventory. */
+            if (keep_default_invent == FALSE)
+                tmpmons.has_invent = NO_INVENT;
         }
     }
 
@@ -3334,7 +3386,8 @@ lspo_monster(lua_State *L)
 
     create_monster(&tmpmons, gc.coder->croom);
 
-    if (tmpmons.has_invent && lua_type(L, -1) == LUA_TFUNCTION) {
+    if ((tmpmons.has_invent & CUSTOM_INVENT)
+        && lua_type(L, -1) == LUA_TFUNCTION) {
         lua_remove(L, -2);
         nhl_pcall_handle(L, 0, 0, "lspo_monster", NHLpa_panic);
         spo_end_moninvent();
@@ -3511,7 +3564,7 @@ lspo_object(lua_State *L)
             0,       /* quan */
             0,       /* buried */
             0,       /* lit */
-            0, 0, 0, 0, /* eroded, locked, trapped, recharged */
+            0, 0, 0, 0, 0, /* eroded, locked, trapped, tknown, recharged */
             0, 0, 0, 0, /* invis, greased, broken, achievement */
     };
 #if 0
@@ -3531,6 +3584,7 @@ lspo_object(lua_State *L)
     tmpobj.spe = -127;
     tmpobj.quan = -1;
     tmpobj.trapped = -1;
+    tmpobj.tknown = -1;
     tmpobj.locked = -1;
     tmpobj.corpsenm = NON_PM;
 
@@ -3585,6 +3639,7 @@ lspo_object(lua_State *L)
         tmpobj.eroded = get_table_int_opt(L, "eroded", 0);
         tmpobj.locked = get_table_boolean_opt(L, "locked", -1);
         tmpobj.trapped = get_table_boolean_opt(L, "trapped", -1);
+        tmpobj.tknown = get_table_boolean_opt(L, "trap_known", -1);
         tmpobj.recharged = get_table_int_opt(L, "recharged", 0);
         tmpobj.greased = get_table_boolean_opt(L, "greased", 0);
         tmpobj.broken = get_table_boolean_opt(L, "broken", 0);
@@ -4640,7 +4695,8 @@ lspo_door(lua_State *L)
 
         get_table_xy_or_coord(L, &dx, &dy);
         x = dx, y = dy;
-        msk = doorstates2i[get_table_option(L, "state", "random", doorstates)];
+        msk = doorstates2i[get_table_option(L, "state", "random",
+                                            doorstates)];
     }
 
     typ = (msk == -1) ? rnddoor() : (coordxy) msk;
@@ -5381,7 +5437,7 @@ l_get_lregion(lua_State *L, lev_region *tmplregion)
 
 /* teleport_region({ region = { x1,y1, x2,y2 } }); */
 /* teleport_region({ region = { x1,y1, x2,y2 }, [ region_islev = 1, ]
- *     exclude = { x1,y1, x2,y2 }, [ exclude_islen = 1, ] [ dir = "up" ] }); */
+ *   exclude = { x1,y1, x2,y2 }, [ exclude_islen = 1, ] [ dir = "up" ] }); */
 /* TODO: maybe allow using selection, with a new method "getextents()"? */
 int
 lspo_teleport_region(lua_State *L)
@@ -5442,25 +5498,34 @@ int
 lspo_exclusion(lua_State *L)
 {
     static const char *const ez_types[] = {
-        "teleport", "teleport-up", "teleport-down", NULL
+        "teleport", "teleport-up", "teleport-down", "monster-generation", NULL
     };
     static const int ez_types2i[] = {
-        LR_TELE, LR_UPTELE, LR_DOWNTELE, 0
+        LR_TELE, LR_UPTELE, LR_DOWNTELE, LR_MONGEN, 0
     };
     struct exclusion_zone *ez = (struct exclusion_zone *) alloc(sizeof *ez);
     lua_Integer x1,y1,x2,y2;
+    coordxy a1,b1,a2,b2;
 
     create_des_coder();
     lcheck_param_table(L);
     ez->zonetype = ez_types2i[get_table_option(L, "type", "teleport",
                                                       ez_types)];
     get_table_region(L, "region", &x1, &y1, &x2, &y2, FALSE);
-    ez->lx = x1;
-    ez->ly = y1;
-    ez->hx = x2;
-    ez->hy = y2;
-    cvt_to_abscoord(&ez->lx, &ez->ly);
-    cvt_to_abscoord(&ez->hx, &ez->hy);
+
+    a1 = x1, b1 = y1;
+    a2 = x2, b2 = y2;
+
+    get_location_coord(&a1, &b1, ANY_LOC|NO_LOC_WARN, gc.coder->croom,
+                       SP_COORD_PACK(a1, b1));
+    get_location_coord(&a2, &b2, ANY_LOC|NO_LOC_WARN, gc.coder->croom,
+                       SP_COORD_PACK(a2, b2));
+
+    ez->lx = a1;
+    ez->ly = b1;
+    ez->hx = a2;
+    ez->hy = b2;
+
     ez->next = sve.exclusion_zones;
     sve.exclusion_zones = ez;
     return 0;
@@ -5530,8 +5595,8 @@ lspo_region(lua_State *L)
     if (argc <= 1) {
         lcheck_param_table(L);
 
-        /* TODO: "unfilled" ==> filled=0, "filled" ==> filled=1, and
-         * "lvflags_only" ==> filled=2, probably in a get_table_needfill_opt */
+        /* TODO: "unfilled" => filled=0, "filled" => filled=1, and
+         * "lvflags_only" => filled=2, probably in a get_table_needfill_opt */
         needfill = get_table_int_opt(L, "filled", 0);
         irregular = get_table_boolean_opt(L, "irregular", 0);
         joined = get_table_boolean_opt(L, "joined", TRUE);

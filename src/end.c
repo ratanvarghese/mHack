@@ -9,7 +9,6 @@
 #ifndef NO_SIGNAL
 #include <signal.h>
 #endif
-#include <ctype.h>
 #ifndef LONG_MAX
 #include <limits.h>
 #endif
@@ -36,12 +35,6 @@ staticfn void dump_everything(int, time_t);
 staticfn void fixup_death(int);
 staticfn int wordcount(char *);
 staticfn void bel_copy1(char **, char *);
-
-#if defined(__BEOS__) || defined(MICRO) || defined(OS2) || defined(WIN32)
-ATTRNORETURN extern void nethack_exit(int) NORETURN;
-#else
-#define nethack_exit exit
-#endif
 
 #define done_stopprint program_state.stopprint
 
@@ -77,7 +70,7 @@ done1(int sig_unused UNUSED)
 #ifndef NO_SIGNAL
     (void) signal(SIGINT, SIG_IGN);
 #endif
-    iflags.debug_fuzzer = FALSE;
+    iflags.debug_fuzzer = fuzzer_off;
     if (flags.ignintr) {
 #ifndef NO_SIGNAL
         (void) signal(SIGINT, (SIG_RET_TYPE) done1);
@@ -118,7 +111,7 @@ done2(void)
 
         if (abandon_tutorial)
             schedule_goto(&u.ucamefrom, UTOTYPE_ATSTAIRS,
-                          "Resuming regular play", (char *) 0);
+                          "Resuming regular play.", (char *) 0);
         return ECMD_OK;
     }
 
@@ -211,7 +204,12 @@ done_in_by(struct monst *mtmp, int how)
         svk.killer.format = KILLED_BY;
     }
     /* _the_ <invisible> <distorted> ghost of Dudley */
+#if 0
+    /* hardfought */
+    if (has_ebones(mtmp)) {
+#else
     if (mptr == &mons[PM_GHOST] && has_mgivenname(mtmp)) {
+#endif
         Strcat(buf, "the ");
         svk.killer.format = KILLED_BY;
     }
@@ -254,6 +252,10 @@ done_in_by(struct monst *mtmp, int how)
                                : "%s imitating %s",
                 realnm, shape);
         mptr = mtmp->data; /* reset for mimicker case */
+#if 0  /* hardfought */
+    } else if (has_ebones(mtmp)) {
+        Strcpy(buf, m_monnam(mtmp));
+#endif
     } else if (mptr == &mons[PM_GHOST]) {
         Strcat(buf, "ghost");
         if (has_mgivenname(mtmp))
@@ -271,8 +273,11 @@ done_in_by(struct monst *mtmp, int how)
         Strcat(buf, m_monnam(mtmp));
     } else {
         Strcat(buf, pmname(mptr, Mgender(mtmp)));
-        if (has_mgivenname(mtmp))
-            Sprintf(eos(buf), " called %s", MGIVENNAME(mtmp));
+        if (has_mgivenname(mtmp)) {
+            Sprintf(eos(buf), " %s %s",
+                    has_ebones(mtmp) ? "of" : "called",
+                    MGIVENNAME(mtmp));
+        }
     }
 
     Strcpy(svk.killer.name, buf);
@@ -702,7 +707,7 @@ savelife(int how)
         u.ulevel = 1;
     uhpmin = minuhpmax(10);
     if (u.uhpmax < uhpmin)
-        setuhpmax(uhpmin);
+        setuhpmax(uhpmin, TRUE);
     u.uhp = min(u.uhpmax, givehp);
     if (Upolyd) /* Unchanging, or death which bypasses losing hit points */
         u.mh = min(u.mhmax, givehp);
@@ -937,8 +942,7 @@ fuzzer_savelife(int how)
      * Some debugging code pulled out of done() to unclutter it.
      * 'done_seq' is maintained in done().
      */
-    if (!program_state.panicking
-        && how != PANICKED && how != TRICKED) {
+    if (!program_state.panicking && how != PANICKED && how != TRICKED) {
         savelife(how);
 
         /* periodically restore characteristics plus lost experience
@@ -986,11 +990,14 @@ fuzzer_savelife(int how)
         svk.killer.name[0] = '\0';
         svk.killer.format = 0;
 
-        /* Guard against getting stuck in a loop if we die in one of
+        /*
+         * Guard against getting stuck in a loop if we die in one of
          * the few ways where life-saving isn't effective (cited case
          * was burning in lava when the level was too full to allow
-         * teleporting to safety).  Deal with it by recreating
-         * the level, if we're in wizmode */
+         * teleporting to safety).  Deal with it by recreating the level
+         * if we're in wizmode (always the case for debug_fuzzer unless
+         * player has used a debugger to fiddle with 'iflags' bits).
+         */
         if (gd.done_seq++ > gh.hero_seq + 100L) {
             if (!wizard)
                 return FALSE; /* can't deal with it */
@@ -1234,14 +1241,15 @@ really_done(int how)
         display_nhwindow(WIN_MESSAGE, FALSE);
 
     if (how != PANICKED) {
-        struct obj *obj;
+        struct obj *obj, *nextobj;
 
         /*
          * This is needed for both inventory disclosure and dumplog.
          * Both are optional, so do it once here instead of duplicating
          * it in both of those places.
          */
-        for (obj = gi.invent; obj; obj = obj->nobj) {
+        for (obj = gi.invent; obj; obj = nextobj) {
+            nextobj = obj->nobj;
             discover_object(obj->otyp, TRUE, FALSE);
             obj->known = obj->bknown = obj->dknown = obj->rknown = 1;
             set_cknown_lknown(obj); /* set flags when applicable */
@@ -1620,7 +1628,7 @@ container_contents(
                                  | (flags.sortpack ? SORTLOOT_PACK : 0));
                     sortedcobj = sortloot(&box->cobj, sortflags, FALSE,
                                           (boolean (*)(OBJ_P)) 0);
-                    for (srtc = sortedcobj; ((obj = srtc->obj) != 0); ++srtc) {
+                    for (srtc = sortedcobj; (obj = srtc->obj) != 0; ++srtc) {
                         if (identified) {
                             discover_object(obj->otyp, TRUE, FALSE);
                             obj->known = obj->bknown = obj->dknown
@@ -1746,9 +1754,9 @@ save_killers(NHFILE *nhfp)
     struct kinfo *kptr;
 
     if (perform_bwrite(nhfp)) {
-        for (kptr = &svk.killer; kptr != (struct kinfo *) 0; kptr = kptr->next) {
+        for (kptr = &svk.killer; kptr; kptr = kptr->next) {
             if (nhfp->structlevel)
-                bwrite(nhfp->fd, (genericptr_t) kptr, sizeof(struct kinfo));
+                bwrite(nhfp->fd, (genericptr_t) kptr, sizeof (struct kinfo));
         }
     }
     if (release_data(nhfp)) {
@@ -1902,9 +1910,11 @@ NH_abort(char *why USED_FOR_CRASHREPORT)
             gdb_prio++;
 
         if (gdb_prio > libc_prio) {
-            (void) (NH_panictrace_gdb() || (libc_prio && NH_panictrace_libc()));
+            (void) (NH_panictrace_gdb()
+                    || (libc_prio && NH_panictrace_libc()));
         } else {
-            (void) (NH_panictrace_libc() || (gdb_prio && NH_panictrace_gdb()));
+            (void) (NH_panictrace_libc()
+                    || (gdb_prio && NH_panictrace_gdb()));
         }
 
 #else /* VMS */

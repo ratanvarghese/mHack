@@ -1,4 +1,4 @@
-/* NetHack 3.7	sounds.c	$NHDT-Date: 1674548234 2023/01/24 08:17:14 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.134 $ */
+/* NetHack 3.7	sounds.c	$NHDT-Date: 1736530208 2025/01/10 09:30:08 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.165 $ */
 /*      Copyright (c) 1989 Janet Walz, Mike Threepoint */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -10,7 +10,6 @@ staticfn boolean morgue_mon_sound(struct monst *);
 staticfn boolean zoo_mon_sound(struct monst *);
 staticfn boolean temple_priest_sound(struct monst *);
 staticfn boolean mon_is_gecko(struct monst *);
-staticfn int domonnoise(struct monst *);
 staticfn int dochat(void);
 staticfn struct monst *responsive_mon_at(int, int);
 staticfn int mon_in_room(struct monst *, int);
@@ -264,6 +263,7 @@ dosounds(void)
                     break;
                 }
             }
+            FALLTHROUGH;
                 /*FALLTHRU*/
             case 0:
                 Soundeffect(se_guards_footsteps, 30);
@@ -631,7 +631,6 @@ cry_sound(struct monst *mtmp)
         ret = "hiss";
         break;
     case MS_ROAR: /* baby dragons; have them growl instead of roar */
-        /*FALLTHRU*/
     case MS_GROWL: /* (none) */
         ret = "growl";
         break;
@@ -675,7 +674,7 @@ mon_is_gecko(struct monst *mon)
 
 DISABLE_WARNING_FORMAT_NONLITERAL
 
-staticfn int /* check calls to this */
+int /* check calls to this */
 domonnoise(struct monst *mtmp)
 {
     char verbuf[BUFSZ];
@@ -792,12 +791,13 @@ domonnoise(struct monst *mtmp)
             int vampindex;
 
             if (kindred) {
-                verbl_msg =
-                    "This is my hunting ground that you dare to prowl!";
+                verbl_msg = "This is my hunting ground"
+                            " that you dare to prowl!";
             } else if (gy.youmonst.data == &mons[PM_SILVER_DRAGON]
                        || gy.youmonst.data == &mons[PM_BABY_SILVER_DRAGON]) {
                 /* Silver dragons are silver in color, not made of silver */
-                Sprintf(verbuf, "%s!  Your silver sheen does not frighten me!",
+                Sprintf(verbuf,
+                        "%s!  Your silver sheen"" does not frighten me!",
                         (gy.youmonst.data == &mons[PM_SILVER_DRAGON])
                             ? "Fool"
                             : "Young Fool");
@@ -869,6 +869,7 @@ domonnoise(struct monst *mtmp)
             }
             break;
         }
+        FALLTHROUGH;
         /*FALLTHRU*/
     case MS_GROWL:
         Soundeffect((mtmp->mpeaceful ? se_snarl : se_growl), 80);
@@ -1018,6 +1019,7 @@ domonnoise(struct monst *mtmp)
             }
             break;
         }
+        FALLTHROUGH;
         /*FALLTHRU*/
     case MS_HUMANOID:
         if (!mtmp->mpeaceful) {
@@ -1067,11 +1069,12 @@ domonnoise(struct monst *mtmp)
                                Phase 1         Phase 2      Phase 3
                          Collect underpants       ?          Profit
                    and they never verbalize step 2 so we don't either */
-                verbl_msg = (gnomeplan == 1) ? "Phase one, collect underpants."
-                                             : "Phase three, profit!";
+                verbl_msg = (gnomeplan == 1)
+                            ? "Phase one, collect underpants."
+                            : "Phase three, profit!";
             } else {
-                verbl_msg =
-                "Many enter the dungeon, and few return to the sunlit lands.";
+                verbl_msg = "Many enter the dungeon,"
+                            " and few return to the sunlit lands.";
             }
         } else
             switch (monsndx(ptr)) {
@@ -1145,7 +1148,8 @@ domonnoise(struct monst *mtmp)
             (void) demon_talk(mtmp);
             break;
         }
-    /* fall through */
+	FALLTHROUGH;
+        /* FALLTHRU */
     case MS_CUSS:
         if (!mtmp->mpeaceful)
             cuss(mtmp);
@@ -1232,7 +1236,7 @@ domonnoise(struct monst *mtmp)
                and without quotation marks */
             char tmpbuf[BUFSZ];
             pline1(ucase(strcpy(tmpbuf, verbl_msg)));
-            SetVoice((struct monst *) 0, 0, 80, voice_death); 
+            SetVoice((struct monst *) 0, 0, 80, voice_death);
             sound_speak(tmpbuf);
         } else {
             SetVoice(mtmp, 0, 80, 0);
@@ -1340,7 +1344,8 @@ dochat(void)
                           Hallucination ? rndmonnam((char *) 0) : "statue");
             return ECMD_OK;
         }
-        if (!Deaf && (IS_WALL(levl[tx][ty].typ) || levl[tx][ty].typ == SDOOR)) {
+        if (!Deaf && (IS_WALL(levl[tx][ty].typ)
+                      || levl[tx][ty].typ == SDOOR)) {
             /* Talking to a wall; secret door remains hidden by behaving
                like a wall; IS_WALL() test excludes solid rock even when
                that serves as a wall bordering a corridor */
@@ -1718,9 +1723,11 @@ add_sound_mapping(const char *mapping)
     text[sizeof text - 1] = '\0';
     if (sscanf(mapping, "MESG \"%255[^\"]\"%*[\t ]\"%255[^\"]\" %d %d",
                text, filename, &volume, &idx) == 4
-        || sscanf(mapping, "MESG %10[^\"] \"%255[^\"]\"%*[\t ]\"%255[^\"]\" %d %d",
+        || sscanf(mapping,
+                  "MESG %10[^\"] \"%255[^\"]\"%*[\t ]\"%255[^\"]\" %d %d",
                   msgtyp, text, filename, &volume, &idx) == 5
-        || sscanf(mapping, "MESG %10[^\"] \"%255[^\"]\"%*[\t ]\"%255[^\"]\" %d",
+        || sscanf(mapping,
+                  "MESG %10[^\"] \"%255[^\"]\"%*[\t ]\"%255[^\"]\" %d",
                   msgtyp, text, filename, &volume) == 4
         || sscanf(mapping, "MESG \"%255[^\"]\"%*[\t ]\"%255[^\"]\" %d",
                   text, filename, &volume) == 3) {
@@ -1744,7 +1751,8 @@ add_sound_mapping(const char *mapping)
 
             if (!regex_compile(text, new_map->regex)) {
                 char errbuf[BUFSZ];
-                char *re_error_desc = regex_error_desc(new_map->regex, errbuf);
+                char *re_error_desc
+                         = regex_error_desc(new_map->regex, errbuf);
 
                 regex_free(new_map->regex);
                 free((genericptr_t) new_map->filename);
@@ -2027,6 +2035,21 @@ get_soundlib_name(char *dest, int maxlen)
     *dest = '\0';
 }
 
+enum soundlib_ids
+soundlib_id_from_opt(char *op)
+{
+    int idx;
+    struct sound_procs *defproc = &nosound_procs,
+                       *sp = 0;
+
+    for (idx = 0; idx < SIZE(soundlib_choices); ++idx) {
+        sp = soundlib_choices[idx].sndprocs;
+        if (!strcmp(sp->soundname, op))
+            return sp->soundlib_id;
+    }
+    return defproc->soundlib_id;
+}
+
 /*
  * The default sound interface
  *
@@ -2291,7 +2314,11 @@ base_soundname_to_filename(
 #endif
 
 void
-set_voice(struct monst *mtmp SPEECHONLY, int32_t tone SPEECHONLY, int32_t volume SPEECHONLY, int32_t moreinfo SPEECHONLY)
+set_voice(
+    struct monst *mtmp SPEECHONLY,
+    int32_t tone SPEECHONLY,
+    int32_t volume SPEECHONLY,
+    int32_t moreinfo SPEECHONLY)
 {
 #ifdef SND_SPEECH
     int32_t gender = (mtmp && mtmp->female) ? FEMALE : MALE;
@@ -2299,14 +2326,14 @@ set_voice(struct monst *mtmp SPEECHONLY, int32_t tone SPEECHONLY, int32_t volume
     if (gv.voice.nameid)
         free((genericptr_t) gv.voice.nameid);
     gv.voice.gender = gender;
-    gv.voice.serialno = mtmp ? mtmp->m_id 
+    gv.voice.serialno = mtmp ? mtmp->m_id
                              : ((moreinfo & voice_talking_artifact) != 0)  ? 3
                                  : ((moreinfo & voice_deity) != 0) ? 4 : 2;
     gv.voice.tone = tone;
     gv.voice.volume = volume;
     gv.voice.moreinfo = moreinfo;
     gv.voice.nameid = (const char *) 0;
-    gp.pline_flags |= PLINE_SPEECH; 
+    gp.pline_flags |= PLINE_SPEECH;
 #endif
 }
 
@@ -2343,7 +2370,7 @@ sound_speak(const char *text SPEECHONLY)
             *cpdst = '\0';
         }
         (*soundprocs.sound_verbal)(buf, gv.voice.gender, gv.voice.tone,
-                                   gv.voice.volume, gv.voice.moreinfo); 
+                                   gv.voice.volume, gv.voice.moreinfo);
     }
 #endif
 }

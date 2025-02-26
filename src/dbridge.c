@@ -255,6 +255,7 @@ create_drawbridge(coordxy x, coordxy y, int dir, boolean flag)
         break;
     default:
         impossible("bad direction in create_drawbridge");
+        FALLTHROUGH;
         /*FALLTHRU*/
     case DB_WEST:
         horiz = FALSE;
@@ -287,8 +288,9 @@ e_at(coordxy x, coordxy y)
     int entitycnt;
 
     for (entitycnt = 0; entitycnt < ENTITIES; entitycnt++)
-        if ((go.occupants[entitycnt].edata) && (go.occupants[entitycnt].ex == x)
-            && (go.occupants[entitycnt].ey == y))
+        if (go.occupants[entitycnt].edata
+            && go.occupants[entitycnt].ex == x
+            && go.occupants[entitycnt].ey == y)
             break;
     debugpline1("entitycnt = %d", entitycnt);
 #ifdef D_DEBUG

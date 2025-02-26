@@ -224,6 +224,12 @@ struct accessibility_data {
             a11y.mon_notices_blocked = 0;                           \
         } } while(0)
 
+enum debug_fuzzer_states {
+    fuzzer_off,
+    fuzzer_impossible_panic,
+    fuzzer_impossible_continue
+};
+
 /*
  * Stuff that really isn't option or platform related and does not
  * get saved and restored.  They are set and cleared during the game
@@ -233,7 +239,6 @@ struct accessibility_data {
 struct instance_flags {
     boolean query_menu;    /* use a menu for yes/no queries */
     boolean showdamage;
-    boolean debug_fuzzer;  /* fuzz testing */
     boolean defer_plname;  /* X11 hack: askname() might not set svp.plname */
     boolean herecmd_menu;  /* use menu when mouseclick on yourself */
     boolean invis_goldsym; /* gold symbol is ' '? */
@@ -244,6 +249,7 @@ struct instance_flags {
                                 * indirectly so we can't use xname_flags() */
     boolean remember_getpos; /* save getpos() positioning in do-again queue */
     boolean sad_feeling;   /* unseen pet is dying */
+    xint8 debug_fuzzer;    /* fuzz testing */
     int at_midnight;       /* only valid during end of game disclosure */
     int at_night;          /* also only valid during end of game disclosure */
     int failing_untrap;    /* move_into_trap() -> spoteffects() -> dotrap() */
@@ -313,6 +319,7 @@ struct instance_flags {
     boolean news;             /* print news */
     boolean num_pad;          /* use numbers for movement commands */
     boolean perm_invent;      /* display persistent inventory window */
+    boolean perm_invent_pending;  /* need to try again */
     boolean renameallowed;    /* can change hero name during role selection */
     boolean renameinprogress; /* we are changing hero name */
     boolean sounds;           /* master on/off switch for using soundlib */

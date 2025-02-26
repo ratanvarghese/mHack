@@ -176,12 +176,13 @@ staticfn int
 stealarm(void)
 {
     struct monst *mtmp;
-    struct obj *otmp;
+    struct obj *otmp, *nextobj;
 
     if (!gs.stealoid || !gs.stealmid)
         goto botm;
 
-    for (otmp = gi.invent; otmp; otmp = otmp->nobj) {
+    for (otmp = gi.invent; otmp; otmp = nextobj) {
+        nextobj = otmp->nobj;
         if (otmp->o_id == gs.stealoid) {
             for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
                 if (mtmp->m_id == gs.stealmid) {
@@ -294,19 +295,8 @@ remove_worn_item(
         setnotworn(obj);
     }
 
-    /*
-     * Fingers crossed; hope unwearing obj didn't destroy it.  Loss of
-     * levitation, flight, water walking, magical breathing or perhaps
-     * some other property can subject hero to hardship.  drown() won't
-     * drop an 'in_use' item during emergency_disrobe() to crawl out
-     * of water.  Surviving in_lava() only burns up items which aren't
-     * able to confer such properties but dying to it will destroy all
-     * in-use items, keeping them out of subsequent bones.  Triggering
-     * traps might pose a risk of item destruction (fire, explosion)
-     * but usually that will be like the surviving lava case--the items
-     * that are affected aren't ones that will be unworn and trigger
-     * the whole mess.
-     */
+    if (obj->where == OBJ_DELETED)
+        debugpline1("remove_worn_item() \"%s\" deleted!", simpleonames(obj));
     obj->in_use = oldinuse;
 }
 
@@ -382,7 +372,7 @@ steal(struct monst *mtmp, char *objnambuf)
        no longer being visible; it could also be a case of a blinded
        hero being able to see via wearing the Eyes of the Overworld and
        having those stolen; remember the name as it is now; if unseen,
-       monkeys will be "It" and nymphs will be "Someone" */
+       nymphs will be "Someone" and monkeys will be "Something" */
     Strcpy(Monnambuf, Some_Monnam(mtmp));
 
     /* food being eaten might already be used up but will not have
@@ -585,13 +575,13 @@ steal(struct monst *mtmp, char *objnambuf)
                        otmp->oclass);
         }
         /* hero's blindfold might have just been stolen; if so, replace
-           cached "It" or "Someone" with Monnam */
+           cached "Someone" or "Something" with Monnam */
         if (!seen && canspotmon(mtmp))
             Strcpy(Monnambuf, Monnam(mtmp));
     } else if (otmp->owornmask) { /* weapon or ball&chain */
         struct obj *item = otmp;
 
-        if (otmp == uball && uchain != NULL)
+        if (otmp == uball) /* non-Null uball implies non-Null uchain */
             item = uchain; /* yields a more accurate 'takes off' message */
         worn_item_removal(mtmp, item);
         /* if we switched from uball to uchain for the preface message,
@@ -671,11 +661,11 @@ mpickobj(struct monst *mtmp, struct obj *otmp)
             pline("%s out.", Tobjnam(otmp, "go"));
         snuff_otmp = TRUE;
     }
+    /* for hero owned object on shop floor, mtmp is taking possession
+       and if it's eventually dropped in a shop, shk will claim it */
+    otmp->no_charge = 0;
     /* some object handling is only done if mtmp isn't a pet */
     if (!mtmp->mtame) {
-        /* for hero owned object on shop floor, mtmp is taking possession
-           and if it's eventually dropped in a shop, shk will claim it */
-        otmp->no_charge = 0;
         /* if monst is unseen, some info hero knows about this object becomes
            lost; continual pickup and drop by pets makes this too annoying if
            it is applied to them; when engulfed (where monster can't be seen

@@ -29,7 +29,8 @@ picking_lock(coordxy *x, coordxy *y)
 boolean
 picking_at(coordxy x, coordxy y)
 {
-    return (boolean) (go.occupation == picklock && gx.xlock.door == &levl[x][y]);
+    return (boolean) (go.occupation == picklock
+                      && gx.xlock.door == &levl[x][y]);
 }
 
 /* produce an occupation string appropriate for the current activity */
@@ -104,10 +105,12 @@ picklock(void)
                        : (gx.xlock.door->doormask & D_TRAPPED) != 0)
         && gx.xlock.magic_key) {
         gx.xlock.chance += 20; /* less effort needed next time */
-        /* unfortunately we don't have a 'tknown' flag to record
-           "known to be trapped" so declining to disarm and then
-           retrying lock manipulation will find it all over again */
-        if (y_n("You find a trap!  Do you want to try to disarm it?") == 'y') {
+        if (!gx.xlock.door) {
+            if (!gx.xlock.box->tknown)
+                You("find a trap!");
+            gx.xlock.box->tknown = 1;
+        }
+        if (y_n("Do you want to try to disarm it?") == 'y') {
             const char *what;
             boolean alreadyunlocked;
 
@@ -118,6 +121,7 @@ picklock(void)
                 alreadyunlocked = !(gx.xlock.door->doormask & D_LOCKED);
             } else {
                 gx.xlock.box->otrapped = 0;
+                gx.xlock.box->tknown = 0;
                 what = (gx.xlock.box->otyp == CHEST) ? "chest" : "box";
                 alreadyunlocked = !gx.xlock.box->olocked;
             }
@@ -182,7 +186,8 @@ breakchestlock(struct obj *box, boolean destroyit)
             if (!rn2(3) || otmp->oclass == POTION_CLASS) {
                 chest_shatter_msg(otmp);
                 if (costly)
-                    loss += stolen_value(otmp, u.ux, u.uy, peaceful_shk, TRUE);
+                    loss += stolen_value(otmp, u.ux, u.uy, peaceful_shk,
+                                         TRUE);
                 if (otmp->quan == 1L) {
                     obfree(otmp, (struct obj *) 0);
                     continue;
@@ -427,6 +432,14 @@ pick_lock(
         boolean it;
         int count;
 
+        /*
+         * FIXME:
+         *  (chest->otrapped && chest->tknown) is handled, to skip
+         *  checking for a trap and continue with asking about disarm;
+         *  (chest->tknown && !chest->otrapped) ignores tknown and will
+         *  ask about checking for non-existant trap.
+         */
+
         if (u.dz < 0 && !autounlock) { /* beware stale u.dz value */
             There("isn't any sort of lock up %s.",
                   Levitation ? "here" : "there");
@@ -506,7 +519,8 @@ pick_lock(
                     You_cant("do that with %s.",
                              an(simple_typename(picktyp)));
                     return PICKLOCK_LEARNED_SOMETHING;
-                } else if (autounlock && !touch_artifact(pick, &gy.youmonst)) {
+                } else if (autounlock
+                           && !touch_artifact(pick, &gy.youmonst)) {
                     /* note: for !autounlock, apply already did touch check */
                     return PICKLOCK_DID_SOMETHING;
                 }
@@ -883,12 +897,15 @@ doopen_indir(coordxy x, coordxy y)
                 && (unlocktool = autokey(TRUE)) != 0) {
                 res = pick_lock(unlocktool, cc.x, cc.y,
                                 (struct obj *) 0) ? ECMD_TIME : ECMD_OK;
-            } else if (!u.usteed
-                       && (flags.autounlock & AUTOUNLOCK_KICK) != 0
+            } else if ((flags.autounlock & AUTOUNLOCK_KICK) != 0
+                       && !u.usteed /* kicking is different when mounted */
                        && ynq("Kick it?") == 'y') {
                 cmdq_add_ec(CQ_CANNED, dokick);
-                cmdq_add_dir(CQ_CANNED, sgn(cc.x - u.ux), sgn(cc.y - u.uy), 0);
-                res = ECMD_TIME;
+                cmdq_add_dir(CQ_CANNED,
+                             sgn(cc.x - u.ux), sgn(cc.y - u.uy), 0);
+                /* this was 'ECMD_TIME', but time shouldn't elapse until
+                   the canned kick takes place */
+                res = ECMD_OK;
             }
         }
         return res;
@@ -911,7 +928,7 @@ doopen_indir(coordxy x, coordxy y)
         } else
             door->doormask = D_ISOPEN;
         feel_newsym(cc.x, cc.y); /* the hero knows she opened it */
-        unblock_point(cc.x, cc.y); /* vision: new see through there */
+        recalc_block_point(cc.x, cc.y); /* vision: new see through there */
     } else {
         exercise(A_STR, TRUE);
         set_msg_xy(cc.x, cc.y);
@@ -998,7 +1015,8 @@ doclose(void)
         schar oldlastseentyp = update_mapseen_for(x, y);
 
         feel_location(x, y);
-        if (door->glyph != oldglyph || svl.lastseentyp[x][y] != oldlastseentyp)
+        if (door->glyph != oldglyph
+            || svl.lastseentyp[x][y] != oldlastseentyp)
             res = ECMD_TIME; /* learned something */
     }
 
@@ -1231,7 +1249,7 @@ doorlock(struct obj *otmp, coordxy x, coordxy y)
             }
             sawit = cansee(x, y);
             door->doormask = D_BROKEN;
-            unblock_point(x, y);
+            recalc_block_point(x, y);
             seeit = cansee(x, y);
             newsym(x, y);
             if (flags.verbose) {

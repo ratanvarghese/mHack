@@ -535,8 +535,9 @@ kick_object(coordxy x, coordxy y, char *kickobjnam)
     /* if a pile, the "top" object gets kicked */
     gk.kickedobj = svl.level.objects[x][y];
     if (gk.kickedobj) {
-        /* kick object; if doing is fatal, done() will clean up gk.kickedobj */
-        Strcpy(kickobjnam, killer_xname(gk.kickedobj)); /* matters iff res==0 */
+        /* formatted object name matters iff res==0 */
+        Strcpy(kickobjnam, killer_xname(gk.kickedobj));
+        /* kick object; if fatal, done() will clean up kickedobj */
         res = really_kick_object(x, y);
         gk.kickedobj = (struct obj *) 0;
     }
@@ -658,9 +659,9 @@ really_kick_object(coordxy x, coordxy y)
     Norep("You kick %s.",
           !isgold ? singular(gk.kickedobj, doname) : doname(gk.kickedobj));
 
-    if (IS_ROCK(levl[x][y].typ) || closed_door(x, y)) {
+    if (IS_OBSTRUCTED(levl[x][y].typ) || closed_door(x, y)) {
         if ((!martial() && rn2(20) > ACURR(A_DEX))
-            || IS_ROCK(levl[u.ux][u.uy].typ) || closed_door(u.ux, u.uy)) {
+            || IS_OBSTRUCTED(levl[u.ux][u.uy].typ) || closed_door(u.ux, u.uy)) {
             if (Blind)
                 pline("It doesn't come loose.");
             else
@@ -851,7 +852,7 @@ kickstr(char *buf, const char *kickobjnam)
         what = "a tree";
     else if (IS_STWALL(gm.maploc->typ))
         what = "a wall";
-    else if (IS_ROCK(gm.maploc->typ))
+    else if (IS_OBSTRUCTED(gm.maploc->typ))
         what = "a rock";
     else if (IS_THRONE(gm.maploc->typ))
         what = "a throne";
@@ -955,6 +956,8 @@ kick_ouch(coordxy x, coordxy y, const char *kickobjnam)
 staticfn void
 kick_door(coordxy x, coordxy y, int avrg_attrib)
 {
+    boolean doorbuster;
+
     if (gm.maploc->doormask == D_ISOPEN || gm.maploc->doormask == D_BROKEN
         || gm.maploc->doormask == D_NODOOR) {
         kick_dumb(x, y);
@@ -968,9 +971,12 @@ kick_door(coordxy x, coordxy y, int avrg_attrib)
     }
 
     exercise(A_DEX, TRUE);
+    doorbuster = Upolyd && is_giant(gy.youmonst.data);
     /* door is known to be CLOSED or LOCKED */
-    if (rnl(35) < avrg_attrib + (!martial() ? 0 : ACURR(A_DEX))) {
+    if (doorbuster
+        || (rnl(35) < avrg_attrib + (!martial() ? 0 : ACURR(A_DEX)))) {
         boolean shopdoor = *in_rooms(x, y, SHOPBASE) ? TRUE : FALSE;
+
         /* break the door */
         if (gm.maploc->doormask & D_TRAPPED) {
             if (flags.verbose)
@@ -1388,6 +1394,7 @@ dokick(void)
                 pline("%s burps loudly.", Monnam(u.ustuck));
                 break;
             }
+            FALLTHROUGH;
             /*FALLTHRU*/
         default:
             Your("feeble kick has no effect.");
@@ -1408,7 +1415,7 @@ dokick(void)
          * reachable for bracing purposes
          * Possible extension: allow bracing against stuff on the side?
          */
-        if (isok(xx, yy) && !IS_ROCK(levl[xx][yy].typ)
+        if (isok(xx, yy) && !IS_OBSTRUCTED(levl[xx][yy].typ)
             && !IS_DOOR(levl[xx][yy].typ)
             && (!Is_airlevel(&u.uz) || !OBJ_AT(xx, yy))) {
             You("have nothing to brace yourself against.");
@@ -1533,6 +1540,7 @@ drop_to(coord *cc, schar loc, coordxy x, coordxy y)
             cc->y = cc->x = 0;
             break;
         }
+        FALLTHROUGH;
         /*FALLTHRU*/
     case MIGR_STAIRS_UP:
     case MIGR_LADDER_UP:
@@ -1848,6 +1856,7 @@ obj_delivery(boolean near_hero)
         switch (where) {
         case MIGR_LADDER_UP:
             isladder = TRUE;
+            FALLTHROUGH;
             /*FALLTHRU*/
         case MIGR_STAIRS_UP:
         case MIGR_SSTAIRS:

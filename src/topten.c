@@ -110,11 +110,13 @@ formatkiller(
     switch (svk.killer.format) {
     default:
         impossible("bad killer format? (%d)", svk.killer.format);
+        FALLTHROUGH;
         /*FALLTHRU*/
     case NO_KILLER_PREFIX:
         break;
     case KILLED_BY_AN:
         kname = an(kname);
+        FALLTHROUGH;
         /*FALLTHRU*/
     case KILLED_BY:
         (void) strncat(buf, killed_by_prefix[how], siz - 1);
@@ -596,6 +598,7 @@ encode_extended_conducts(char *buf)
     add_achieveX(buf, "blind",        u.uroleplay.blind);
     add_achieveX(buf, "deaf",         u.uroleplay.deaf);
     add_achieveX(buf, "nudist",       u.uroleplay.nudist);
+    add_achieveX(buf, "pauper",       u.uroleplay.pauper);
     add_achieveX(buf, "bonesless",    !flags.bones);
     add_achieveX(buf, "petless",      !u.uconduct.pets);
 

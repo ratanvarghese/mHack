@@ -1,4 +1,4 @@
-/* NetHack 3.7	role.c	$NHDT-Date: 1711734229 2024/03/29 17:43:49 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.100 $ */
+/* NetHack 3.7	role.c	$NHDT-Date: 1737607158 2025/01/22 20:39:18 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.107 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985-1999. */
 /*-Copyright (c) Robert Patrick Rankin, 2012. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -24,6 +24,9 @@
  *
  * God names use a leading underscore to flag goddesses.
  */
+
+/* NUM_ROLES is defined in hack.h */
+
 const struct Role roles[NUM_ROLES+1] = {
     { { "Archeologist", 0 },
       { { "Digger", 0 },
@@ -692,7 +695,9 @@ const struct Role roles[NUM_ROLES+1] = {
 };
 
 /* Table of all races */
-const struct Race races[] = {
+
+/* NUM_RACES is defined in hack.h */
+const struct Race races[NUM_RACES + 1] = {
     {
         "human",
         "human",
@@ -1476,6 +1481,7 @@ clearrolefilter(int which)
     switch (which) {
     case RS_filter:
         gr.rfilter.mask = 0; /* clear race, gender, and alignment filters */
+        FALLTHROUGH;
         /*FALLTHRU*/
     case RS_ROLE:
         for (i = 0; i < SIZE(roles) - 1; ++i)
@@ -1680,7 +1686,7 @@ root_plselection_prompt(
         if (donefirst)
             Strcat(buf, " ");
         Strcat(buf, "character");
-        donefirst = TRUE;
+        /*donefirst = TRUE;*/
     }
     /* <your lawful female gnomish cavewoman> || <your lawful female gnome>
      *    || <your lawful female character>
@@ -1802,7 +1808,8 @@ plnamesuffix(void)
 
     do {
         if (!svp.plname[0]) {
-            askname(); /* fill svp.plname[] if necessary, or set defer_plname */
+            askname(); /* fill svp.plname[] if necessary, or set
+                        * defer_plname */
             gp.plnamelen = 0; /* plname[] might have -role-race-&c attached */
         }
 
@@ -1852,7 +1859,8 @@ role_selection_prolog(int which, winid where)
         allowmask = roles[r].allow;
         if ((allowmask & ROLE_RACEMASK) == MH_HUMAN)
             c = 0; /* races[human] */
-        else if (IndexOkT(c, races) && !(allowmask & ROLE_RACEMASK & races[c].allow))
+        else if (IndexOkT(c, races)
+                 && !(allowmask & ROLE_RACEMASK & races[c].allow))
             c = ROLE_RANDOM;
         if ((allowmask & ROLE_GENDMASK) == ROLE_MALE)
             gend = 0; /* role forces male (hypothetical) */
@@ -1967,8 +1975,8 @@ role_menu_extra(int which, winid where, boolean preselect)
             if (c >= 0) {
                 constrainer = "role";
                 forcedvalue = races[c].noun;
-            } else if (f >= 0
-                       && (allowmask & ~gr.rfilter.mask) == races[f].selfmask) {
+            } else if (f >= 0 && ((allowmask & ~gr.rfilter.mask)
+                                  == races[f].selfmask)) {
                 /* if there is only one race choice available due to user
                    options disallowing others, race menu entry is disabled */
                 constrainer = "filter";
@@ -1989,8 +1997,8 @@ role_menu_extra(int which, winid where, boolean preselect)
             if (gend >= 0) {
                 constrainer = "role";
                 forcedvalue = genders[gend].adj;
-            } else if (f >= 0
-                       && (allowmask & ~gr.rfilter.mask) == genders[f].allow) {
+            } else if (f >= 0 && ((allowmask & ~gr.rfilter.mask)
+                                  == genders[f].allow)) {
                 /* if there is only one gender choice available due to user
                    options disallowing other, gender menu entry is disabled */
                 constrainer = "filter";
@@ -2296,7 +2304,7 @@ genl_player_selection(void)
     /*NOTREACHED*/
 }
 
-#if defined(TTY_GRAPHICS) || defined(CURSES_GRAPHICS)
+#if defined(TTY_GRAPHICS) || defined(CURSES_GRAPHICS) || defined(SHIM_GRAPHICS)
 /* ['#else' far below] */
 
 staticfn boolean reset_role_filtering(void);
@@ -2658,7 +2666,9 @@ genl_player_setup(int screenheight)
         }     /* picking gender */
 
         if (nextpick == RS_ALGNMNT) {
-            nextpick = (ROLE < 0) ? RS_ROLE : (RACE < 0) ? RS_RACE : RS_GENDER;
+            nextpick = (ROLE < 0) ? RS_ROLE
+                       : (RACE < 0) ? RS_RACE
+                         : RS_GENDER;
             /* Select an alignment, if necessary;
                force compatibility with role/race/gender. */
             if (ALGN < 0 || !validalign(ROLE, RACE, ALGN)) {
@@ -2774,7 +2784,8 @@ genl_player_setup(int screenheight)
         if (iflags.renameallowed) {
             any.a_int = 3;
             add_menu(win, &nul_glyphinfo, &any, 'a', 0, ATR_NONE,
-                     clr, "Not yet; choose another name", MENU_ITEMFLAGS_NONE);
+                     clr, "Not yet; choose another name",
+                     MENU_ITEMFLAGS_NONE);
         }
         any.a_int = -1;
         add_menu(win, &nul_glyphinfo, &any, 'q', 0,
@@ -2803,10 +2814,12 @@ genl_player_setup(int screenheight)
             iflags.renameinprogress = TRUE; /* affects main() in unixmain.c */
             /* plnamesuffix() can change any or all of ROLE, RACE,
                GEND, ALGN; we'll override that and honor only the name */
-            saveROLE = ROLE, saveRACE = RACE, saveGEND = GEND, saveALGN = ALGN;
+            saveROLE = ROLE, saveRACE = RACE,
+            saveGEND = GEND, saveALGN = ALGN;
             svp.plname[0] = '\0';
             plnamesuffix(); /* calls askname() when svp.plname[] is empty */
-            ROLE = saveROLE, RACE = saveRACE, GEND = saveGEND, ALGN = saveALGN;
+            ROLE = saveROLE, RACE = saveRACE,
+            GEND = saveGEND, ALGN = saveALGN;
             break; /* getconfirmation is still True */
         }
         case 2: /* 'n' */

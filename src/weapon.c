@@ -1,4 +1,4 @@
-/* NetHack 3.7	weapon.c	$NHDT-Date: 1723318730 2024/08/10 19:38:50 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.127 $ */
+/* NetHack 3.7	weapon.c	$NHDT-Date: 1725227810 2024/09/01 21:56:50 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.128 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2011. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -84,7 +84,7 @@ give_may_advance_msg(int skill)
                  : (skill <= P_LAST_WEAPON) ? "weapon "
                      : (skill <= P_LAST_SPELL) ? "spell casting "
                          : "fighting ");
-    handle_tip(TIP_ENHANCE);
+    (void) handle_tip(TIP_ENHANCE);
 }
 
 /* weapon's skill category name for use as generalized description of weapon;
@@ -895,7 +895,7 @@ possibly_unwield(struct monst *mon, boolean polyspot)
         mon->weapon_check = NO_WEAPON_WANTED;
         /* if we're going to call distant_name(), do so before extract_self */
         if (cansee(mon->mx, mon->my)) {
-            pline("%s drops %s.", Monnam(mon), distant_name(obj, doname));
+            pline_mon(mon, "%s drops %s.", Monnam(mon), distant_name(obj, doname));
             newsym(mon->mx, mon->my);
         }
         obj_extract_self(obj);
@@ -1006,7 +1006,7 @@ mon_wield_item(struct monst *mon)
                     pline("%s cannot wield that %s.", mon_nam(mon),
                           xname(obj));
                 } else {
-                    pline("%s tries to wield %s.", Monnam(mon), doname(obj));
+                    pline_mon(mon, "%s tries to wield %s.", Monnam(mon), doname(obj));
                     pline("%s %s!", Yname2(mw_tmp), welded_buf);
                 }
                 mw_tmp->bknown = 1;
@@ -1327,7 +1327,11 @@ skill_advance(int skill)
         P_SKILL(skill) >= P_MAX_SKILL(skill) ? "most" : "more",
         P_NAME(skill));
 
-    skill_based_spellbook_id();
+    /* wizards discover spellbook IDs depending on spell 'school' skill limits;
+       this allows them to successfully write books for unknown spells without
+       the Luck bias they used to have over other roles */
+    if (skill >= P_FIRST_SPELL && skill <= P_LAST_SPELL)
+        skill_based_spellbook_id();
 }
 
 static const struct skill_range {
@@ -1641,7 +1645,9 @@ weapon_hit_bonus(struct obj *weapon)
     } else if (type <= P_LAST_WEAPON) {
         switch (P_SKILL(type)) {
         default:
-            impossible(bad_skill, P_SKILL(type)); /* fall through */
+            impossible(bad_skill, P_SKILL(type));
+            FALLTHROUGH;
+            /* FALLTHRU */
         case P_ISRESTRICTED:
         case P_UNSKILLED:
             bonus = -4;
@@ -1662,7 +1668,9 @@ weapon_hit_bonus(struct obj *weapon)
             skill = P_SKILL(wep_type);
         switch (skill) {
         default:
-            impossible(bad_skill, skill); /* fall through */
+            impossible(bad_skill, skill);
+            FALLTHROUGH;
+            /* FALLTHRU */
         case P_ISRESTRICTED:
         case P_UNSKILLED:
             bonus = -9;
@@ -1736,7 +1744,8 @@ weapon_dam_bonus(struct obj *weapon)
         switch (P_SKILL(type)) {
         default:
             impossible("weapon_dam_bonus: bad skill %d", P_SKILL(type));
-        /* fall through */
+            FALLTHROUGH;
+        /* FALLTHRU */
         case P_ISRESTRICTED:
         case P_UNSKILLED:
             bonus = -2;
@@ -1897,7 +1906,8 @@ skill_init(const struct def_skill *class_skill)
        (despite the function name, this works for spell skills too) */
     unrestrict_weapon_skill(spell_skilltype(gu.urole.spelspec));
 
-    skill_based_spellbook_id();
+    if (!u.uroleplay.pauper) /* paupers lack advanced access to books */
+        skill_based_spellbook_id();
 }
 
 void

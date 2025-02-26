@@ -5,7 +5,6 @@
 
 #include "hack.h"
 #include "mfndpos.h"
-#include <ctype.h>
 
 staticfn void sanity_check_single_mon(struct monst *, boolean, const char *);
 staticfn struct obj *make_corpse(struct monst *, unsigned);
@@ -913,11 +912,10 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_ABBOT: case PM_ACOLYTE: case PM_HUNTER:
     case PM_THUG: case PM_NINJA: case PM_ROSHI: case PM_GUIDE:
     case PM_WARRIOR: case PM_APPRENTICE:
-    /*FALLTHRU*/
 #else
     default:
 #endif
-default_1:
+ default_1:
         if (svm.mvitals[mndx].mvflags & G_NOCORPSE) {
             return (struct obj *) 0;
         } else {
@@ -1091,7 +1089,8 @@ minliquid_core(struct monst *mtmp)
          * water damage to dead monsters' inventory, but survivors need to
          * be handled here.  Swimmers are able to protect their stuff...
          */
-        if ((waterwall || !is_clinger(mtmp->data)) && !cant_drown(mtmp->data)) {
+        if ((waterwall || !is_clinger(mtmp->data))
+            && !cant_drown(mtmp->data)) {
             /* like hero with teleport intrinsic or spell, teleport away
                if possible */
             if (can_teleport(mtmp->data) && !tele_restrict(mtmp)) {
@@ -1406,9 +1405,7 @@ m_consume_obj(struct monst *mtmp, struct obj *otmp)
 
     /* non-pet: Heal up to the object's weight in hp */
     if (!ispet && mtmp->mhp < mtmp->mhpmax) {
-        mtmp->mhp += objects[otmp->otyp].oc_weight;
-        if (mtmp->mhp > mtmp->mhpmax)
-            mtmp->mhp = mtmp->mhpmax;
+        healmon(mtmp, objects[otmp->otyp].oc_weight, 0);
     }
     if (Has_contents(otmp))
         meatbox(mtmp, otmp);
@@ -1453,7 +1450,7 @@ m_consume_obj(struct monst *mtmp, struct obj *otmp)
             }
         }
         if (heal)
-            mtmp->mhp = mtmp->mhpmax;
+            healmon(mtmp, mtmp->mhpmax, 0);
         if ((eyes || heal) && !mtmp->mcansee)
             mcureblindness(mtmp, canseemon(mtmp));
         if (ispet && deadmimic)
@@ -1488,8 +1485,9 @@ meatmetal(struct monst *mtmp)
          otmp = otmp->nexthere) {
         /* Don't eat indigestible/choking/inappropriate objects */
         if ((mtmp->data == &mons[PM_RUST_MONSTER] && !is_rustprone(otmp))
-            || (otmp->otyp == AMULET_OF_STRANGULATION)
-            || (otmp->otyp == RIN_SLOW_DIGESTION))
+            || (otmp->otyp == AMULET_OF_STRANGULATION
+                || otmp->otyp == RIN_SLOW_DIGESTION)
+            || (otmp->opoisoned && !resists_poison(mtmp)))
             continue;
         if (is_metallic(otmp) && !obj_resists(otmp, 5, 95)
             && touch_artifact(otmp, mtmp)) {
@@ -1601,6 +1599,7 @@ meatobj(struct monst* mtmp) /* for gelatinous cubes */
                       included for emphasis */
                    || (otmp->otyp == AMULET_OF_STRANGULATION
                        || otmp->otyp == RIN_SLOW_DIGESTION)
+                   || (otmp->opoisoned && !resists_poison(mtmp))
                    /* cockatrice corpses handled above; this
                       touch_petrifies() check catches eggs */
                    || (mstoning(otmp) && !resists_ston(mtmp))
@@ -1739,9 +1738,9 @@ mon_give_prop(struct monst *mtmp, int prop)
     const char *msg = NULL;
     unsigned short intrinsic = 0; /* MR_* constant */
 
-    /* Pets don't have all the fields that the hero does, so they can't get all
-       the same intrinsics. If it happens to choose strength gain or teleport
-       control or whatever, ignore it. */
+    /* Pets don't have all the fields that the hero does, so they can't get
+       all the same intrinsics.  If it happens to choose strength gain or
+       teleport control or whatever, ignore it. */
     switch (prop) {
     case FIRE_RES:
         msg = "%s shivers slightly.";
@@ -1988,7 +1987,7 @@ can_touch_safely(struct monst *mtmp, struct obj *otmp)
  *
  * to support the new pet behavior, this now returns the max # of objects
  * that a given monster could pick up from a pile. frequently this will be
- * otmp->quan, but special cases for 'only one' now exist so.
+ * otmp->quan, but special cases for 'only one' now exist.
  *
  * this will probably cause very amusing behavior with pets and gold coins.
  *
@@ -2221,12 +2220,12 @@ mfndpos(
             if (nx == x && ny == y)
                 continue;
             ntyp = levl[nx][ny].typ;
-            if (IS_ROCK(ntyp)
+            if (IS_OBSTRUCTED(ntyp)
                 && !((flag & ALLOW_WALL) && may_passwall(nx, ny))
                 && !((IS_TREE(ntyp) ? treeok : rockok) && may_dig(nx, ny)))
                 continue;
             /* intelligent peacefuls avoid digging shop/temple walls */
-            if (IS_ROCK(ntyp) && rockok
+            if (IS_OBSTRUCTED(ntyp) && rockok
                 && !mindless(mon->data) && (mon->mpeaceful || mon->mtame)
                 && (*in_rooms(nx, ny, TEMPLE) || *in_rooms(nx, ny, SHOPBASE))
                 && !(*in_rooms(x, y, TEMPLE) || *in_rooms(x, y, SHOPBASE)))
@@ -2279,7 +2278,8 @@ mfndpos(
                 /* Displacement also displaces the Elbereth/scare monster,
                  * as long as you are visible.
                  */
-                if (Displaced && monseeu && mon->mux == nx && mon->muy == ny) {
+                if (Displaced && monseeu
+                    && mon->mux == nx && mon->muy == ny) {
                     dispx = u.ux;
                     dispy = u.uy;
                 } else {
@@ -2330,7 +2330,8 @@ mfndpos(
                     }
                     /* Note: ALLOW_SANCT only prevents movement, not
                        attack, into a temple. */
-                    if (svl.level.flags.has_temple && *in_rooms(nx, ny, TEMPLE)
+                    if (svl.level.flags.has_temple
+                        && *in_rooms(nx, ny, TEMPLE)
                         && !*in_rooms(x, y, TEMPLE)
                         && in_your_sanctuary((struct monst *) 0, nx, ny)) {
                         if (!(flag & ALLOW_SANCT))
@@ -2364,8 +2365,8 @@ mfndpos(
                  */
                 if ((ttmp = t_at(nx, ny)) != 0) {
                     if (ttmp->ttyp >= TRAPNUM || ttmp->ttyp == 0) {
-                        impossible(
-                         "A monster looked at a very strange trap of type %d.",
+                        impossible("A monster looked at a very strange trap"
+                                   " of type %d.",
                                    ttmp->ttyp);
                             continue;
                     }
@@ -2621,6 +2622,12 @@ copy_mextra(struct monst *mtmp2, struct monst *mtmp1)
         assert(has_edog(mtmp2));
         *EDOG(mtmp2) = *EDOG(mtmp1);
     }
+    if (EBONES(mtmp1)) {
+        if (!EBONES(mtmp2))
+            newebones(mtmp2);
+        assert(has_ebones(mtmp2));
+        *EBONES(mtmp2) = *EBONES(mtmp1);
+    }
     if (has_mcorpsenm(mtmp1))
         MCORPSENM(mtmp2) = MCORPSENM(mtmp1);
 }
@@ -2643,6 +2650,8 @@ dealloc_mextra(struct monst *m)
             free((genericptr_t) x->emin), x->emin = 0;
         if (x->edog)
             free((genericptr_t) x->edog), x->edog = 0;
+        if (x->ebones)
+            free((genericptr_t) x->ebones), x->ebones = 0;
         x->mcorpsenm = NON_PM; /* no allocation to release */
 
         free((genericptr_t) x);
@@ -2862,15 +2871,20 @@ lifesaved_monster(struct monst *mtmp)
 }
 
 /* when a shape-shifted vampire is killed, it reverts to base form instead
-   of dying; moved into separate routine to unclutter mondead() */
+   of dying; returns True if mtmp successfully revives, False otherwise;
+   "successfully revived" vampire might be killed by a booby trapped door */
 staticfn boolean
 vamprises(struct monst *mtmp)
 {
     int mndx = mtmp->cham;
 
+    /*
+     * Protection from shape changers protects against this because
+     * the vampire will always be in normal form instead of shifted.
+     * So there's no need to check for that attribute being active.
+     */
     if (ismnum(mndx) && mndx != monsndx(mtmp->data)
         && !(svm.mvitals[mndx].mvflags & G_GENOD)) {
-        coord new_xy;
         char action[BUFSZ];
         /* alternate message phrasing for some monster types */
         boolean spec_mon = (nonliving(mtmp->data)
@@ -2883,30 +2897,28 @@ vamprises(struct monst *mtmp)
 
         /* construct a 'before' argument to pass to pline(); this used
            to construct a dynamic format string but that's overkill */
-        Snprintf(action, sizeof action, "%s suddenly %s and rises as",
+        Snprintf(action, sizeof action, "%s%s %s%s and rises as",
+                 Unaware ? "you dream that " : "",
                  x_monnam(mtmp, ARTICLE_THE,
                           spec_mon ? (char *) 0 : "seemingly dead",
                           (SUPPRESS_INVISIBLE | AUGMENT_IT), FALSE),
+                 Unaware ? "" : "suddenly ",
                  spec_death ? "reconstitutes" : "transforms");
         mtmp->mcanmove = 1;
         mtmp->mfrozen = 0;
         set_mon_min_mhpmax(mtmp, 10); /* mtmp->mhpmax=max(m_lev+1,10) */
         mtmp->mhp = mtmp->mhpmax;
-        /* mtmp==u.ustuck can happen if previously a fog cloud
-           or poly'd hero is hugging a vampire bat */
+        /* mtmp==u.ustuck can happen if previously a fog cloud or if
+           poly'd hero is hugging a vampire bat */
         if (mtmp == u.ustuck) {
             if (u.uswallow)
                 expels(mtmp, mtmp->data, FALSE);
             else
                 uunstick();
         }
-        /* if fog cloud is on a closed door space, move it to a more
-           appropriate spot for its intended new form */
-        if (amorphous(mtmp->data) && closed_door(mtmp->mx, mtmp->my)) {
-            if (enexto(&new_xy, mtmp->mx, mtmp->my, &mons[mndx]))
-                rloc_to(mtmp, new_xy.x, new_xy.y);
-        }
-        (void) newcham(mtmp, &mons[mndx], NO_NC_FLAGS);
+
+        if (!newcham(mtmp, &mons[mndx], NO_NC_FLAGS))
+            return !DEADMONSTER(mtmp);
         mtmp->cham = (mtmp->data == &mons[mndx]) ? NON_PM : mndx;
 
         if (canspotmon(mtmp)) {
@@ -2918,6 +2930,42 @@ vamprises(struct monst *mtmp)
                            (SUPPRESS_NAME | SUPPRESS_IT | SUPPRESS_INVISIBLE),
                                FALSE));
             gv.vamp_rise_msg = TRUE;
+        }
+        /* revived vampire is in normal shape, so can't be amorphous; if on
+           a closed door spot, destroy the door and if trapped, blow it up */
+        if (closed_door(x, y)) {
+            static const char
+                door_smashed[] = "a door being smashed",
+                door_go_boom[] = "a door exploding";
+            struct rm *door = &levl[x][y];
+            boolean trapped = (door->doormask & D_TRAPPED) != 0,
+                    seeit = cansee(x, y);
+
+            set_msg_xy(x, y); /* You()/pline() will reset this */
+            if (!seeit)
+                You_hear("%s.", trapped ? "an explosion" : door_smashed);
+            else if (!canspotmon(mtmp))
+                You_see("%s.", trapped ? door_go_boom : door_smashed);
+            else if (!Unaware)
+                pline_The("door is smashed%s",
+                          trapped ? " and it explodes!" : ".");
+            set_msg_xy(0, 0); /* in case none of the messages was delivered */
+
+            door->doormask = D_NODOOR;
+            unblock_point(x, y);
+            if (trapped) {
+                boolean trap_killed, save_verbose = flags.verbose;
+
+                flags.verbose = FALSE; /* suppress mb_trapped() messages
+                                        * (that makes the 'seeit' arg moot) */
+                trap_killed = mb_trapped(mtmp, seeit);
+                flags.verbose = save_verbose;
+                /* if the booby trap has killed the monster, mondied() will
+                   have been called but no message about its death given yet;
+                   mtmp was a vampire so use unconditional "destroyed" */
+                if (trap_killed && canspotmon(mtmp) && !Unaware)
+                    pline_mon(mtmp, "%s is destroyed!", Monnam(mtmp));
+            }
         }
         newsym(x, y);
         return TRUE;
@@ -3006,8 +3054,6 @@ logdeadmon(struct monst *mtmp, int mndx)
     }
 }
 
-#undef livelog_mon_nam
-
 /* monster 'mtmp' has died; maybe life-save, otherwise unshapeshift and
    update vanquished stats and update map */
 void
@@ -3087,7 +3133,8 @@ mondead(struct monst *mtmp)
                 (void) makemon(mtmp->data, stway->sx, stway->sy, NO_MM_FLAGS);
                 break;
             }
-            /* fall-through */
+            FALLTHROUGH;
+            /* FALLTHRU */
         case 2: /* randomly */
             (void) makemon(mtmp->data, 0, 0, NO_MM_FLAGS);
             break;
@@ -3139,7 +3186,8 @@ corpse_chance(
                     There("is an explosion in your %s!", body_part(STOMACH));
                     Sprintf(svk.killer.name, "%s explosion",
                             s_suffix(pmname(mdat, Mgender(mon))));
-                    losehp(Maybe_Half_Phys(tmp), svk.killer.name, KILLED_BY_AN);
+                    losehp(Maybe_Half_Phys(tmp), svk.killer.name,
+                           KILLED_BY_AN);
                 } else {
                     You_hear("an explosion.");
                     magr->mhp -= tmp;
@@ -3418,7 +3466,7 @@ killed(struct monst *mtmp)
 void
 xkilled(
     struct monst *mtmp,
-    int xkill_flags) /* 1: suppress message, 2: suppress corpse, 4: pacifist */
+    int xkill_flags) /* 1: suppress mesg, 2: suppress corpse, 4: pacifist */
 {
     int tmp, mndx;
     coordxy x = mtmp->mx, y = mtmp->my;
@@ -3665,10 +3713,24 @@ xkilled(
 
     /* malign was already adjusted for u.ualign.type and randomization */
     adjalign(mtmp->malign);
+
+#if 0  /* HARDFOUGHT-only at present */
+#ifdef LIVELOG
+    if (has_ebones(mtmp)) {
+        livelog_printf(LL_UMONST, "destroyed %s, %s former %s",
+                       livelog_mon_nam(mtmp),
+                       (mtmp->data == &mons[PM_GHOST]) ? "the" : "and",
+                       rank_of(EBONES(mtmp)->deathlevel,
+                               EBONES(mtmp)->mnum,
+                               EBONES(mtmp)->female));
+    }
+#endif  /* LIVELOG */
+#endif
     return;
 }
 
 #undef LEVEL_SPECIFIC_NOCORPSE
+#undef livelog_mon_nam
 
 /* changes the monster into a monster of the same type and differing material
    this should only be called when poly_when_petrified() is true */
@@ -4015,7 +4077,8 @@ mnearto(
 
     if (move_other && othermon) {
         res = 2; /* moving another monster out of the way */
-        if (!mnearto(othermon, x, y, FALSE, rlocflags))  /* no 'move_other' this time */
+        /* 'move_other'==FALSE this time; fail rather than recurse */
+        if (!mnearto(othermon, x, y, FALSE, rlocflags))
             deal_with_overcrowding(othermon);
     }
 
@@ -4500,9 +4563,47 @@ get_iter_mons_xy(
 }
 
 
+/* Heal the given monster by amt hitpoints, unless it is somehow prevented
+   from healing. "overheal" is the maximum amount by which the max HP will
+   increase to allow for the healing (the resulting HP caps at max HP +
+   overheal, and the max HP stays the some unless it needs to increase to
+   accommodate the new HP). Overhealing the player is not currently
+   implemented by this method.
+
+   This function should only be used for situations which are conceptually
+   heals, rather than other situations where a monster's HP is set, so that
+   "prevent healing" effects work correctly. In particular, it should not
+   be used for cases where a monster's HP is restored upon revival, or when
+   a monster is created. It also shouldn't be used for lifesaving, which
+   overrides "cannot heal" effects.
+
+   amt and overheal must not be negative (0 is allowed, and a very common
+   amount for overheal). Returns the number of hitpoints healed. */
+int
+healmon(struct monst *mtmp, int amt, int overheal)
+{
+    if (mtmp == &gy.youmonst) {
+        int oldhp = Upolyd ? u.mh : u.uhp;
+        healup(amt, 0, 0, 0);
+        return (Upolyd ? u.mh : u.uhp) - oldhp;
+    } else {
+        int oldhp = mtmp->mhp;
+        if (mtmp->mhp + amt > mtmp->mhpmax + overheal) {
+            mtmp->mhpmax += overheal;
+            mtmp->mhp = mtmp->mhpmax;
+        } else {
+            mtmp->mhp += amt;
+            if (mtmp->mhp > mtmp->mhpmax)
+                mtmp->mhpmax = mtmp->mhp;
+        }
+        return mtmp->mhp - oldhp;
+    }
+}
+
+
 /* force all chameleons and mimics to become themselves and werecreatures
    to revert to human form; called when Protection_from_shape_changers gets
-   activated via wearing or eating ring or wizintrinsics */
+   activated via wearing or eating ring or via #wizintrinsic */
 void
 rescham(void)
 {
@@ -4633,6 +4734,9 @@ hideunder(struct monst *mtmp)
                && (otmp = svl.level.objects[x][y]) != 0
                /* most things can be hidden under, but not all */
                && can_hide_under_obj(otmp)
+               /* pets won't hide under a cursed item or an item of any BUC
+                  state that shares a pile with one or more cursed items */
+               && (!mtmp->mtame || !cursed_object_at(x, y))
                /* aquatic creatures don't reach here; other swimmers
                   shouldn't hide beneath underwater objects */
                && !is_pool_or_lava(x, y)) {
@@ -4666,6 +4770,7 @@ hideunder(struct monst *mtmp)
         if (undetected && seenmon && seenobj) {
             if (!locomo)
                 locomo = locomotion(mtmp->data, "hide");
+            set_msg_xy(mtmp->mx, mtmp->my); /* pline() will reset this */
             You_see("%s %s under %s.", seenmon, locomo, seenobj);
             iflags.last_msg = PLNMSG_HIDE_UNDER;
             gl.last_hider = mtmp->m_id;
@@ -4824,12 +4929,14 @@ pickvampshape(struct monst *mon)
         if (mon_has_special(mon))
             break; /* leave mndx as is */
         wolfchance = 3;
+        FALLTHROUGH;
     /*FALLTHRU*/
     case PM_VAMPIRE_LEADER: /* vampire lord or Vlad can become wolf */
         if (!rn2(wolfchance) && !uppercase_only) {
             mndx = PM_WOLF;
             break;
         }
+        FALLTHROUGH;
     /*FALLTHRU*/
     case PM_VAMPIRE: /* any vampire can become fog or bat */
         mndx = (!rn2(4) && !uppercase_only) ? PM_FOG_CLOUD : PM_VAMPIRE_BAT;
@@ -4933,6 +5040,7 @@ validvamp(struct monst *mon, int *mndx_p, int monclass)
             *mndx_p = PM_WOLF;
             break;
         }
+        FALLTHROUGH;
         /*FALLTHRU*/
     default:
         *mndx_p = NON_PM;
@@ -5566,10 +5674,7 @@ golemeffects(struct monst *mon, int damtype, int dam)
             mon_adjust_speed(mon, -1, (struct obj *) 0);
     }
     if (heal) {
-        if (mon->mhp < mon->mhpmax) {
-            mon->mhp += heal;
-            if (mon->mhp > mon->mhpmax)
-                mon->mhp = mon->mhpmax;
+        if (healmon(mon, heal, 0)) {
             if (cansee(mon->mx, mon->my))
                 pline_mon(mon, "%s seems healthier.", Monnam(mon));
         }
@@ -5835,4 +5940,59 @@ adj_erinys(unsigned abuse)
     pm->difficulty = min(10 + (u.ualign.abuse / 3), 25);
 }
 
+/* mark monster type as seen from close-up,
+   if we haven't seen it nearby before */
+void
+see_monster_closeup(struct monst *mtmp)
+{
+    if (!svm.mvitals[monsndx(mtmp->data)].seen_close) {
+        svm.mvitals[monsndx(mtmp->data)].seen_close = TRUE;
+        if (Role_if(PM_TOURIST)) {
+            more_experienced(experience(mtmp, 0), 0);
+            newexplevel();
+        }
+    }
+}
+
+/* mark a monster type as seen close-up when we see it next to us */
+void
+see_nearby_monsters(void)
+{
+    coordxy x, y;
+
+    for (x = u.ux - 1; x <= u.ux + 1; x++)
+        for (y = u.uy - 1; y <= u.uy + 1; y++)
+            if (isok(x, y) && MON_AT(x, y)) {
+                struct monst *mtmp = m_at(x, y);
+
+                if (canspotmon(mtmp) && !mtmp->mundetected && !M_AP_TYPE(mtmp))
+                    svm.mvitals[monsndx(mtmp->data)].seen_close = TRUE;
+            }
+}
+
+/* monster resists something.
+   make a shield effect at monster's location and give a message */
+void
+shieldeff_mon(struct monst *mtmp)
+{
+    shieldeff(mtmp->mx, mtmp->my);
+    /* does not depend on seeing the monster; the shield effect is visible */
+    if (cansee(mtmp->mx, mtmp->my))
+        pline_mon(mtmp, "%s resists!", Monnam(mtmp));
+}
+
+void
+flash_mon(struct monst *mtmp)
+{
+    coordxy mx = mtmp->mx, my = mtmp->my;
+    int count = couldsee(mx, my) ? 8 : 4;
+    char saveviz = gv.viz_array[my][mx];
+
+    if (!flags.sparkle)
+        count /= 2;
+    gv.viz_array[my][mx] |= (IN_SIGHT | COULD_SEE);
+    flash_glyph_at(mx, my, mon_to_glyph(mtmp, newsym_rn2), count);
+    gv.viz_array[my][mx] = saveviz;
+    newsym(mx, my);
+}
 /*mon.c*/

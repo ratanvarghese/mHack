@@ -21,6 +21,7 @@ newemin(struct monst *mtmp)
     if (!EMIN(mtmp)) {
         EMIN(mtmp) = (struct emin *) alloc(sizeof(struct emin));
         (void) memset((genericptr_t) EMIN(mtmp), 0, sizeof(struct emin));
+        EMIN(mtmp)->parentmid = mtmp->m_id;
     }
 }
 
@@ -466,7 +467,8 @@ ndemon(aligntyp atyp) /* A_NONE is used for 'any alignment' */
 
 /* guardian angel has been affected by conflict so is abandoning hero */
 void
-lose_guardian_angel(struct monst *mon) /* if null, angel hasn't been created yet */
+lose_guardian_angel(
+    struct monst *mon) /* if Null, angel hasn't been created yet */
 {
     coord mm;
     int i;

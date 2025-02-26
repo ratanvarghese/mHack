@@ -1,4 +1,4 @@
-/* NetHack 3.7	allmain.c	$NHDT-Date: 1704225560 2024/01/02 19:59:20 $  $NHDT-Branch: keni-luabits2 $:$NHDT-Revision: 1.238 $ */
+/* NetHack 3.7	allmain.c	$NHDT-Date: 1726894914 2024/09/21 05:01:54 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.261 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2012. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -6,7 +6,6 @@
 /* various code that was replicated in *main.c */
 
 #include "hack.h"
-#include <ctype.h>
 
 #ifndef NO_SIGNAL
 #include <signal.h>
@@ -202,6 +201,7 @@ moveloop_core(void)
                 struct monst *mtmp;
 
                 /* set up for a new turn */
+                gw.were_changes = 0L;
                 mcalcdistress(); /* adjust monsters' trap, blind, etc */
 
                 /* reallocate movement rations to monsters; don't need
@@ -320,10 +320,15 @@ moveloop_core(void)
                     }
                 }
 
-                if (!svl.level.flags.noautosearch && Searching && gm.multi >= 0)
+                if (Searching && !svl.level.flags.noautosearch
+                    && gm.multi >= 0)
                     (void) dosearch0(1);
                 if (Warning)
                     warnreveal();
+                if (gw.were_changes) {
+                    /* update innate intrinsics (mainly Drain_resistance) */
+                    set_uasmon();
+                }
                 mkot_trap_warn();
                 dosounds();
                 do_storms();
@@ -409,6 +414,7 @@ moveloop_core(void)
         else if (u.uburied)
             under_ground(0);
 
+        see_nearby_monsters();
     } /* actual time passed */
 
     /****************************************/
@@ -425,11 +431,14 @@ moveloop_core(void)
             see_traps();
             if (u.uswallow)
                 swallowed(0);
-        } else if (Unblind_telepat) {
+        } else if (Unblind_telepat || Warning || Warn_of_mon
+                   /* this is needed for the case where you saw a monster
+                      due to being next to it while it's in a gas cloud
+                      and then you moved away; it should no longer be seen
+                      when that happens, even if it hasn't moved */
+                   || any_visible_region()) { /* TODO: optimize this */
             see_monsters();
-        } else if (Warning || Warn_of_mon)
-            see_monsters();
-
+        }
         if (gv.vision_full_recalc)
             vision_recalc(0); /* vision! */
     }
@@ -717,6 +726,10 @@ init_sound_disp_gamewindows(void)
     display_nhwindow(WIN_MESSAGE, FALSE);
     clear_glyph_buffer();
     display_nhwindow(WIN_MAP, FALSE);
+#ifdef TTY_PERM_INVENT
+    if (iflags.perm_invent_pending)
+        check_perm_invent_again();
+#endif
  }
 
 void
@@ -727,7 +740,7 @@ newgame(void)
     /* make sure welcome messages are given before noticing monsters */
     notice_mon_off();
     disp.botlx = TRUE;
-    svc.context.ident = 1;
+    svc.context.ident = 2;  /* id 1 is reserved for gy.youmonst */
     svc.context.warnlevel = 1;
     svc.context.next_attrib_check = 600L; /* arbitrary first setting */
     svc.context.tribute.enabled = TRUE;   /* turn on 3.6 tributes    */
@@ -750,7 +763,7 @@ newgame(void)
                        * any artifacts */
     u_init();
 
-    l_nhcore_init();  /* create a Lua state that lasts until the end of the game */
+    l_nhcore_init();  /* create a Lua state that lasts until end of game */
     reset_glyphmap(gm_newgame);
 #ifndef NO_SIGNAL
     (void) signal(SIGINT, (SIG_RET_TYPE) done1);
@@ -775,7 +788,7 @@ newgame(void)
 
     if (flags.legacy) {
         flush_screen(1);
-        com_pager("legacy");
+        com_pager(u.uroleplay.pauper ? "pauper_legacy" : "legacy");
     }
 
     urealtime.realtime = 0L;
@@ -795,7 +808,7 @@ newgame(void)
     return;
 }
 
-/* show "welcome [back] to nethack" message at program startup */
+/* show "welcome [back] to NetHack" message at program startup */
 void
 welcome(boolean new_game) /* false => restoring an old game */
 {
@@ -827,11 +840,12 @@ welcome(boolean new_game) /* false => restoring an old game */
         Sprintf(eos(buf), " %s", align_str(u.ualignbase[A_ORIGINAL]));
     if (!gu.urole.name.f
         && (new_game
-                ? (gu.urole.allow & ROLE_GENDMASK) == (ROLE_MALE | ROLE_FEMALE)
-                : currentgend != flags.initgend))
+            ? (gu.urole.allow & ROLE_GENDMASK) == (ROLE_MALE | ROLE_FEMALE)
+            : currentgend != flags.initgend))
         Sprintf(eos(buf), " %s", genders[currentgend].adj);
     Sprintf(eos(buf), " %s %s", gu.urace.adj,
-            (currentgend && gu.urole.name.f) ? gu.urole.name.f : gu.urole.name.m);
+            (currentgend && gu.urole.name.f) ? gu.urole.name.f
+                                             : gu.urole.name.m);
 
     pline(new_game ? "%s %s, welcome to NetHack!  You are a%s."
                    : "%s %s, the%s, welcome back to NetHack!",
@@ -925,6 +939,7 @@ static const struct early_opt earlyopts[] = {
     { ARG_DUMPENUMS, "dumpenums", 9, FALSE },
 #endif
     { ARG_DUMPGLYPHIDS, "dumpglyphids", 12, FALSE },
+    { ARG_DUMPMONGEN, "dumpmongen", 10, FALSE },
 #ifdef WIN32
     { ARG_WINDOWS, "windows", 4, TRUE },
 #endif
@@ -1026,6 +1041,9 @@ argcheck(int argc, char *argv[], enum earlyarg e_arg)
         case ARG_DUMPGLYPHIDS:
             dump_glyphids();
             return 2;
+        case ARG_DUMPMONGEN:
+            dump_mongen();
+            return 2;
 #ifdef CRASHREPORT
         case ARG_BIDSHOW:
             crashreport_bidshow();
@@ -1037,6 +1055,7 @@ argcheck(int argc, char *argv[], enum earlyarg e_arg)
                 extended_opt++;
                 return windows_early_options(extended_opt);
             }
+        FALLTHROUGH;
         /*FALLTHRU*/
 #endif
         default:
@@ -1126,6 +1145,7 @@ timet_delta(time_t etim, time_t stim) /* end and start times */
 /* monsdump[] and objdump[] are also used in utf8map.c */
 
 #define DUMP_ENUMS
+#define UNPREFIXED_COUNT (5)
 struct enum_dump monsdump[] = {
 #include "monsters.h"
     { NUMMONS, "NUMMONS" },
@@ -1206,12 +1226,6 @@ dump_enums(void)
         arti_enum,
         NUM_ENUM_DUMPS
     };
-    static const char *const titles[NUM_ENUM_DUMPS] = {
-        "monnums", "objects_nums" , "misc_object_nums",
-        "cmap_symbols", "mon_syms", "mon_defchars",
-        "objclass_defchars", "objclass_classes",
-        "objclass_syms", "artifacts_nums",
-    };
 
 #define dump_om(om) { om, #om }
     static const struct enum_dump omdump[] = {
@@ -1232,6 +1246,7 @@ dump_enums(void)
         dump_om(MAX_GLYPH),
     };
 #undef dump_om
+
     static const struct enum_dump *const ed[NUM_ENUM_DUMPS] = {
         monsdump, objdump, omdump,
         defsym_cmap_dump, defsym_mon_syms_dump,
@@ -1241,32 +1256,37 @@ dump_enums(void)
         objclass_syms_dump,
         arti_enum_dump,
     };
-    static const char *const pfx[NUM_ENUM_DUMPS] = { "PM_", "", "",
-                                                     "", "", "", "",
-                                                     "", "", "" };
-    /* 0 = dump numerically only, 1 = add 'char' comment */
-    static const int dumpflgs[NUM_ENUM_DUMPS] = { 0, 0, 0, 0, 0, 1, 1, 0, 0, 0 };
-    static int szd[NUM_ENUM_DUMPS] = { SIZE(monsdump), SIZE(objdump),
-                                       SIZE(omdump), SIZE(defsym_cmap_dump),
-                                       SIZE(defsym_mon_syms_dump),
-                                       SIZE(defsym_mon_defchars_dump),
-                                       SIZE(objclass_defchars_dump),
-                                       SIZE(objclass_classes_dump),
-                                       SIZE(objclass_syms_dump),
-                                       SIZE(arti_enum_dump),
+
+    static const struct de_params {
+        const char *const title;
+        const char *const pfx;
+        int unprefixed_count;
+        int dumpflgs;  /* 0 = dump numerically only, 1 = add 'char' comment */
+        int szd;
+    } edmp[NUM_ENUM_DUMPS] = {
+        { "monnums", "PM_", UNPREFIXED_COUNT, 0, SIZE(monsdump) },
+        { "objects_nums", "", 1, 0, SIZE(objdump) },
+        { "misc_object_nums", "", 1, 0, SIZE(omdump) },
+        { "cmap_symbols", "", 1, 0, SIZE(defsym_cmap_dump) },
+        { "mon_syms", "", 1, 0, SIZE(defsym_mon_syms_dump) },
+        { "mon_defchars", "", 1, 1, SIZE(defsym_mon_defchars_dump) },
+        { "objclass_defchars", "", 1, 1, SIZE(objclass_defchars_dump) },
+        { "objclass_classes", "", 1, 0, SIZE(objclass_classes_dump) },
+        { "objclass_syms", "", 1, 0, SIZE(objclass_syms_dump) },
+        { "artifacts_nums", "", 1, 0, SIZE(arti_enum_dump) },
     };
+
     const char *nmprefix;
     int i, j, nmwidth;
     char comment[BUFSZ];
 
     for (i = 0; i < NUM_ENUM_DUMPS; ++ i) {
-        raw_printf("enum %s = {", titles[i]);
-        for (j = 0; j < szd[i]; ++j) {
-            int unprefixed_count = (i == monsters_enum) ? 4 : 1;
-            nmprefix = (j >= szd[i] - unprefixed_count)
-                           ? "" : pfx[i]; /* "" or "PM_" */
+        raw_printf("enum %s = {", edmp[i].title);
+        for (j = 0; j < edmp[i].szd; ++j) {
+            nmprefix = (j >= edmp[i].szd - edmp[i].unprefixed_count)
+                           ? "" : edmp[i].pfx; /* "" or "PM_" */
             nmwidth = 27 - (int) strlen(nmprefix); /* 27 or 24 */
-            if (dumpflgs[i] > 0) {
+            if (edmp[i].dumpflgs > 0) {
                 Snprintf(comment, sizeof comment,
                          "    /* '%c' */",
                          (ed[i][j].val >= 32 && ed[i][j].val <= 126)
@@ -1284,6 +1304,7 @@ dump_enums(void)
     }
     raw_print("");
 }
+#undef UNPREFIXED_COUNT
 #endif /* NODUMPENUMS */
 
 void

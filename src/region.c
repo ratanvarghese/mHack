@@ -1,4 +1,4 @@
-/* NetHack 3.7	region.c	$NHDT-Date: 1723580898 2024/08/13 20:28:18 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.98 $ */
+/* NetHack 3.7	region.c	$NHDT-Date: 1727251269 2024/09/25 08:01:09 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.104 $ */
 /* Copyright (c) 1996 by Jean-Christophe Collet  */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -357,11 +357,14 @@ remove_region(NhRegion *reg)
     reg->ttl = -2L; /* for visible_region_at */
     if (reg->visible) {
         int pass;
+        boolean tmp_uinwater = u.uinwater;
 
         /* need to process the region's spots twice, first unblocking all
            locations which no longer block line-of-sight, then redrawing
            spots within revised line-of-sight; skip second pass if blind */
         for (pass = 1; pass <= (Blind ? 1 : 2); ++pass) {
+            u.uinwater = (pass == 1) ? 0 : tmp_uinwater;
+
             for (x = reg->bounding_box.lx; x <= reg->bounding_box.hx; x++)
                 for (y = reg->bounding_box.ly; y <= reg->bounding_box.hy; y++)
                     if (isok(x, y) && inside_region(reg, x, y)) {
@@ -374,6 +377,7 @@ remove_region(NhRegion *reg)
                         }
                     }
         }
+        u.uinwater = tmp_uinwater;
     }
     free_region(reg);
 }
@@ -448,12 +452,20 @@ run_regions(void)
         }
     }
 
-    if (gg.gas_cloud_diss_within)
+    if (gg.gas_cloud_diss_within) {
         pline_The("gas cloud around you dissipates.");
-    if (gg.gas_cloud_diss_seen)
-        You_see("%s dissipate.",
-                gg.gas_cloud_diss_seen == 1
-                ? "a gas cloud" : "some gas clouds");
+        /* normally won't see additional dissipation when within */
+        /* FIXME? this assumes that additional dissipation is close by */
+        if (u.xray_range <= 1)
+            gg.gas_cloud_diss_seen = 0;
+        gg.gas_cloud_diss_within = FALSE;
+    }
+    if (gg.gas_cloud_diss_seen) {
+        You_see("%s gas cloud%s dissipate.",
+                (gg.gas_cloud_diss_seen == 1) ? "a" : "some",
+                plur(gg.gas_cloud_diss_seen));
+        gg.gas_cloud_diss_seen = 0;
+    }
 }
 
 /*
@@ -629,7 +641,7 @@ remove_mon_from_regions(struct monst *mon)
 
 #endif /*0*/
 
-/* per-turn damaeg inflicted by visible region; hides details from caller */
+/* per-turn damage inflicted by visible region; hides details from caller */
 int
 reg_damg(NhRegion *reg)
 {
@@ -659,6 +671,7 @@ visible_region_summary(winid win)
     NhRegion *reg;
     char buf[BUFSZ], typbuf[QBUFSZ];
     int i, damg, hdr_done = 0;
+    const char *fldsep = iflags.menu_tab_sep ? "\t" : "  ";
 
     for (i = 0; i < svn.n_regions; i++) {
         reg = gr.regions[i];
@@ -684,8 +697,8 @@ visible_region_summary(winid win)
             Sprintf(typbuf, "poison gas (%d)", damg);
         else
             Strcpy(typbuf, "vapor");
-        Sprintf(eos(buf), "  %-16s", typbuf);
-        Sprintf(eos(buf), "  @[%d,%d..%d,%d]",
+        Sprintf(eos(buf), "%s%-16s", fldsep, typbuf);
+        Sprintf(eos(buf), "%s@[%d,%d..%d,%d]", fldsep,
                 reg->bounding_box.lx, reg->bounding_box.ly,
                 reg->bounding_box.hx, reg->bounding_box.hy);
         putstr(win, 0, buf);
@@ -736,12 +749,14 @@ save_regions(NHFILE *nhfp)
     for (i = 0; i < svn.n_regions; i++) {
         r = gr.regions[i];
         if (nhfp->structlevel) {
-            bwrite(nhfp->fd, (genericptr_t) &r->bounding_box, sizeof (NhRect));
+            bwrite(nhfp->fd, (genericptr_t) &r->bounding_box,
+                   sizeof (NhRect));
             bwrite(nhfp->fd, (genericptr_t) &r->nrects, sizeof (short));
         }
         for (j = 0; j < r->nrects; j++) {
             if (nhfp->structlevel)
-                bwrite(nhfp->fd, (genericptr_t) &r->rects[j], sizeof (NhRect));
+                bwrite(nhfp->fd, (genericptr_t) &r->rects[j],
+                       sizeof (NhRect));
         }
         if (nhfp->structlevel)
             bwrite(nhfp->fd, (genericptr_t) &r->attach_2_u, sizeof (boolean));
@@ -922,7 +937,7 @@ region_stats(
 
     /* other stats formats take one parameter; this takes two */
     Sprintf(hdrbuf, hdrfmt, (long) sizeof (NhRegion), (long) sizeof (NhRect));
-    *count = (long) svn.n_regions; /* might be 0 even though max_regions isn't */
+    *count = (long) svn.n_regions; /* might be 0 even tho max_regions isn't */
     *size = (long) gm.max_regions * (long) sizeof (NhRegion);
     for (i = 0; i < svn.n_regions; ++i) {
         rg = gr.regions[i];
@@ -1085,11 +1100,13 @@ expire_gas_cloud(genericptr_t p1, genericptr_t p2 UNUSED)
                     if (pass == 1) {
                         if (!does_block(x, y, &levl[x][y]))
                             unblock_point(x, y);
-                        if (u_at(x, y))
-                            gg.gas_cloud_diss_within = TRUE;
                     } else { /* pass==2 */
-                        if (cansee(x, y))
-                            gg.gas_cloud_diss_seen++;
+                        if (!u.uswallow) {
+                            if (u_at(x, y))
+                                gg.gas_cloud_diss_within = TRUE;
+                            else if (cansee(x, y))
+                                gg.gas_cloud_diss_seen++;
+                        }
                     }
                 }
             }
@@ -1209,6 +1226,9 @@ make_gas_cloud(
 
     if (!gi.in_mklev && !inside_cloud && is_hero_inside_gas_cloud()) {
         You("are enveloped in a cloud of %s!",
+            /* FIXME: "steam" is wrong if this cloud is just the trail of
+               a fog cloud's movement; changing to "vapor" would handle
+               that but seems a step backward when it really is steam */
             damage ? "noxious gas" : "steam");
         iflags.last_msg = PLNMSG_ENVELOPED_IN_GAS;
     }
@@ -1394,7 +1414,14 @@ region_safety(void)
 
     if (n > 1 || (n == 1 && !r)) {
         /* multiple overlapping cloud regions or non-expiring one */
-        safe_teleds(TELEDS_NO_FLAGS);
+        (void) safe_teleds(TELEDS_NO_FLAGS);
+        /* maybe there's no safe place available; must get hero out of danger
+           or prayer's "fix all troubles" result will get stuck in a loop */
+        if (region_danger()) {
+            set_itimeout(&HMagical_breathing, (long) (d(4, 4) + 4));
+            /* not already Breathless or wouldn't be in region danger */
+            You_feel("able to breathe.");
+        }
     } else if (r) {
         remove_region(r);
         pline_The("gas cloud enveloping you dissipates.");

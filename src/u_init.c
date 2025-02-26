@@ -1,4 +1,4 @@
-/* NetHack 3.7	u_init.c	$NHDT-Date: 1711165379 2024/03/23 03:42:59 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.106 $ */
+/* NetHack 3.7	u_init.c	$NHDT-Date: 1737620595 2025/01/23 00:23:15 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.113 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2017. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -21,10 +21,11 @@ staticfn void ini_inv_adjust_obj(struct trobj *,
                                struct obj *) NONNULLPTRS;
 staticfn void ini_inv_use_obj(struct obj *) NONNULLARG1;
 staticfn void ini_inv(struct trobj *) NONNULLARG1;
-staticfn void knows_object(int);
+staticfn void knows_object(int, boolean);
 staticfn void knows_class(char);
 staticfn void u_init_role(void);
 staticfn void u_init_race(void);
+staticfn void pauper_reinit(void);
 staticfn void u_init_carry_attr_boost(void);
 staticfn boolean restricted_spell_discipline(int);
 
@@ -230,7 +231,7 @@ static struct trobj Blindfold[] = { { BLINDFOLD, 0, TOOL_CLASS, 1, 0 },
                                     { 0, 0, 0, 0, 0 } };
 static struct trobj Instrument[] = { { FLUTE, 0, TOOL_CLASS, 1, 0 },
                                      { 0, 0, 0, 0, 0 } };
-static struct trobj Xtra_food[] = { { UNDEF_TYP, UNDEF_SPE, FOOD_CLASS, 2, 0 },
+static struct trobj Xtra_food[] = { { UNDEF_TYP, UNDEF_SPE, FOOD_CLASS, 2, 0},
                                     { 0, 0, 0, 0, 0 } };
 static struct trobj Leash[] = { { LEASH, 0, TOOL_CLASS, 1, 0 },
                                 { 0, 0, 0, 0, 0 } };
@@ -688,8 +689,10 @@ static const struct def_skill Skill_W[] = {
 };
 
 staticfn void
-knows_object(int obj)
+knows_object(int obj, boolean override_pauper)
 {
+    if (u.uroleplay.pauper && !override_pauper)
+        return;
     discover_object(obj, TRUE, FALSE);
     objects[obj].oc_pre_discovered = 1; /* not a "discovery" */
 }
@@ -701,6 +704,9 @@ knows_class(char sym)
 {
     struct obj odummy, *o;
     int ct;
+
+    if (u.uroleplay.pauper)
+        return;
 
     odummy = cg.zeroobj;
     odummy.oclass = sym;
@@ -733,7 +739,7 @@ knows_class(char sym)
         }
 
         if (objects[ct].oc_class == sym && !objects[ct].oc_magic)
-            knows_object(ct);
+            knows_object(ct, FALSE);
     }
 }
 
@@ -742,6 +748,12 @@ staticfn void
 u_init_role(void)
 {
     int i;
+
+    /* the program used to check moves<=1 && invent==NULL do decide whether
+       a new game has started, but due to the 'pauper' option/conduct, can't
+       rely on invent becoming non-Null anymore; instead, initialize moves
+       to 0 instead of 1, then set it to 1 here, where invent init occurs */
+    svm.moves = 1L;
 
     switch (Role_switch) {
     /* rn2(100) > 50 necessary for some choices because some
@@ -755,7 +767,7 @@ u_init_role(void)
         if (!rn2(5))
             ini_inv(Magicmarker);
         knows_class(POTION_CLASS);
-        knows_object(SCR_ALCHEMY);
+        knows_object(SCR_ALCHEMY, FALSE);
         skill_init(Skill_Alc);
         break;
     case PM_ARCHEOLOGIST:
@@ -766,8 +778,10 @@ u_init_role(void)
             ini_inv(Lamp);
         else if (!rn2(5))
             ini_inv(Magicmarker);
-        knows_object(SACK);
-        knows_object(TOUCHSTONE);
+        knows_object(SACK, FALSE);
+        knows_object(TOUCHSTONE, FALSE); /* FALSE: don't override pauper here,
+                                          * but TOUCHSTONE will be made known
+                                          * in pauper_reinit() */
         skill_init(Skill_A);
         break;
     case PM_BARBARIAN:
@@ -792,7 +806,7 @@ u_init_role(void)
         ini_inv(Healer);
         if (!rn2(25))
             ini_inv(Lamp);
-        knows_object(POT_FULL_HEALING);
+        knows_object(POT_FULL_HEALING, FALSE);
         skill_init(Skill_H);
         break;
     case PM_KNIGHT:
@@ -805,15 +819,15 @@ u_init_role(void)
         break;
     case PM_LEGISLATOR:
         ini_inv(Legislator);
-        knows_object(RIN_CONFLICT);
+        knows_object(RIN_CONFLICT, FALSE);
         skill_init(Skill_L);
         break;
     case PM_MERCHANT:
         u.umoney0 = (30 * rn1(100, 1)) + 1000;
         ini_inv(Merchant);
-        knows_object(POT_HEALING);
-        knows_object(POT_EXTRA_HEALING);
-        knows_object(WAN_MAGIC_MISSILE);
+        knows_object(POT_HEALING, FALSE);
+        knows_object(POT_EXTRA_HEALING, FALSE);
+        knows_object(WAN_MAGIC_MISSILE, FALSE);
         skill_init(Skill_Mer);
         break;
     case PM_MONK: {
@@ -829,7 +843,7 @@ u_init_role(void)
             ini_inv(Lamp);
         knows_class(ARMOR_CLASS);
         /* sufficiently martial-arts oriented item to ignore language issue */
-        knows_object(SHURIKEN);
+        knows_object(SHURIKEN, FALSE);
         skill_init(Skill_Mon);
         break;
     }
@@ -839,7 +853,7 @@ u_init_role(void)
             ini_inv(Magicmarker);
         else if (!rn2(10))
             ini_inv(Lamp);
-        knows_object(POT_WATER);
+        knows_object(POT_WATER, TRUE); /* override pauper */
         skill_init(Skill_P);
         /* KMH, conduct --
          * Some may claim that this isn't agnostic, since they
@@ -862,7 +876,9 @@ u_init_role(void)
         ini_inv(Rogue);
         if (!rn2(5))
             ini_inv(Blindfold);
-        knows_object(SACK);
+        knows_object(SACK, FALSE); /* FALSE: don't override pauper here,
+                                    * but sack will be made known in
+                                    * pauper_reinit() */
         knows_class(WEAPON_CLASS); /* daggers only */
         skill_init(Skill_R);
         break;
@@ -879,7 +895,9 @@ u_init_role(void)
             if (objects[i].oc_magic) /* skip "magic koto" */
                 continue;
             if (Japanese_item_name(i, (const char *) 0))
-                knows_object(i);
+                /* we don't override pauper here because that would give
+                   samarai an advantage of knowing several items in advance */
+                knows_object(i, FALSE);
         }
         skill_init(Skill_S);
         break;
@@ -940,28 +958,28 @@ u_init_race(void)
         }
 
         /* Elves can recognize all elvish objects */
-        knows_object(ELVEN_SHORT_SWORD);
-        knows_object(ELVEN_ARROW);
-        knows_object(ELVEN_BOW);
-        knows_object(ELVEN_SPEAR);
-        knows_object(ELVEN_DAGGER);
-        knows_object(ELVEN_BROADSWORD);
-        knows_object(ELVEN_RING_MAIL);
-        knows_object(ELVEN_HELM);
-        knows_object(ELVEN_SHIELD);
-        knows_object(ELVEN_BOOTS);
-        knows_object(ELVEN_CLOAK);
+        knows_object(ELVEN_SHORT_SWORD, FALSE);
+        knows_object(ELVEN_ARROW, FALSE);
+        knows_object(ELVEN_BOW, FALSE);
+        knows_object(ELVEN_SPEAR, FALSE);
+        knows_object(ELVEN_DAGGER, FALSE);
+        knows_object(ELVEN_BROADSWORD, FALSE);
+        knows_object(ELVEN_RING_MAIL, FALSE);
+        knows_object(ELVEN_HELM, FALSE);
+        knows_object(ELVEN_SHIELD, FALSE);
+        knows_object(ELVEN_BOOTS, FALSE);
+        knows_object(ELVEN_CLOAK, FALSE);
         break;
 
     case PM_DWARF:
         /* Dwarves can recognize all dwarvish objects */
-        knows_object(DWARVISH_SPEAR);
-        knows_object(DWARVISH_SHORT_SWORD);
-        knows_object(DWARVISH_MATTOCK);
-        knows_object(DWARVISH_HELM);
-        knows_object(DWARVISH_RING_MAIL);
-        knows_object(DWARVISH_CLOAK);
-        knows_object(DWARVISH_ROUNDSHIELD);
+        knows_object(DWARVISH_SPEAR, FALSE);
+        knows_object(DWARVISH_SHORT_SWORD, FALSE);
+        knows_object(DWARVISH_MATTOCK, FALSE);
+        knows_object(DWARVISH_HELM, FALSE);
+        knows_object(DWARVISH_RING_MAIL, FALSE);
+        knows_object(DWARVISH_CLOAK, FALSE);
+        knows_object(DWARVISH_ROUNDSHIELD, FALSE);
         break;
 
     case PM_GNOME:
@@ -972,22 +990,88 @@ u_init_race(void)
         if (!Role_if(PM_WIZARD))
             ini_inv(Xtra_food);
         /* Orcs can recognize all orcish objects */
-        knows_object(ORCISH_SHORT_SWORD);
-        knows_object(ORCISH_ARROW);
-        knows_object(ORCISH_BOW);
-        knows_object(ORCISH_SPEAR);
-        knows_object(ORCISH_DAGGER);
-        knows_object(ORCISH_CHAIN_MAIL);
-        knows_object(ORCISH_RING_MAIL);
-        knows_object(ORCISH_HELM);
-        knows_object(ORCISH_SHIELD);
-        knows_object(URUK_HAI_SHIELD);
-        knows_object(ORCISH_CLOAK);
+        knows_object(ORCISH_SHORT_SWORD, FALSE);
+        knows_object(ORCISH_ARROW, FALSE);
+        knows_object(ORCISH_BOW, FALSE);
+        knows_object(ORCISH_SPEAR, FALSE);
+        knows_object(ORCISH_DAGGER, FALSE);
+        knows_object(ORCISH_CHAIN_MAIL, FALSE);
+        knows_object(ORCISH_RING_MAIL, FALSE);
+        knows_object(ORCISH_HELM, FALSE);
+        knows_object(ORCISH_SHIELD, FALSE);
+        knows_object(URUK_HAI_SHIELD, FALSE);
+        knows_object(ORCISH_CLOAK, FALSE);
         break;
 
     default: /* impossible */
         break;
     }
+}
+
+/* for 'pauper' aka 'unpreparsed'; take away any skills (bare-handed combat,
+   riding) that are better than unskilled; learn the book (without carrying
+   it or knowing its spell yet) for some key spells */
+staticfn void
+pauper_reinit(void)
+{
+    int skill, preknown = STRANGE_OBJECT;
+
+    if (!u.uroleplay.pauper)
+        return;
+
+    for (skill = 0; skill < P_NUM_SKILLS; skill++)
+        if (P_SKILL(skill) > P_UNSKILLED) {
+            P_SKILL(skill) = P_UNSKILLED;
+            P_ADVANCE(skill) = 0;
+        }
+    /* pauper has lost out on initial skills, but provide some unspent skill
+       credits to make up for that */
+    u.weapon_slots = 2;
+
+    /* paupers don't know any spells yet, but several roles will recognize
+       the spellbook for a key spell (not necessarily that role's special
+       spell); "supply chests" on the first few levels provide a fairly
+       high chance to find the book; some other roles know a non-book item */
+    switch (Role_switch) {
+    case PM_HEALER:
+        preknown = SPE_HEALING;
+        break;
+    case PM_CLERIC:
+    case PM_KNIGHT:
+    case PM_MONK:
+        preknown = SPE_PROTECTION;
+        break;
+    case PM_WIZARD:
+        preknown = SPE_FORCE_BOLT;
+        break;
+    case PM_ARCHEOLOGIST:
+        preknown = TOUCHSTONE;
+        break;
+    case PM_CAVE_DWELLER:
+        preknown = FLINT;
+        break;
+    case PM_MERCHANT:
+    case PM_ROGUE:
+    case PM_TOURIST:
+        preknown = SACK;
+        break;
+    case PM_SAMURAI:
+        /* food ration isn't interesting to discover, but put "gunyoki" into
+           discoveries list for players who might not recognize what it is */
+        preknown = FOOD_RATION;
+        break;
+    case PM_LEGISLATOR:
+        preknown = SPE_CONFUSE_MONSTER;
+        break;
+    default:
+    case PM_ALCHEMIST:
+    case PM_BARBARIAN:
+    case PM_RANGER:
+    case PM_VALKYRIE:
+        break;
+    }
+    if (preknown != STRANGE_OBJECT)
+        knows_object(preknown, TRUE);
 }
 
 /* boost STR and CON until hero can carry inventory */
@@ -1093,6 +1177,8 @@ u_init(void)
 
     u_init_role();
     u_init_race();
+    if (u.uroleplay.pauper)
+        pauper_reinit();
 
     /* roughly based on distribution in human population */
     u.uhandedness = rn2(10) ? RIGHT_HANDED : LEFT_HANDED;
@@ -1412,6 +1498,9 @@ ini_inv(struct trobj *trop)
     int otyp;
     boolean got_sp1 = FALSE; /* got a level 1 spellbook? */
 
+    if (u.uroleplay.pauper) /* pauper gets no items */
+        return;
+
     while (trop->trclass) {
         otyp = (int) trop->trotyp;
         if (otyp != UNDEF_TYP) {
@@ -1456,10 +1545,11 @@ ini_inv(struct trobj *trop)
                 
             }
         }
-        /* Put post-creation object adjustments that don't depend on whether it
-         * was UNDEF_TYP or not after this. */
+        /* Put post-creation object adjustments that don't depend on whether
+         * it was UNDEF_TYP or not after this. */
 
         otyp = ini_inv_obj_substitution(trop, obj);
+        nhUse(otyp);
 
         /* nudist gets no armor */
         if (u.uroleplay.nudist && obj->oclass == ARMOR_CLASS) {

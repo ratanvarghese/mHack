@@ -1,4 +1,4 @@
-/* NetHack 3.7	insight.c	$NHDT-Date: 1713334807 2024/04/17 06:20:07 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.112 $ */
+/* NetHack 3.7	insight.c	$NHDT-Date: 1737384766 2025/01/20 06:52:46 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.128 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -106,7 +106,8 @@ static struct ll_achieve_msg achieve_msg [] = {
 #define you_are(attr, ps) enl_msg(You_, are, were, (attr), (ps))
 #define you_have(attr, ps) enl_msg(You_, have, had, (attr), (ps))
 #define you_can(attr, ps) enl_msg(You_, can, could, (attr), (ps))
-#define you_have_been(goodthing) enl_msg(You_, have_been, were, (goodthing), "")
+#define you_have_been(goodthing) \
+    enl_msg(You_, have_been, were, (goodthing), "")
 #define you_have_never(badthing) \
     enl_msg(You_, have_never, never, (badthing), "")
 #define you_have_X(something) \
@@ -603,7 +604,8 @@ background_enlightenment(int unused_mode UNUSED, int final)
         you_have("just started your adventure", "");
     } else {
         /* 'turns' grates on the nerves in this context... */
-        Sprintf(buf, "the dungeon %ld turn%s ago", svm.moves, plur(svm.moves));
+        Sprintf(buf, "the dungeon %ld turn%s ago",
+                svm.moves, plur(svm.moves));
         /* same phrasing for current and final: "entered" is unconditional */
         enlght_line(You_, "entered ", buf, "");
     }
@@ -1071,7 +1073,8 @@ status_enlightenment(int mode, int final)
                 || strcmp(MGIVENNAME(u.ustuck), "it") != 0))
             Strcpy(heldmon, "an unseen creature");
     }
-    if (u.uswallow) { /* implies u.ustuck is non-Null */
+    if (u.uswallow) {
+        assert(u.ustuck != NULL); /* implied by u.uswallow */
         Snprintf(buf, sizeof buf, "%s by %s",
                 digests(u.ustuck->data) ? "swallowed" : "engulfed",
                 heldmon);
@@ -1501,7 +1504,8 @@ attributes_enlightenment(
     item_resistance_message(AD_DISN, " protected from disintegration", final);
     if (Shock_resistance)
         you_are("shock resistant", from_what(SHOCK_RES));
-    item_resistance_message(AD_ELEC, " protected from electric shocks", final);
+    item_resistance_message(AD_ELEC, " protected from electric shocks",
+                            final);
     if (Poison_resistance)
         you_are("poison resistant", from_what(POISON_RES));
     if (Acid_resistance) {
@@ -1530,6 +1534,9 @@ attributes_enlightenment(
     /*** Vision and senses ***/
     if ((HBlinded || EBlinded) && BBlinded) /* blind w/ blindness blocked */
         you_can("see", from_what(-BLINDED)); /* Eyes of the Overworld */
+    if (Blnd_resist && !Blind) /* skip if no eyes or blindfolded */
+        you_are("not subject to light-induced blindness",
+                from_what(BLND_RES));
     if (See_invisible) {
         if (!Blind)
             enl_msg(You_, "see", "saw", " invisible", from_what(SEE_INVIS));
@@ -1548,23 +1555,19 @@ attributes_enlightenment(
         Sprintf(buf, "aware of the presence of %s",
                 (svc.context.warntype.obj & M2_ORC) ? "orcs"
                 : (svc.context.warntype.obj & M2_ELF) ? "elves"
-                : (svc.context.warntype.obj & M2_DEMON) ? "demons" : something);
+                  : (svc.context.warntype.obj & M2_DEMON) ? "demons"
+                    : something);
         you_are(buf, from_what(WARN_OF_MON));
     }
     if (Warn_of_mon && svc.context.warntype.polyd) {
         Sprintf(buf, "aware of the presence of %s",
                 ((svc.context.warntype.polyd & (M2_HUMAN | M2_ELF))
-                 == (M2_HUMAN | M2_ELF))
-                    ? "humans and elves"
-                    : (svc.context.warntype.polyd & M2_HUMAN)
-                          ? "humans"
-                          : (svc.context.warntype.polyd & M2_ELF)
-                                ? "elves"
-                                : (svc.context.warntype.polyd & M2_ORC)
-                                      ? "orcs"
-                                      : (svc.context.warntype.polyd & M2_DEMON)
-                                            ? "demons"
-                                            : "certain monsters");
+                 == (M2_HUMAN | M2_ELF)) ? "humans and elves"
+                    : (svc.context.warntype.polyd & M2_HUMAN) ? "humans"
+                      : (svc.context.warntype.polyd & M2_ELF) ? "elves"
+                        : (svc.context.warntype.polyd & M2_ORC) ? "orcs"
+                          : (svc.context.warntype.polyd & M2_DEMON) ? "demons"
+                            : "certain monsters");
         you_are(buf, "");
     }
     warnspecies =  svc.context.warntype.speciesidx;
@@ -1635,7 +1638,7 @@ attributes_enlightenment(
     if (Stealth) {
         you_are("stealthy", from_what(STEALTH));
     } else if (BStealth && (HStealth || EStealth)) {
-        Sprintf(buf, " steathy%s",
+        Sprintf(buf, " stealthy%s",
                 (BStealth == FROMOUTSIDE) ? " if not mounted" : "");
         enl_msg(You_, "would be", "would have been", buf, "");
     }
@@ -1779,6 +1782,23 @@ attributes_enlightenment(
         enlght_halfdmg(HALF_SPDAM, final);
     if (Half_gas_damage)
         enl_msg(You_, "take", "took", " reduced poison gas damage", "");
+    if (spellid(0) > NO_SPELL) { /* skip if no spells are known yet */
+        /* greatly simplified edition of percent_success(spell.c)--may need
+           to be suppressed if oversimplification leads to player confusion */
+        char cast_adj[QBUFSZ];
+        boolean suit = uarm && is_metallic(uarm),
+                robe = uarmc && uarmc->otyp == ROBE;
+
+        *cast_adj = '\0';
+        if (suit) /* omit "wearing" to shorten the text */
+            Sprintf(cast_adj, " impaired by metallic armor%s",
+                    robe ? ", mitigated by your robe" : "");
+        else if (robe)
+            Strcpy(cast_adj, " enhanced by wearing a robe");
+
+        if (*cast_adj)
+            enl_msg("Your spell casting ", "is", "was", cast_adj, "");
+    }
     /* polymorph and other shape change */
     if (Protection_from_shape_changers)
         you_are("protected from shape changers",
@@ -1929,6 +1949,21 @@ attributes_enlightenment(
     }
 #endif
 
+    /* saving-grace: show during final disclosure, hide during normal play */
+    if (final || wizard || discover) {
+        static const char *verbchoices[2][2] = {
+            { "might avoid", "have avoided" },
+            { "could have avoided", "avoided" },
+        };
+        /* u.usaving_grace will always be 0 or 1; final is 0 (game in
+           progress), 1 (game over, survived), or 2 (game over, died) */
+        const char *verb = verbchoices[!!final][u.usaving_grace];
+
+        /* 'verb' has already been set for present or past but enl_msg()
+           needs it twice, one for in progress, the other for game over */
+        enl_msg(You_, verb, verb, " a one-shot death via saving-grace", "");
+    }
+
     {
         const char *p;
 
@@ -1957,6 +1992,8 @@ attributes_enlightenment(
             switch (u.umortality) {
             case 0:
                 impossible("dead without dying?");
+                FALLTHROUGH;
+                /* FALLTHRU */
             case 1:
                 break; /* just "are dead" */
             default:
@@ -2065,6 +2102,14 @@ show_conduct(int final)
         you_have_been("blind from birth");
     if (u.uroleplay.deaf)
         you_have_been("deaf from birth");
+    /* note: we don't report "you are without possessions" unless the
+       game started with the pauper option set */
+    if (u.uroleplay.pauper)
+        enl_msg(You_, gi.invent ? "started" : "are", "started out",
+                " without possessions", "");
+    /* nudist is far more than a subset of possessionless, and a much
+       more impressive accomplishment, but showing "started out without
+       possessions" before "faithfully nudist" looks more logical */
     if (u.uroleplay.nudist)
         you_have_been("faithfully nudist");
 
@@ -2605,6 +2650,7 @@ vanqsort_cmp(
             res = uniq2 - uniq1;
             break;
         } /* else both unique or neither unique */
+        FALLTHROUGH;
         /*FALLTHRU*/
     case VANQ_ALPHA_MIX:
         name1 = mons[indx1].pmnames[NEUTRAL];
@@ -2638,6 +2684,15 @@ vanqsort_cmp(
         }
         res = mcls1 - mcls2; /* class */
         if (res == 0) {
+            /* Riders are in the same class as major demons, yielding res==0
+               above when both mcls1 and mcls2 are either Riders or demons or
+               one of each; force Riders to be sorted before demons */
+            res = is_rider(&mons[indx2]) - is_rider(&mons[indx1]);
+            /* res -1 => #1 is a Rider, #2 isn't;
+                    0 => both Riders or neither;
+                   +1 => #2 is a Rider, #1 isn't */
+            if (res)
+                break;
             mlev1 = mons[indx1].mlevel;
             mlev2 = mons[indx2].mlevel;
             res = mlev1 - mlev2; /* mlevel low to high */
@@ -2715,7 +2770,8 @@ set_vanq_order(boolean for_vanq)
 int
 dovanquished(void)
 {
-    list_vanquished(iflags.menu_requested ? 'a' : 'y', FALSE);
+    list_vanquished(iflags.menu_requested ? 'A' : 'y', FALSE);
+    iflags.menu_requested = FALSE;
     return ECMD_OK;
 }
 
@@ -2725,6 +2781,7 @@ dovanquished(void)
 
 #define done_stopprint program_state.stopprint
 
+/* used for #vanquished and end of game disclosure and end of game dumplog */
 void
 list_vanquished(char defquery, boolean ask)
 {
@@ -2735,12 +2792,25 @@ list_vanquished(char defquery, boolean ask)
     winid klwin;
     short mindx[NUMMONS];
     char c, buf[BUFSZ], buftoo[BUFSZ];
-    boolean dumping; /* for DUMPLOG; doesn't need to be conditional */
+    /* 'A' is only supplied by 'm #vanquished'; 'd' is only supplied by
+       dump_everything() when writing dumplog, so won't happen if built
+       without '#define DUMPLOG' but there's no need for conditionals here */
+    boolean force_sort = (defquery == 'A'),
+            dumping = (defquery == 'd');
 
-    dumping = (defquery == 'd');
-    if (dumping) {
+    /* normally we don't ask about sort order for the vanquished list unless
+       it contains at least two entries; however, if player has used explicit
+       'm #vanquished', choose order no matter what it contains so far */
+    if (force_sort) { /* iflags.menu_requested via dovanquished() */
+        /* choose value for vanq_sortmode via menu; ESC cancels choosing
+           sort order but continues with vanquishd monsters display */
+        (void) set_vanq_order(TRUE);
+    }
+    if (dumping || force_sort) {
+        /* switch from 'A' or 'd' to 'y'; 'ask' is already False for the
+           cases that might supply 'A' or 'd' */
         defquery = 'y';
-        ask = FALSE; /* redundant; caller passes False with defquery=='d' */
+        ask = FALSE; /* redundant */
     }
 
     /* get totals first */
@@ -2757,16 +2827,30 @@ list_vanquished(char defquery, boolean ask)
      */
     if (ntypes != 0) {
         char mlet, prev_mlet = 0; /* used as small integer, not character */
-        boolean class_header, uniq_header, was_uniq = FALSE;
+        boolean class_header, uniq_header, Rider,
+                was_uniq = FALSE, special_hdr = FALSE;
 
-        c = ask ? yn_function(
-                            "Do you want an account of creatures vanquished?",
-                              ynaqchars, defquery, TRUE)
-                : defquery;
+        if (ask) {
+            char allow_yn[10];
+
+            if (ntypes > 1) {
+                Strcpy(allow_yn, ynaqchars);
+            } else {
+                Strcpy(allow_yn, ynqchars); /* don't include 'a', but */
+                Strcat(allow_yn, "\033a");  /* allow user to answer 'a' */
+                if (defquery == 'a') /* potential default from 'disclose' */
+                    defquery = 'y';
+            }
+            c = yn_function("Do you want an account of creatures vanquished?",
+                            allow_yn, defquery, TRUE);
+        } else {
+            c = defquery;
+        }
+
         if (c == 'q')
             done_stopprint++;
         if (c == 'y' || c == 'a') {
-            if (c == 'a' && ntypes > 1) { /* ask player to choose sort order */
+            if (c == 'a' && ntypes > 1) { /* ask user to choose sort order */
                 /* choose value for vanq_sortmode via menu; ESC cancels list
                    of vanquished monsters but does not set 'done_stopprint' */
                 if (set_vanq_order(TRUE) < 0)
@@ -2786,9 +2870,17 @@ list_vanquished(char defquery, boolean ask)
             for (ni = 0; ni < ntypes; ni++) {
                 i = mindx[ni];
                 nkilled = svm.mvitals[i].died;
+                Rider = is_rider(&mons[i]);
                 mlet = mons[i].mlet;
-                if (class_header && mlet != prev_mlet) {
-                    Strcpy(buf, def_monsyms[(int) mlet].explain);
+                if (class_header
+                    && (mlet != prev_mlet || (special_hdr && !Rider))) {
+                    if (!Rider) {
+                        Strcpy(buf, def_monsyms[(int) mlet].explain);
+                        special_hdr = FALSE;
+                    } else {
+                        Strcpy(buf, "Rider");
+                        special_hdr = TRUE;
+                    }
                     /* 'ask' implies final disclosure, where highlighting
                        of various header lines is suppressed */
                     putstr(klwin, ask ? ATR_NONE : iflags.menu_headings.attr,
@@ -3211,7 +3303,7 @@ mstatusline(struct monst *mtmp)
     if (mtmp->data == &mons[PM_LONG_WORM]) {
         int segndx, nsegs = count_wsegs(mtmp);
 
-        /* the worm code internals don't consider the head of be one of
+        /* the worm code internals don't consider the head to be one of
            the worm's segments, but we count it as such when presenting
            worm feedback to the player */
         if (!nsegs) {
@@ -3232,8 +3324,10 @@ mstatusline(struct monst *mtmp)
         Strcat(info, ", eating");
     /* a stethoscope exposes mimic before getting here so this
        won't be relevant for it, but wand of probing doesn't */
-    if (mtmp->mundetected || mtmp->m_ap_type)
-        mhidden_description(mtmp, MHID_PREFIX | MHID_ARTICLE | MHID_ALTMON,
+    if (mtmp->mundetected || mtmp->m_ap_type
+        || visible_region_at(gb.bhitpos.x, gb.bhitpos.y))
+        mhidden_description(mtmp,
+                       MHID_PREFIX | MHID_ARTICLE | MHID_ALTMON | MHID_REGION,
                             eos(info));
     if (mtmp->mcan)
         Strcat(info, ", cancelled");
@@ -3305,7 +3399,7 @@ mstatusline(struct monst *mtmp)
 
     /* avoid "Status of the invisible newt ..., invisible" */
     /* and unlike a normal mon_nam, use "saddled" even if it has a name */
-    Strcpy(monnambuf, x_monnam(mtmp, ARTICLE_THE, (char *) 0,
+    Strcpy(monnambuf, x_monnam(mtmp, ARTICLE_YOUR, (char *) 0,
                                (SUPPRESS_IT | SUPPRESS_INVISIBLE), FALSE));
 
     pline("Status of %s (%s, %s):  Level %d  HP %d(%d)  AC %d%s.",
@@ -3317,7 +3411,9 @@ mstatusline(struct monst *mtmp)
 void
 ustatusline(void)
 {
+    NhRegion *reg;
     char info[BUFSZ];
+    size_t ln;
 
     info[0] = '\0';
     if (Sick) {
@@ -3372,15 +3468,29 @@ ustatusline(void)
         Strcat(info, Very_fast ? ", very fast" : ", fast");
     if (u.uundetected)
         Strcat(info, ", concealed");
+    else if (U_AP_TYPE != M_AP_NOTHING)
+        Strcat(info, ", disguised");
     if (Invis)
         Strcat(info, ", invisible");
     if (u.ustuck) {
-        if (sticks(gy.youmonst.data))
-            Strcat(info, ", holding ");
-        else
+        if (u.uswallow)
+            Strcat(info, digests(u.ustuck->data) ? ", being digested by "
+                                                 : ", engulfed by ");
+        else if (!sticks(gy.youmonst.data))
             Strcat(info, ", held by ");
-        Strcat(info, mon_nam(u.ustuck));
+        else
+            Strcat(info, ", holding ");
+        /* FIXME? a_monnam() uses x_monnam() which has a special case that
+           forces "the" instead of "a" when formatting u.ustuck while hero
+           is swallowed; we don't really want that here but it isn't worth
+           fiddling with just for self-probing while engulfed */
+        Strcat(info, a_monnam(u.ustuck));
     }
+    if (!u.uswallow
+        && (reg = visible_region_at(u.ux, u.uy)) != 0
+        && (ln = strlen(info)) < sizeof info)
+        Snprintf(eos(info), sizeof info - ln, ", in a cloud of %s",
+                 reg_damg(reg) ? "poison gas" : "vapor");
 
     pline("Status of %s (%s):  Level %d  HP %d(%d)  AC %d%s.", svp.plname,
           piousness(FALSE, align_str(u.ualign.type)),

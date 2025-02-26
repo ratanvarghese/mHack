@@ -1,4 +1,4 @@
-/* NetHack 3.7	windows.c	$NHDT-Date: 1700012891 2023/11/15 01:48:11 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.109 $ */
+/* NetHack 3.7	windows.c	$NHDT-Date: 1737345149 2025/01/19 19:52:29 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.138 $ */
 /* Copyright (c) D. Cohrs, 1993. */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -598,8 +598,6 @@ static struct window_procs hup_procs = {
 #endif
     hup_get_color_string,
 #endif /* CHANGE_COLOR */
-    hup_void_ndecl,                                   /* start_screen */
-    hup_void_ndecl,                                   /* end_screen */
     hup_outrip, genl_preference_update, genl_getmsghistory,
     genl_putmsghistory,
     hup_void_ndecl,                                   /* status_init */
@@ -1196,7 +1194,8 @@ dump_fmtstr(
                 break;
             case 'n': /* player name */
                 if (fullsubs)
-                    Sprintf(tmpbuf, "%s", *svp.plname ? svp.plname : "unknown");
+                    Sprintf(tmpbuf, "%s",
+                            *svp.plname ? svp.plname : "unknown");
                 else
                     Strcpy(tmpbuf, "{hero name}");
                 break;
@@ -1654,12 +1653,11 @@ choose_classes_menu(const char *prompt,
     char buf[BUFSZ];
     const char *text = 0;
     boolean selected;
-    int ret, i, n, next_accelerator, accelerator;
+    int ret, i, n, next_accelerator, accelerator = 0;
     int clr = NO_COLOR;
 
     if (!class_list || !class_select)
         return 0;
-    accelerator = 0;
     next_accelerator = 'a';
     any = cg.zeroany;
     win = create_nhwindow(NHW_MENU);
@@ -1672,7 +1670,8 @@ choose_classes_menu(const char *prompt,
         case 0:
             idx = def_char_to_monclass(*class_list);
             if (!IndexOk(idx, def_monsyms)) {
-                panic("choose_classes_menu: invalid monclass '%c'", *class_list);
+                panic("choose_classes_menu: invalid monclass '%c'",
+                      *class_list);
                 /*NOTREACHED*/
             }
             text = def_monsyms[idx].explain;
@@ -1682,7 +1681,8 @@ choose_classes_menu(const char *prompt,
         case 1:
             idx = def_char_to_objclass(*class_list);
             if (!IndexOk(idx, def_oc_syms)) {
-                panic("choose_classes_menu: invalid objclass '%c'", *class_list);
+                panic("choose_classes_menu: invalid objclass '%c'",
+                      *class_list);
                 /*NOTREACHED*/
             }
             text = def_oc_syms[idx].explain;
@@ -1794,6 +1794,12 @@ add_menu(
     const char *str,            /* menu text */
     unsigned int itemflags)     /* itemflags such as MENU_ITEMFLAGS_SELECTED */
 {
+    if (!str) {
+        /* if 'str' is Null, just return without adding any menu entry */
+        debugpline0("add_menu(Null)");
+        return;
+    }
+
     if (iflags.use_menu_color) {
         if ((itemflags & MENU_ITEMFLAGS_SKIPMENUCOLORS) == 0)
             (void) get_menu_coloring(str, &color, &attr);

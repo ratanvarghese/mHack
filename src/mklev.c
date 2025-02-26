@@ -1,4 +1,4 @@
-/* NetHack 3.7	mklev.c	$NHDT-Date: 1704830831 2024/01/09 20:07:11 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.175 $ */
+/* NetHack 3.7	mklev.c	$NHDT-Date: 1737387068 2025/01/20 07:31:08 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.194 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Alex Smith, 2017. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -65,7 +65,7 @@ mkroom_cmp(const genericptr vx, const genericptr vy)
 }
 
 /* Return TRUE if a door placed at (x, y) which otherwise passes okdoor()
- * checks would be connecting into an area that was declared as joined = false.
+ * checks would be connecting into an area that was declared as joined=false.
  * Checking for this in finddpos() enables us to have rooms with sub-areas
  * (such as shops) that will never randomly generate unwanted doors in order
  * to connect them up to other areas.
@@ -78,7 +78,7 @@ door_into_nonjoined(coordxy x, coordxy y)
     for (i = 0; i < 4; i++) {
         tx = x + xdir[dirs_ord[i]];
         ty = y + ydir[dirs_ord[i]];
-        if (!isok(tx, ty) || IS_ROCK(levl[tx][ty].typ))
+        if (!isok(tx, ty) || IS_OBSTRUCTED(levl[tx][ty].typ))
             continue;
 
         /* Is this connecting to a room that doesn't want joining? */
@@ -91,7 +91,10 @@ door_into_nonjoined(coordxy x, coordxy y)
 }
 
 staticfn boolean
-finddpos(coord *cc, coordxy xl, coordxy yl, coordxy xh, coordxy yh)
+finddpos(
+    coord *cc,
+    coordxy xl, coordxy yl,
+    coordxy xh, coordxy yh)
 {
     coordxy x, y;
 
@@ -110,8 +113,8 @@ finddpos(coord *cc, coordxy xl, coordxy yl, coordxy xh, coordxy yh)
             if (IS_DOOR(levl[x][y].typ) || levl[x][y].typ == SDOOR)
                 goto gotit;
     /* cannot find something reasonable -- strange */
-    x = xl;
-    y = yh;
+    cc->x = xl;
+    cc->y = yh;
     return FALSE;
  gotit:
     cc->x = x;
@@ -216,7 +219,7 @@ do_room_or_subroom(struct mkroom *croom,
 }
 
 void
-add_room(int lowx, int lowy, int hix, int hiy,
+add_room(coordxy lowx, coordxy lowy, coordxy hix, coordxy hiy,
          boolean lit, schar rtype, boolean special)
 {
     struct mkroom *croom;
@@ -230,7 +233,9 @@ add_room(int lowx, int lowy, int hix, int hiy,
 }
 
 void
-add_subroom(struct mkroom *proom, int lowx, int lowy, int hix, int hiy,
+add_subroom(struct mkroom *proom,
+            coordxy lowx, coordxy lowy,
+            coordxy hix, coordxy hiy,
             boolean lit, schar rtype, boolean special)
 {
     struct mkroom *croom;
@@ -462,11 +467,12 @@ alloc_doors(void)
 {
     if (!svd.doors || gd.doorindex >= svd.doors_alloc) {
         int c = svd.doors_alloc + DOORINC;
-        coord *doortmp = (coord *) alloc(c * sizeof(coord));
+        coord *doortmp = (coord *) alloc(c * sizeof (coord));
 
-        (void) memset((genericptr_t) doortmp, 0, c * sizeof(coord));
+        (void) memset((genericptr_t) doortmp, 0, c * sizeof (coord));
         if (svd.doors) {
-            (void) memcpy(doortmp, svd.doors, svd.doors_alloc * sizeof(coord));
+            (void) memcpy(doortmp, svd.doors,
+                          svd.doors_alloc * sizeof (coord));
             free(svd.doors);
         }
         svd.doors = doortmp;
@@ -611,11 +617,13 @@ place_niche(
 
     if (rn2(2)) {
         *dy = 1;
-        if (!finddpos(&dd, aroom->lx, aroom->hy + 1, aroom->hx, aroom->hy + 1))
+        if (!finddpos(&dd, aroom->lx, aroom->hy + 1,
+                      aroom->hx, aroom->hy + 1))
             return FALSE;
     } else {
         *dy = -1;
-        if (!finddpos(&dd, aroom->lx, aroom->ly - 1, aroom->hx, aroom->ly - 1))
+        if (!finddpos(&dd, aroom->lx, aroom->ly - 1,
+                      aroom->hx, aroom->ly - 1))
             return FALSE;
     }
     *xx = dd.x;
@@ -1112,14 +1120,17 @@ makelevel(void)
     branch *branchp;
     stairway *prevstairs;
     int room_threshold;
-    s_level *slev = Is_special(&u.uz);
+    s_level *slev;
     int i;
 
-    if (wiz1_level.dlevel == 0)
+    if (wiz1_level.dlevel == 0) {
+        impossible("makelevel() called when dungeon not yet initialized.");
         init_dungeons();
+    }
     oinit(); /* assign level dependent obj probabilities */
     clear_level_structures();
 
+    slev = Is_special(&u.uz);
     /* check for special levels */
     if (slev && !Is_rogue_level(&u.uz)) {
         makemaz(slev->proto);
@@ -1392,8 +1403,8 @@ level_finalize_topology(void)
     mineralize(-1, -1, -1, -1, FALSE);
     gi.in_mklev = FALSE;
     /* avoid coordinates in future lua-loads for this level being thrown off
-     * because xstart and ystart aren't saved with the level and will be 0 after
-     * leaving and returning */
+     * because xstart and ystart aren't saved with the level and will be 0
+     * after leaving and returning */
     gx.xstart = gy.ystart = 0;
     /* has_morgue gets cleared once morgue is entered; graveyard stays
        set (graveyard might already be set even when has_morgue is clear
@@ -1537,7 +1548,6 @@ place_branch(
     coord m = {0};
     d_level *dest;
     boolean make_stairs;
-    struct mkroom *br_room;
 
     /*
      * Return immediately if there is no branch to make or we have
@@ -1548,14 +1558,13 @@ place_branch(
     if (!br || gm.made_branch)
         return;
 
-    nhUse(br_room);
     if (!x) { /* find random coordinates for branch */
         /* br_room = find_branch_room(&m); */
         (void) find_branch_room(&m);  /* sets m via mazexy() or somexy() */
         x = m.x;
         y = m.y;
     } else {
-        br_room = pos_to_room(x, y);
+        (void) pos_to_room(x, y);
     }
 
     if (on_level(&br->end1, &u.uz)) {
@@ -1625,10 +1634,10 @@ okdoor(coordxy x, coordxy y)
     boolean near_door = bydoor(x, y);
 
     return ((levl[x][y].typ == HWALL || levl[x][y].typ == VWALL)
-            && ((isok(x - 1, y) && !IS_ROCK(levl[x - 1][y].typ))
-                || (isok(x + 1, y) && !IS_ROCK(levl[x + 1][y].typ))
-                || (isok(x, y - 1) && !IS_ROCK(levl[x][y - 1].typ))
-                || (isok(x, y + 1) && !IS_ROCK(levl[x][y + 1].typ)))
+            && ((isok(x - 1, y) && !IS_OBSTRUCTED(levl[x - 1][y].typ))
+                || (isok(x + 1, y) && !IS_OBSTRUCTED(levl[x + 1][y].typ))
+                || (isok(x, y - 1) && !IS_OBSTRUCTED(levl[x][y - 1].typ))
+                || (isok(x, y + 1) && !IS_OBSTRUCTED(levl[x][y + 1].typ)))
             && !near_door);
 }
 
@@ -2457,7 +2466,7 @@ mkinvpos(coordxy x, coordxy y, int dist)
     }
 
     if (!does_block(x, y, lev))
-        unblock_point(x, y); /* make sure vision knows this location is open */
+        unblock_point(x, y); /* make sure vision knows location is open */
 
     /* display new value of position; could have a monster/object on it */
     newsym(x, y);

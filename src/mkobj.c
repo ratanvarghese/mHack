@@ -1,4 +1,4 @@
-/* NetHack 3.7	mkobj.c	$NHDT-Date: 1718999849 2024/06/21 19:57:29 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.299 $ */
+/* NetHack 3.7	mkobj.c	$NHDT-Date: 1737528890 2025/01/21 22:54:50 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.315 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Derek S. Ray, 2015. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -9,7 +9,7 @@ staticfn boolean may_generate_eroded(struct obj *);
 staticfn void mkobj_erosions(struct obj *);
 staticfn void mkbox_cnts(struct obj *);
 staticfn unsigned nextoid(struct obj *, struct obj *);
-staticfn void mksobj_init(struct obj *, boolean);
+staticfn void mksobj_init(struct obj **, boolean);
 staticfn int item_on_ice(struct obj *);
 staticfn void shrinking_glob_gone(struct obj *);
 staticfn void obj_timer_checks(struct obj *, coordxy, coordxy, int);
@@ -328,6 +328,7 @@ mkbox_cnts(struct obj *box)
             n = 0;
             break;
         }
+        FALLTHROUGH;
         /*FALLTHRU*/
     case BAG_OF_HOLDING:
         n = 1;
@@ -516,7 +517,7 @@ next_ident(void)
        uses 16-bit 'int'), just live with that and hope no o_id conflicts
        between objects or m_id conflicts between monsters arise */
     if (!svc.context.ident)
-        svc.context.ident = rnd(2);
+        svc.context.ident = rnd(2) + 1;   /* id 1 is reserved */
 
     return res;
 }
@@ -846,6 +847,7 @@ unknow_object(struct obj *obj)
 
     obj->bknown = obj->rknown = 0;
     obj->cknown = obj->lknown = 0;
+    obj->tknown = 0;
     /* for an existing object, awareness of charges or enchantment has
        gone poof...  [object types which don't use the known flag have
        it set True for some reason] */
@@ -854,9 +856,10 @@ unknow_object(struct obj *obj)
 
 /* do some initialization to newly created object; otyp must already be set */
 staticfn void
-mksobj_init(struct obj *otmp, boolean artif)
+mksobj_init(struct obj **obj, boolean artif)
 {
     int mndx, tryct;
+    struct obj *otmp = *obj;
     char let = objects[otmp->otyp].oc_class;
 
     switch (let) {
@@ -876,8 +879,11 @@ mksobj_init(struct obj *otmp, boolean artif)
             else otmp->opoisoned = POT_SICKNESS;
         }
 
-        if (artif && !rn2(20 + (10 * nartifact_exist())))
-            otmp = mk_artifact(otmp, (aligntyp) A_NONE);
+        if (artif && !rn2(20 + (10 * nartifact_exist()))) {
+            /* mk_artifact() with otmp and A_NONE will never return NULL */
+            otmp = mk_artifact(otmp, (aligntyp) A_NONE, 99, TRUE);
+            *obj = otmp;
+        }
         break;
     case FOOD_CLASS:
         otmp->oeaten = 0;
@@ -950,8 +956,7 @@ mksobj_init(struct obj *otmp, boolean artif)
                need to perform any fix up and returns glob->owt as-is */
             otmp->owt = objects[otmp->otyp].oc_weight;
             otmp->known = otmp->dknown = 1;
-            otmp->corpsenm = PM_GRAY_OOZE
-                           + (otmp->otyp - GLOB_OF_GRAY_OOZE);
+            otmp->corpsenm = PM_GRAY_OOZE + (otmp->otyp - GLOB_OF_GRAY_OOZE);
             start_glob_timeout(otmp, 0L);
         } else {
             if (otmp->otyp != CORPSE && otmp->otyp != MEAT_RING
@@ -998,6 +1003,8 @@ mksobj_init(struct obj *otmp, boolean artif)
         case LARGE_BOX:
             otmp->olocked = !!(rn2(5));
             otmp->otrapped = !(rn2(10));
+            otmp->tknown = otmp->otrapped && !rn2(100); /* obvious trap */
+            FALLTHROUGH;
             /*FALLTHRU*/
         case ICE_BOX:
         case SACK:
@@ -1080,8 +1087,11 @@ mksobj_init(struct obj *otmp, boolean artif)
             otmp->spe = rne(3);
         } else
             blessorcurse(otmp, 10);
-        if (artif && !rn2(40 + (10 * nartifact_exist())))
-            otmp = mk_artifact(otmp, (aligntyp) A_NONE);
+        if (artif && !rn2(40 + (10 * nartifact_exist()))) {
+            /* mk_artifact() with otmp and A_NONE will never return NULL */
+            otmp = mk_artifact(otmp, (aligntyp) A_NONE, 99, TRUE);
+            *obj = otmp;
+        }
         /* simulate lacquered armor for samurai */
         if (Role_if(PM_SAMURAI) && otmp->otyp == SPLINT_MAIL
             && (svm.moves <= 1 || In_quest(&u.uz))) {
@@ -1098,7 +1108,8 @@ mksobj_init(struct obj *otmp, boolean artif)
         if (otmp->otyp == WAN_WISHING)
             otmp->spe = rnd(3);
         else
-            otmp->spe = rn1(5, (objects[otmp->otyp].oc_dir == NODIR) ? 11 : 4);
+            otmp->spe = rn1(5,
+                            (objects[otmp->otyp].oc_dir == NODIR) ? 11 : 4);
         blessorcurse(otmp, 17);
         otmp->recharged = 0; /* used to control recharging */
         break;
@@ -1158,7 +1169,7 @@ mksobj(int otyp, boolean init, boolean artif)
 
     otmp = newobj();
     *otmp = cg.zeroobj;
-    otmp->age = svm.moves;
+    otmp->age = max(svm.moves, 1L);
     otmp->o_id = next_ident();
     otmp->quan = 1L;
     otmp->oclass = let;
@@ -1172,7 +1183,7 @@ mksobj(int otyp, boolean init, boolean artif)
     init_obj_material(otmp);
 
     if (init)
-        mksobj_init(otmp, artif);
+        mksobj_init(&otmp, artif);
 
     /* some things must get done (corpsenm, timers) even if init = 0 */
     switch ((otmp->oclass == POTION_CLASS && otmp->otyp != POT_OIL)
@@ -1184,6 +1195,7 @@ mksobj(int otyp, boolean init, boolean artif)
             if (svm.mvitals[otmp->corpsenm].mvflags & (G_NOCORPSE | G_GONE))
                 otmp->corpsenm = gu.urole.mnum;
         }
+        FALLTHROUGH;
         /*FALLTHRU*/
     case STATUE:
     case FIGURINE:
@@ -1197,6 +1209,7 @@ mksobj(int otyp, boolean init, boolean artif)
                            : is_male(ptr) ? CORPSTAT_MALE
                              : rn2(2) ? CORPSTAT_FEMALE : CORPSTAT_MALE);
         }
+        FALLTHROUGH;
         /*FALLTHRU*/
     case EGG:
     /* case TIN: */
@@ -1210,6 +1223,7 @@ mksobj(int otyp, boolean init, boolean artif)
         break;
     case POT_OIL:
         otmp->age = MAX_OIL_IN_FLASK; /* amount of oil */
+        FALLTHROUGH;
         /*FALLTHRU*/
     case POT_WATER: /* POTION_CLASS */
         otmp->fromsink = 0; /* overloads corpsenm, which was set to NON_PM */
@@ -1224,8 +1238,10 @@ mksobj(int otyp, boolean init, boolean artif)
     }
 
     /* unique objects may have an associated artifact entry */
-    if (objects[otyp].oc_unique && !otmp->oartifact)
-        otmp = mk_artifact(otmp, (aligntyp) A_NONE);
+    if (objects[otyp].oc_unique && !otmp->oartifact) {
+        /* mk_artifact() with otmp and A_NONE will never return NULL */
+        otmp = mk_artifact(otmp, (aligntyp) A_NONE, 99, FALSE);
+    }
     otmp->owt = weight(otmp);
     return otmp;
 }
@@ -1341,7 +1357,7 @@ start_corpse_timeout(struct obj *body)
 
     action = ROT_CORPSE;               /* default action: rot away */
     rot_adjust = gi.in_mklev ? 25 : 10; /* give some variation */
-    age = svm.moves - body->age;
+    age = max(svm.moves, 1) - body->age;
     if (age > ROT_AGE)
         when = rot_adjust;
     else
@@ -2123,8 +2139,9 @@ mkcorpstat(
 
         otmp->corpsenm = monsndx(ptr);
         otmp->owt = weight(otmp);
-        if (otmp->otyp == CORPSE && (gz.zombify || special_corpse(old_corpsenm)
-                                     || special_corpse(otmp->corpsenm))) {
+        if (otmp->otyp == CORPSE
+            && (gz.zombify || special_corpse(old_corpsenm)
+                || special_corpse(otmp->corpsenm))) {
             obj_stop_timers(otmp);
             start_corpse_timeout(otmp);
         }
@@ -2473,8 +2490,8 @@ obj_timer_checks(
 
             /* mark the corpse as being on ice */
             otmp->on_ice = 1;
-            debugpline3("%s is now on ice at <%d,%d>.", The(xname(otmp)), x,
-                        y);
+            debugpline3("%s is now on ice at <%d,%d>.",
+                        The(xname(otmp)), x, y);
             /* Adjust the time remaining */
             tleft *= ROT_ICE_ADJUSTMENT;
             restart_timer = TRUE;
@@ -2527,9 +2544,8 @@ remove_object(struct obj *otmp)
         panic("remove_object: obj not on floor");
     extract_nexthere(otmp, &svl.level.objects[x][y]);
     extract_nobj(otmp, &fobj);
-    /* update vision iff this was the only boulder at its spot */
-    if (otmp->otyp == BOULDER && !sobj_at(BOULDER, x, y))
-        unblock_point(x, y); /* vision */
+    if (otmp->otyp == BOULDER)
+        recalc_block_point(x, y); /* vision */
     if (otmp->timed)
         obj_timer_checks(otmp, x, y, 0);
 }
@@ -2758,6 +2774,8 @@ container_weight(struct obj *object)
 void
 dealloc_obj(struct obj *obj)
 {
+    if (obj->otyp == BOULDER)
+        obj->next_boulder = 0;
     if (obj->where == OBJ_DELETED) {
         impossible("dealloc_obj: obj already deleted (type=%d)", obj->otyp);
         return;
@@ -2795,6 +2813,10 @@ dealloc_obj(struct obj *obj)
         gt.thrownobj = 0;
     if (obj == gk.kickedobj)
         gk.kickedobj = 0;
+    if (obj == svc.context.tin.tin) {
+        svc.context.tin.tin = (struct obj *) 0;
+        svc.context.tin.o_id = 0;
+    }
 
     /* if obj came from the most recent splitobj(), it's no longer eligible
        for unsplitobj(); perform inline clear_splitobjs() */
@@ -3073,6 +3095,7 @@ objlist_sanity(struct obj *objlist, int wheretype, const char *mesg)
                 /* note: ball and chain can also be OBJ_FREE, but not across
                    turns so this sanity check shouldn't encounter that */
                 bc_ok = TRUE;
+            FALLTHROUGH;
             /*FALLTHRU*/
             default:
                 if ((obj != uchain && obj != uball) || !bc_ok) {
@@ -3746,16 +3769,19 @@ obj_absorb(struct obj **obj1, struct obj **obj2)
 /*
  * Causes the heavier object to absorb the lighter object in
  * most cases, but if one object is OBJ_FREE and the other is
- * on the floor, the floor object goes first.
+ * on the floor, the floor object goes first.  Note that when
+ * a globby monster dies, its corpse (new glob) will be created
+ * on the floor; when a glob is dropped, thrown, or kicked it
+ * will be free at the time obj_meld() gets called.
  *
- * wrapper for obj_absorb so that floor_effects works more
- * cleanly (since we don't know which we want to stay around)
+ * Wrapper for obj_absorb() so that floor_effects works more
+ * cleanly (since we don't know which we want to stay around).
  */
 struct obj *
 obj_meld(struct obj **obj1, struct obj **obj2)
 {
     struct obj *otmp1, *otmp2, *result = 0;
-    int ox, oy;
+    int ox, oy; /* coordinates for the glob that goes away */
 
     if (obj1 && obj2) {
         otmp1 = *obj1;
@@ -3785,8 +3811,14 @@ obj_meld(struct obj **obj1, struct obj **obj2)
             }
             /* callers really ought to take care of this; glob melding is
                a bookkeeping issue rather than a display one */
-            if (ox && cansee(ox, oy))
-                newsym(ox, oy);
+            if (ox) {
+                if (cansee(ox, oy))
+                    newsym(ox, oy);
+                /* and this; a hides-under monster might be hiding under
+                   the glob that went away; if there's nothing else there
+                   to hide under, force it out of hiding */
+                maybe_unhide_at(ox, oy);
+            }
         }
     } else {
         impossible("obj_meld: not called with two actual objects");

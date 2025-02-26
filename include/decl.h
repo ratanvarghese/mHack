@@ -1,4 +1,4 @@
-/* NetHack 3.7  decl.h  $NHDT-Date: 1720074483 2024/07/04 06:28:03 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.373 $ */
+/* NetHack 3.7  decl.h  $NHDT-Date: 1725653004 2024/09/06 20:03:24 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.377 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Michael Allison, 2007. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -270,7 +270,7 @@ struct instance_globals_c {
     /* invent.c */
     /* for perm_invent when operating on a partial inventory display, so that
        persistent one doesn't get shrunk during filtering for item selection
-       then regrown to full inventory, possibly being resized in the process */
+       then regrown to full inventory, possibly being resized in process */
     winid cached_pickinv_win;
     int core_invent_state;
 
@@ -339,6 +339,10 @@ struct instance_globals_d {
     /* pickup.c */
     boolean decor_fumble_override;
     boolean decor_levitate_override;
+
+    /* new */
+    boolean deferred_showpaths;
+    char *deferred_showpaths_dir;
 
     boolean havestate;
     unsigned long magic; /* validate that structure layout is preserved */
@@ -615,10 +619,10 @@ struct instance_globals_m {
     boolean made_branch; /* used only during level creation */
 
     /* mkmap.c */
-    int min_rx; /* rectangle bounds for regions */
-    int max_rx;
-    int min_ry;
-    int max_ry;
+    coordxy min_rx; /* rectangle bounds for regions */
+    coordxy max_rx;
+    coordxy min_ry;
+    coordxy max_ry;
 
     /* mkobj.c */
     boolean mkcorpstat_norevive; /* for trolls */
@@ -865,7 +869,8 @@ struct instance_globals_s {
     /* symbols.c */
     struct symsetentry symset[NUM_GRAPHICS];
     /* adds UNICODESET */
-    struct symset_customization sym_customizations[NUM_GRAPHICS + 1][custom_count];
+    struct symset_customization
+        sym_customizations[NUM_GRAPHICS + 1][custom_count];
     nhsym showsyms[SYM_MAX]; /* symbols to be displayed */
 
     /* files.c */
@@ -951,14 +956,14 @@ struct instance_globals_t {
     const char *this_title; /* title for inventory list of specific type */
 
     /* muse.c */
-    int trapx;
-    int trapy;
+    coordxy trapx;
+    coordxy trapy;
 
     /* rumors.c */
     long true_rumor_size; /* rumor size variables are signed so that value -1
                            * can be used as a flag */
-    unsigned long true_rumor_start; /* rumor start offsets are unsigned because
-                                     * they're handled via %lx format */
+    unsigned long true_rumor_start; /* rumor start offsets are unsigned due
+                                     * to use of %lx format */
     long true_rumor_end; /* rumor end offsets are signed because they're
                           * compared with [dlb_]ftell() */
 
@@ -1042,6 +1047,9 @@ struct instance_globals_w {
     int warn_obj_cnt; /* count of monsters meeting criteria */
     long wailmsg;
 
+    /* do_wear.c */
+    uint8 wasinwater;
+
     /* symbols.c */
     nhsym warnsyms[WARNCOUNT]; /* the current warning display symbols */
 
@@ -1056,6 +1064,7 @@ struct instance_globals_w {
 
     /* new */
     struct win_settings wsettings;      /* wintype.h */
+    long were_changes;                  /* were.c, allmain.c */
 
     boolean havestate;
     unsigned long magic; /* validate that structure layout is preserved */

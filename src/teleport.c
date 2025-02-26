@@ -1,4 +1,4 @@
-/* NetHack 3.7	teleport.c	$NHDT-Date: 1685863331 2023/06/04 07:22:11 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.206 $ */
+/* NetHack 3.7	teleport.c	$NHDT-Date: 1736129950 2025/01/05 18:19:10 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.235 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2011. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -173,6 +173,9 @@ goodpos(
     /* skip boulder locations for most creatures */
     if (sobj_at(BOULDER, x, y) && (!mdat || !throws_rocks(mdat)))
         return FALSE;
+    /* pretend GP_AVOID_MONPOS == monster creation */
+    if (avoid_monpos && is_exclusion_zone(LR_MONGEN, x, y))
+        return FALSE;
 
     return TRUE;
 }
@@ -193,6 +196,17 @@ enexto(
 {
     return (enexto_core(cc, xx, yy, mdat, GP_CHECKSCARY)
             || enexto_core(cc, xx, yy, mdat, NO_MM_FLAGS));
+}
+
+boolean
+enexto_gpflags(
+    coord *cc,
+    coordxy xx, coordxy yy,
+    struct permonst *mdat,
+    mmflags_nht entflags)
+{
+    return (enexto_core(cc, xx, yy, mdat, GP_CHECKSCARY | entflags)
+            || enexto_core(cc, xx, yy, mdat, entflags));
 }
 
 #ifdef NEW_ENEXTO
@@ -1097,12 +1111,14 @@ dotele(
     }
 
     if (next_to_u()) {
-        if (trap && trap_once)
+        if (trap && trap_once) {
             vault_tele();
-        else if (trap && isok(trap->teledest.x, trap->teledest.y))
+        } else if (trap && isok(trap->teledest.x, trap->teledest.y)) {
             teleds(trap->teledest.x, trap->teledest.y, TELEDS_TELEPORT);
-        else
+        } else {
+            iflags.travelcc.x = iflags.travelcc.y = 0;
             tele();
+        }
         (void) next_to_u();
     } else {
         You("%s", shudder_for_moment);
@@ -1532,22 +1548,25 @@ rloc_pos_ok(
         if (svd.dndest.nlx && On_W_tower_level(&u.uz))
             return (((yy & 2) != 0)
                     /* inside xor not within */
-                    ^ !within_bounded_area(x, y, svd.dndest.nlx, svd.dndest.nly,
+                    ^ !within_bounded_area(x, y,
+                                           svd.dndest.nlx, svd.dndest.nly,
                                            svd.dndest.nhx, svd.dndest.nhy));
         if (svu.updest.lx && (yy & 1) != 0) /* moving up */
-            return (within_bounded_area(x, y, svu.updest.lx, svu.updest.ly,
+            return (within_bounded_area(x, y,
+                                        svu.updest.lx, svu.updest.ly,
                                         svu.updest.hx, svu.updest.hy)
                     && (!svu.updest.nlx
                         || !within_bounded_area(x, y,
-                                              svu.updest.nlx, svu.updest.nly,
-                                              svu.updest.nhx, svu.updest.nhy)));
+                                            svu.updest.nlx, svu.updest.nly,
+                                            svu.updest.nhx, svu.updest.nhy)));
         if (svd.dndest.lx && (yy & 1) == 0) /* moving down */
-            return (within_bounded_area(x, y, svd.dndest.lx, svd.dndest.ly,
+            return (within_bounded_area(x, y,
+                                        svd.dndest.lx, svd.dndest.ly,
                                         svd.dndest.hx, svd.dndest.hy)
                     && (!svd.dndest.nlx
                         || !within_bounded_area(x, y,
-                                              svd.dndest.nlx, svd.dndest.nly,
-                                              svd.dndest.nhx, svd.dndest.nhy)));
+                                            svd.dndest.nlx, svd.dndest.nly,
+                                            svd.dndest.nhx, svd.dndest.nhy)));
     } else {
         /* [try to] prevent a shopkeeper or temple priest from being
            sent out of his room (caller might resort to goodpos() if
@@ -1625,6 +1644,7 @@ rloc_to_core(
     if (u.ustuck == mtmp) {
         if (u.uswallow) {
             u_on_newpos(mtmp->mx, mtmp->my);
+            check_special_room(FALSE);
             docrt();
         } else if (!m_next2u(mtmp)) {
            unstuck(mtmp);
@@ -1634,14 +1654,16 @@ rloc_to_core(
     maybe_unhide_at(x, y);
     newsym(x, y);      /* update new location */
     set_apparxy(mtmp); /* orient monster */
-    if (domsg && (canspotmon(mtmp) || appearmsg)) {
+    if (domsg && (canspotmon(mtmp) || appearmsg || mtmp == u.ustuck)) {
         int du = distu(x, y), olddu;
         const char *next = (du <= 2) ? " next to you" : 0, /* next2u() */
                    *nearu = (du <= BOLT_LIM * BOLT_LIM) ? " close by" : 0;
 
         set_msg_xy(x, y);
         mtmp->mstrategy &= ~STRAT_APPEARMSG; /* one chance only */
-        if (telemsg && (couldsee(x, y) || sensemon(mtmp))) {
+        if (mtmp == u.ustuck && !u_at(u.ux0, u.uy0)) {
+            You("and %s teleport together.", mon_nam(mtmp));
+        } else if (telemsg && (couldsee(x, y) || sensemon(mtmp))) {
             pline("%s vanishes and reappears%s.",
                   Monnam(mtmp),
                   next ? next
@@ -1656,11 +1678,18 @@ rloc_to_core(
                   !Blind ? "appears" : "arrives",
                   next ? next : nearu ? nearu : "");
         }
+        /* wand discovery only happens if a messaage is delivered (bug?);
+           if spell or q.mechanic attack or artifact #invoke for banish
+           then current_wand will be Null */
+        if (gc.current_wand && gc.current_wand->otyp == WAN_TELEPORTATION)
+            makeknown(WAN_TELEPORTATION);
     }
 
     /* shopkeepers will only teleport if you zap them with a wand of
        teleportation or if they've been transformed into a jumpy monster;
-       the latter only happens if you've attacked them with polymorph */
+       the latter only happens if you've attacked them with polymorph
+       [FIXME? or they've been hit by a genetic engineer, which won't
+       necessarily be due to Conflict by hero] */
     if (resident_shk && !inhishop(mtmp))
         make_angry_shk(mtmp, oldx, oldy);
 
@@ -1907,7 +1936,8 @@ mtele_trap(struct monst *mtmp, struct trap *trap, int in_sight)
              * possible space - instead it just doesn't work. */
             if (!(m_at(trap->teledest.x, trap->teledest.y)
                   || u_at(trap->teledest.x, trap->teledest.y))) {
-                rloc_to_core(mtmp, trap->teledest.x, trap->teledest.y, RLOC_MSG);
+                rloc_to_core(mtmp, trap->teledest.x, trap->teledest.y,
+                             RLOC_MSG);
             }
         } else
             (void) rloc(mtmp, RLOC_NONE);
@@ -2042,16 +2072,18 @@ rloco(struct obj *obj)
             break;
     } while (!goodpos(tx, ty, (struct monst *) 0, 0)
              || (restricted_fall
-                 && (!within_bounded_area(tx, ty, svd.dndest.lx, svd.dndest.ly,
+                 && (!within_bounded_area(tx, ty,
+                                          svd.dndest.lx, svd.dndest.ly,
                                           svd.dndest.hx, svd.dndest.hy)
                      || (svd.dndest.nlx
                          && within_bounded_area(tx, ty,
-                                              svd.dndest.nlx, svd.dndest.nly,
-                                              svd.dndest.nhx, svd.dndest.nhy))))
+                                            svd.dndest.nlx, svd.dndest.nly,
+                                            svd.dndest.nhx, svd.dndest.nhy))))
              /* on the Wizard Tower levels, objects inside should
                 stay inside and objects outside should stay outside */
              || (svd.dndest.nlx && On_W_tower_level(&u.uz)
-                 && within_bounded_area(tx, ty, svd.dndest.nlx, svd.dndest.nly,
+                 && within_bounded_area(tx, ty,
+                                        svd.dndest.nlx, svd.dndest.nly,
                                         svd.dndest.nhx, svd.dndest.nhy)
                     != within_bounded_area(otx, oty,
                                            svd.dndest.nlx, svd.dndest.nly,
@@ -2178,7 +2210,9 @@ random_teleport_level(void)
 /* you teleport a monster (via wand, spell, or poly'd q.mechanic attack);
    return false iff the attempt fails */
 boolean
-u_teleport_mon(struct monst *mtmp, boolean give_feedback)
+u_teleport_mon(
+    struct monst *mtmp,
+    boolean give_feedback)
 {
     coord cc;
 
@@ -2193,10 +2227,12 @@ u_teleport_mon(struct monst *mtmp, boolean give_feedback)
         if (!rloc(mtmp, RLOC_MSG))
             m_into_limbo(mtmp);
     } else if ((is_rider(mtmp->data) || control_teleport(mtmp->data))
-               && rn2(13) && enexto(&cc, u.ux, u.uy, mtmp->data))
+               && rn2(13) && enexto(&cc, u.ux, u.uy, mtmp->data)) {
         rloc_to(mtmp, cc.x, cc.y);
-    else
-        (void) rloc(mtmp, RLOC_MSG);
+    } else {
+        if (!rloc(mtmp, RLOC_MSG))
+            return FALSE;
+    }
     return TRUE;
 }
 
