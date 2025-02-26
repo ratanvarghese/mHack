@@ -152,7 +152,7 @@ mk_mplayer(struct permonst *ptr, coordxy x, coordxy y, boolean special)
         cloak  = !rn2(8) ? STRANGE_OBJECT
                          : rnd_class(OILSKIN_CLOAK, CLOAK_OF_DISPLACEMENT);
         helm   = !rn2(8) ? STRANGE_OBJECT
-                         : rnd_class(ELVEN_LEATHER_HELM, HELM_OF_TELEPATHY);
+                         : rnd_class(ELVEN_HELM, HELM_OF_TELEPATHY);
         shield = !rn2(8) ? STRANGE_OBJECT
                          : rnd_class(ELVEN_SHIELD, SHIELD_OF_REFLECTION);
 
@@ -160,6 +160,14 @@ mk_mplayer(struct permonst *ptr, coordxy x, coordxy y, boolean special)
         case PM_ARCHEOLOGIST:
             if (rn2(2))
                 weapon = BULLWHIP;
+            break;
+        case PM_ALCHEMIST:
+            if (rn2(2))
+                weapon = UNICORN_HORN;
+            if (armor == YELLOW_DRAGON_SCALE_MAIL || armor == GREEN_DRAGON_SCALE_MAIL) {
+                armor = SILVER_DRAGON_SCALE_MAIL;
+            }
+            cloak = ALCHEMY_SMOCK;
             break;
         case PM_BARBARIAN:
             if (rn2(2)) {
@@ -194,6 +202,17 @@ mk_mplayer(struct permonst *ptr, coordxy x, coordxy y, boolean special)
                 weapon = LONG_SWORD;
             if (rn2(2))
                 armor = rnd_class(PLATE_MAIL, CHAIN_MAIL);
+            break;
+        case PM_LEGISLATOR:
+            if (rn2(2))
+                weapon = rn2(2) ? DAGGER : SPEAR;
+            if (rn2(4))
+                cloak = ROBE;
+            if (rn2(4))
+                helm = rn2(2) ? HELM_OF_BRILLIANCE : HELM_OF_TELEPATHY;
+            break;
+        case PM_MERCHANT:
+            /* Stick to defaults */
             break;
         case PM_MONK:
             weapon = !rn2(3) ? SHURIKEN : STRANGE_OBJECT;
@@ -285,7 +304,7 @@ mk_mplayer(struct permonst *ptr, coordxy x, coordxy y, boolean special)
             if (weapon == WAR_HAMMER) /* valkyrie: wimpy weapon or Mjollnir */
                 mk_mplayer_armor(mtmp, GAUNTLETS_OF_POWER);
             else if (rn2(8))
-                mk_mplayer_armor(mtmp, rnd_class(LEATHER_GLOVES,
+                mk_mplayer_armor(mtmp, rnd_class(GLOVES,
                                                  GAUNTLETS_OF_DEXTERITY));
             if (rn2(8))
                 mk_mplayer_armor(mtmp, rnd_class(LOW_BOOTS,

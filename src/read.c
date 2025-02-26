@@ -4,6 +4,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "artifact.h"
 
 #define Your_Own_Role(mndx)  ((mndx) == gu.urole.mnum)
 #define Your_Own_Race(mndx)  ((mndx) == gu.urace.mnum)
@@ -35,6 +36,7 @@ staticfn void seffect_amnesia(struct obj **);
 staticfn void seffect_fire(struct obj **);
 staticfn void seffect_earth(struct obj **);
 staticfn void seffect_punishment(struct obj **);
+staticfn void seffect_alchemy(struct obj **);
 staticfn void seffect_stinking_cloud(struct obj **);
 staticfn void seffect_blank_paper(struct obj **);
 staticfn void seffect_teleportation(struct obj **);
@@ -656,7 +658,7 @@ stripspe(struct obj *obj)
         pline("%s briefly.", Yobjnam2(obj, "vibrate"));
         costly_alteration(obj, COST_UNCHRG);
         obj->spe = 0;
-        if (obj->otyp == OIL_LAMP || obj->otyp == BRASS_LANTERN)
+        if (obj->otyp == OIL_LAMP || obj->otyp == LANTERN)
             obj->age = 0;
     }
 }
@@ -693,7 +695,7 @@ charge_ok(struct obj *obj)
 
     if (obj->oclass == TOOL_CLASS) {
         /* suggest tools that aren't oc_charged but can still be recharged */
-        if (obj->otyp == BRASS_LANTERN
+        if (obj->otyp == LANTERN
             || (obj->otyp == OIL_LAMP)
             /* only list magic lamps if they are not identified yet */
             || (obj->otyp == MAGIC_LAMP
@@ -843,11 +845,16 @@ recharge(struct obj *obj, int curse_bless)
                 stripspe(obj);
             } else if (rechrg && obj->otyp == MAGIC_MARKER) {
                 /* previously recharged */
-                obj->recharged = 1; /* override increment done above */
-                if (obj->spe < 3)
-                    Your("marker seems permanently dried out.");
-                else
-                    pline1(nothing_happens);
+                if(obj->oartifact) {
+                    obj->spe = 15;
+                    p_glow2(obj, NH_WHITE);
+                } else {
+                    obj->recharged = 1; /* override increment done above */
+                    if (obj->spe < 3)
+                        Your("marker seems permanently dried out.");
+                    else
+                        pline1(nothing_happens);
+                }
             } else if (is_blessed) {
                 n = rn1(16, 15); /* 15..30 */
                 if (obj->spe + n <= 50)
@@ -878,7 +885,7 @@ recharge(struct obj *obj, int curse_bless)
             }
             break;
         case OIL_LAMP:
-        case BRASS_LANTERN:
+        case LANTERN:
             if (is_cursed) {
                 stripspe(obj);
                 if (obj->lamplit) {
@@ -1900,6 +1907,43 @@ seffect_punishment(struct obj **sobjp)
 }
 
 staticfn void
+seffect_alchemy(struct obj **sobjp)
+{
+    struct obj *sobj = *sobjp;
+    boolean sblessed = sobj->blessed;
+    boolean scursed = sobj->cursed;
+    boolean confused = (Confusion != 0);
+
+    int target_output = STRANGE_OBJECT;
+    if(confused) {
+        switch(d(1,4)) {
+        case 1: target_output = POT_BOOZE; break;
+        case 2: target_output = POT_HALLUCINATION; break;
+        default: target_output = POT_CONFUSION;
+        }
+    } else if(sblessed) {
+        switch(d(1,4)) {
+        case 1: target_output = POT_GAIN_LEVEL; break;
+        case 2: target_output = POT_GAIN_ENERGY; break;
+        default: target_output = POT_FULL_HEALING;
+        }
+    } else if(scursed) {
+        switch(d(1,4)) {
+        case 1: target_output = POT_SLEEPING; break;
+        case 2: target_output = POT_PARALYSIS; break;
+        default: target_output = POT_SICKNESS;
+        }
+    }
+
+    if(discover_random_recipe(target_output)) {
+        pline("You learn an alchemic formula from the scroll.");
+        gk.known = TRUE;
+    } else {
+        pline1(nothing_happens);
+    }
+}
+
+staticfn void
 seffect_stinking_cloud(struct obj **sobjp)
 {
     struct obj *sobj = *sobjp;
@@ -2188,6 +2232,9 @@ seffects(
     case SCR_PUNISHMENT:
         seffect_punishment(&sobj);
         break;
+    case SCR_ALCHEMY:
+        seffect_alchemy(&sobj);
+        break;
     case SCR_STINKING_CLOUD:
         seffect_stinking_cloud(&sobj);
         break;
@@ -2405,9 +2452,11 @@ litroom(
     struct obj *obj) /* scroll, spellbook (for spell), or wand of light */
 {
     struct obj *otmp, *nextobj;
-    boolean blessed_effect = (obj && obj->oclass == SCROLL_CLASS
-                              && obj->blessed);
+
     boolean no_op = (u.uswallow || Underwater || Is_waterlevel(&u.uz));
+    boolean blessed_effect = (obj &&
+                             ((obj->oclass == SCROLL_CLASS && obj->blessed) ||
+                             (obj->oclass == WAND_CLASS && P_SKILL(P_WAND) > P_BASIC)));
     char is_lit = 0; /* value is irrelevant but assign something anyway; its
                       * address is used as a 'not null' flag for set_lit() */
 
@@ -2927,7 +2976,7 @@ void
 punish(struct obj *sobj)
 {
     /* angrygods() calls this with NULL sobj arg */
-    struct obj *reuse_ball = (sobj && sobj->otyp == HEAVY_IRON_BALL)
+    struct obj *reuse_ball = (sobj && sobj->otyp == HEAVY_BALL)
                                 ? sobj : (struct obj *) 0;
     /* analyzer doesn't know that the one caller that passes a NULL
      * sobj (angrygods) checks !Punished first, so add a guard */
@@ -2937,7 +2986,7 @@ punish(struct obj *sobj)
     if (!reuse_ball)
         You("are being punished for your misbehavior!");
     if (Punished) {
-        Your("iron ball gets heavier.");
+        Your("heavy ball gets heavier.");
         uball->owt += IRON_BALL_W_INCR * (1 + cursed_levy);
         return;
     }

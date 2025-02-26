@@ -830,6 +830,11 @@ gcrownu(void)
                && !carrying(SPE_RESTORE_ABILITY)) {
         /* monks rarely wield a weapon */
         class_gift = SPE_RESTORE_ABILITY;
+    } else if (Role_if(PM_ALCHEMIST)
+        && !u_wield_art(ART_VORPAL_BLADE)
+        && !u_wield_art(ART_STORMBRINGER)
+        && !carrying(SPE_POLYMORPH)) {
+        class_gift = SPE_POLYMORPH;
     }
 
     obj = ok_wep(uwep) ? uwep : 0;
@@ -1860,7 +1865,7 @@ dosacrifice(void)
         You("are not %s an altar.",
             (Levitation || Flying) ? "over" : "on");
         return ECMD_OK;
-    } else if (Confusion || Stunned || Hallucination) {
+    } else if (Confusion || Stunned) {
         You("are too impaired to perform the rite.");
         return ECMD_OK;
     }

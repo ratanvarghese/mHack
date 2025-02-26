@@ -1609,7 +1609,7 @@ mbhitm(struct monst *mtmp, struct obj *otmp)
         } else if (rnd(20) < 10 + find_mac(mtmp)) {
             tmp = d(2, 12);
             hit("wand", mtmp, exclam(tmp));
-            (void) resist(mtmp, otmp->oclass, tmp, TELL);
+            (void) resist_askillbonus(mtmp, otmp->oclass, tmp, TELL, mon_wand_skill(mtmp));
             learnit = TRUE;
         } else {
             miss("wand", mtmp);
@@ -1653,7 +1653,7 @@ mbhitm(struct monst *mtmp, struct obj *otmp)
                    make_corpse() will set obj->bypass on the new corpse
                    so that mbhito() will skip it instead of reviving it */
                 svc.context.bypasses = TRUE; /* for make_corpse() */
-                (void) resist(mtmp, WAND_CLASS, rnd(8), NOTELL);
+                (void) resist_askillbonus(mtmp, WAND_CLASS, rnd(8), NOTELL, mon_wand_skill(mtmp));
             }
             if (wake) {
                 if (!DEADMONSTER(mtmp))
@@ -1783,6 +1783,21 @@ mbhit(
     }
 }
 
+int
+mon_wand_skill(struct monst *mtmp)
+{
+    int wand_skill;
+    if ((mtmp->data->geno & G_UNIQ))
+        wand_skill = P_EXPERT;
+    else if (is_prince(mtmp->data))
+        wand_skill = P_SKILLED;
+    else if (is_lord(mtmp->data))
+        wand_skill = P_BASIC;
+    else
+        wand_skill = P_UNSKILLED;
+    return wand_skill;
+}
+
 /* Perform an offensive action for a monster.  Must be called immediately
  * after find_offensive().  Return values are same as use_defensive().
  */
@@ -1812,7 +1827,7 @@ use_offensive(struct monst *mtmp)
         gc.current_wand = otmp;
         gb.buzzer = mtmp;
         buzz(BZ_M_WAND(BZ_OFS_WAN(otmp->otyp)),
-             (otmp->otyp == WAN_MAGIC_MISSILE) ? 2 : 6, mtmp->mx, mtmp->my,
+             wanddice(mon_wand_skill(mtmp)), mtmp->mx, mtmp->my,
              sgn(mtmp->mux - mtmp->mx), sgn(mtmp->muy - mtmp->my));
         gb.buzzer = 0;
         gc.current_wand = 0;
@@ -2510,7 +2525,7 @@ use_misc(struct monst *mtmp)
             if (vismon)
                 pline_mon(mtmp, "%s flicks a bullwhip towards your %s!",
                           Monnam(mtmp), hand);
-            if (obj->otyp == HEAVY_IRON_BALL) {
+            if (obj->otyp == HEAVY_BALL) {
                 pline("%s fails to wrap around %s.", The_whip, the_weapon);
                 return 1;
             }
@@ -2526,8 +2541,8 @@ use_misc(struct monst *mtmp)
             if (!where_to) {
                 pline_The("whip slips free."); /* not `The_whip' */
                 return 1;
-            } else if (where_to == 3 && mon_hates_silver(mtmp)
-                       && objects[obj->otyp].oc_material == SILVER) {
+            } else if (where_to == 3
+                       && mon_hates_material(mtmp, obj->material)) {
                 /* this monster won't want to catch a silver
                    weapon; drop it at hero's feet instead */
                 where_to = 2;

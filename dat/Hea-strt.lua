@@ -3,6 +3,7 @@
 --	Copyright (c) 1991, 1993 by M. Stephenson, P. Winner
 -- NetHack may be freely redistributed.  See license for details.
 --
+-- Modified for the Terrain patch by L
 --
 --	The "start" level for the quest.
 --
@@ -15,24 +16,24 @@ des.level_flags("mazelevel", "noteleport", "hardfloor")
 
 des.map([[
 PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
-PPPP........PPPP.....PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP.P..PPPPP......PPPPPPPP
-PPP..........PPPP...PPPPP.........................PPPP..PPPPP........PPPPPPP
-PP............PPPPPPPP..............................PPP...PPPP......PPPPPPPP
-P.....PPPPPPPPPPPPPPP................................PPPPPPPPPPPPPPPPPPPPPPP
-PPPP....PPPPPPPPPPPP...................................PPPPP.PPPPPPPPPPPPPPP
-PPPP........PPPPP.........-----------------------........PP...PPPPPPP.....PP
-PPP............PPPPP....--|.|......S..........S.|--.....PPPP.PPPPPPP.......P
-PPPP..........PPPPP.....|.S.|......-----------|S|.|......PPPPPP.PPP.......PP
-PPPPPP......PPPPPP......|.|.|......|...|......|.|.|.....PPPPPP...PP.......PP
-PPPPPPPPPPPPPPPPPPP.....+.|.|......S.\.S......|.|.+......PPPPPP.PPPP.......P
-PPP...PPPPP...PPPP......|.|.|......|...|......|.|.|.......PPPPPPPPPPP.....PP
-PP.....PPP.....PPP......|.|S|-----------......|.S.|......PPPPPPPPPPPPPPPPPPP
-PPP..PPPPP...PPPP.......--|.S..........S......|.|--.....PPPPPPPPP....PPPPPPP
-PPPPPPPPPPPPPPPP..........-----------------------..........PPPPP..........PP
-PPPPPPPPPPPPPPPPP........................................PPPPPP............P
-PPP.............PPPP...................................PPP..PPPP..........PP
-PP...............PPPPP................................PPPP...PPPP........PPP
-PPP.............PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP....PPPPPP
+PPPPw......wPPPPw...wPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPwP..PPPPPw....wPPPPPPPP
+PPPw........wPPPPwwwPPPPPwwwwwwwwwwwwwwwwwwwwwwwwwPPPP..PPPPPw......wPPPPPPP
+PPw..........wPPPPPPPPwww.........................wwPPP...PPPPw....wPPPPPPPP
+Pwww..PPPPPPPPPPPPPPPw..............................wPPPPPPPPPPPPPPPPPPPPPPP
+PPPPw...PPPPPPPPPPPPw................................wwPPPPPwPPPPPPPPPPPPPPP
+PPPPw.......PPPPPwww......-----------------------......wwPPw.wPPPPPPPwwwwwPP
+PPPw..........wPPPPPw...--|.|......S..........S.|--....wPPPPwPPPPPPPw.....wP
+PPPPw.......wwPPPPPw....|.S.|......-----------|S|.|.....wPPPPPPwPPPw.....wPP
+PPPPPPwwwwwwPPPPPPw.....|.|.|......|...|......|.|.|....wPPPPPPw.wPPw.....wPP
+PPPPPPPPPPPPPPPPPPPw....+.|.|......S.\.S......|.|.+.....wPPPPPPwPPPPw.....wP
+PPPwwwPPPPPwwwPPPPw.....|.|.|......|...|......|.|.|......wPPPPPPPPPPPwwwwwPP
+PPw...wPPPw..wwPPPw.....|.|S|-----------......|.S.|.....wPPPPPPPPPPPPPPPPPPP
+PPPwwPPPPPwwwPPPPw......--|.S..........S......|.|--....wPPPPPPPPPwwwwPPPPPPP
+PPPPPPPPPPPPPPPPw.........-----------------------........wwPPPPPw....wwwwwPP
+PPPPPPPPPPPPPPPPPwww...................................wwPPPPPPw..........wP
+PPPw...........wPPPPww................................wPPPw.PPPPw........wPP
+PPw.............wPPPPPwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwPPPPw..PPPPw....wwwPPP
+PPPw...........wPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPwwwwPPPPPP
 PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
 ]]);
 
@@ -61,7 +62,7 @@ des.door("closed",48,12)
 des.door("locked",50,10)
 -- Hippocrates
 des.monster({ id = "Hippocrates", coord = {37, 10}, inventory = function()
-   des.object({ id = "silver dagger", spe = 5 });
+   des.object({ id = "dagger", spe = 5, material="silver" });
 end })
 -- The treasure of Hippocrates
 des.object("chest", 37, 10)

@@ -412,6 +412,252 @@ You have an odd feeling this may be the last time you ever come here.]],
 regain the Amulet of Yendor for %d?"]],
       },
    },
+   Alc = {
+      assignquest = {
+         synopsis = "[%nC has killed %cP. Locate %i, defeat %ni, and return %O.]",
+         output = "text",
+         text = [["A few days ago, a team of %cP started an experiment to
+concoct the most precious substance in the universe, the Elixr
+of Life. But the experiment went awry, and instead of the prized
+Elixr, the %cP created a sentient, unstable substance:
+%n.
+
+"%n killed the %cP which created it, then stole
+%o and fled.
+
+"While we mourned our fallen colleagues and repaired our lab,
+%n spawned inhuman, unfeeling minions to continue
+harassing us. Without %o, we can't
+hold them off for much longer.
+
+"You must venture deep into the bowels of %i.
+There, you will find %n. You must neutralize it, and
+return %o to me. All organic life
+depends on it."]],
+      },
+      badalign = {
+         synopsis = "[\"%pC, you need a more %a viewpoint.\"]",
+         output = "text",
+         text = [["%pC, you have been playing it too safe! Where is your
+experimental spirit? You'll need a more %a viewpoint
+before you are ready for the quest that awaits you.
+
+"Go from here, and come back when you have opened your mind."]],
+      },
+      badlevel = {
+         synopsis = "[\"%pC, return once become %Ra\"]",
+         output = "text",
+         text = [["%p, there is much you still have to learn. You will need
+knowledge of the elements, and all the compounds they can combine
+to form. Continue your adventures, keep experimenting, and return
+once you become %Ra."]],
+      },
+      discourage = {
+         "\"%p, I will pull the air from your lungs.\"",
+         "\"%p, I will drain your blood and leave your corpse a dry husk.\"",
+         "\"%p, I will dissolve your flesh and crack your bones.\"",
+         "\"%p, I will shock your brain with gigavolts of lightning.\"",
+         "\"Time for your final experiment, %r!\"",
+         "\"%r, your kind created the means of their own destruction.\"",
+         "\"With %o, I will destroy all organic life, atom by atom.\"",
+         "\"I am the perfect lifeform, your precious species is obsolete.\"",
+         "\"The age of %d has ended, and followers of %d will soon be extinct.\"",
+         "\"Using the power of %o, my word will be law, and all shall kneel or die.\"",
+      },
+      encourage = {
+         "\"%nC is unstable at high temperatures.\"",
+         "\"%nC has a high electrical conductivity, it can shock you on contact!\"",
+         "\"I'm proud of you %p, and I believe you can save us all.\"",
+         "\"Please, take any lab equipment that could help you defeat %n.\"",
+         "\"%nC has a low pH, it can even burn your flesh!\"",
+         "\"Did you pack your alchemy smock?\"",
+         "\"%nC is a threat to all organic life.\"",
+         "\"I hope you remember the formula for the potion of full healing.\"",
+         "\"I'm counting on you, %p, and so is the scientific community.\"",
+         "\"Throwing poison at %n is like throwing water at a fish.\"",
+      },
+      firsttime = {
+         synopsis = "[You arrive at %H, but something is amiss.]",
+         output = "text",
+         text = [[You are suddenly back at %H, your
+workplace. But it seems much emptier than before. There aren't
+any chemists relaxing in the yard. Indeed, there are no
+townspeople walking by, or even any stray animals.
+
+Suddenly, you notice a flash of electromagnetic rays!
+Could that be an energy vortex? But instead of being
+confined to a controlled experimental environment, the
+vortex is floating about outside, towards you!]],
+      },
+      goal_alt = {
+         text = "As you arrive once again at the cold basement of %n.",
+      },
+      goal_first = {
+         synopsis = "[%nC lurks somewhere in this cold subterranean haunt.]",
+         output = "text",
+         text = [[You feel a chill. The air feels icy cold, and smells metallic. Static
+electricity jumps across your body. That's when you realize that
+%n is lurking somewhere in this underground hideout.]],
+      },
+      goal_next = {
+         text = "Yet again the air around you feels chilly and smells oddly metallic.",
+      },
+      gotit = {
+         synopsis = "[You feel surging energy of %o.]",
+         output = "text",
+         text = [[As you pick up %o, you feel a surge of
+energy. Suddenly all the chaotic motions of atoms seem
+entirely predictable. It is almost as though all the elements
+of the universe are yours to command.]],
+      },
+      guardtalk_after = {
+         "\"With %n destroyed, we can resume our search for the Elixr of Life.\"",
+         "\"Now that %n is destroyed, I feel sanguine.\"",
+         "\"Got any spare lead? After transmuting it, I'll give you a cut of the gold.\"",
+         "\"I met a traveller who claimed that air is not an element. Ridiculous!\"",
+         "\"Is lava wet?\"",
+      },
+      guardtalk_before = {
+         "\"With %n attacking us, we must pause our search for the Elixr of Life.\"",
+         "\"Ever since %n killed our colleagues, I have felt melancholic.\"",
+         "\"Got any spare lead? After transmuting it, I'll give you a cut of the gold.\"",
+         "\"I met a traveller who claimed that earth is not an element. Ridiculous!\"",
+         "\"Is water wet?\"",
+      },
+      hasamulet = {
+         synopsis = "[\"Take the Amulet to the altar of %d on the Astral Plane and offer it.\"]",
+         output = "text",
+         text = [["Excellent work, %p! By bringing the Amulet of Yendor out of the
+depths of Gehennom, you have succeeded where so many before you
+have failed. The Amulet is rarer than dilithium crystals and more
+resilient than steel: it is the most precious object in the universe.
+
+"But your journey is not done yet! For according to the ancient
+alchemical texts, the Amulet of Yendor is prized by the gods
+themselves. You must take the Amulet to the highest point you can
+reach, find the high altar of %d on the Astral Plane,
+and offer the Amulet there.
+
+"In return, %d will reward you for your service. With what,
+I cannot say for sure. But know this: you will be remembered
+forever as the greatest %r in history."]],
+      },
+      killed_nemesis = {
+         synopsis = "[%nC undergoes a violent chemical reaction and sublimates]",
+         output = "text",
+         text = [[%nC sizzles, sputters and pops. Noxious gas rises from
+the unstable, viscous substance. The sentient substance %n
+vibrates uncontrollably and lets out a disturbingly human shriek.
+Then at last it explodes, and the last of %n sublimates
+into the atmosphere.]],
+      },
+      leader_first = {
+         synopsis = "[\"The world is out of equilibrium, we need your help.\"]",
+         output = "text",
+         text = [["Good to see you again, %p. As you can see, this lab and
+perhaps the entire world has been thrown out of equilibrium. Terrible
+events have transpired, and we need someone who can inhibit its
+dangerous reactions.
+
+We need your help, %p. But let me check if you have all the prerequisites."]],
+      },
+      leader_last = {
+         synopsis = "[\"You abandoned the %a path, and are unwelcome here.\"]",
+         output = "text",
+         text = [["%p, you have betrayed us, you have betrayed alchemy, and you
+have betrayed me. You have lost your spirit of creative discovery
+and careful observation. You have abandoned the %a path and embraced
+mindless obedience.
+
+You are no longer welcome here - I would rather be poisoned with
+belladonna than see you again. Leave, and never return!"]],
+      },
+      leader_next = {
+         text = "\"Welcome back, %p. Are you ready for the quest now?\"",
+      },
+      leader_other = {
+         text = "\"Hello again, %p. I hope you are ready this time.\"",
+      },
+      locate_first = {
+         synopsis = "[You remember this place: it is %i.]",
+         output = "text",
+         text = [[Something feels familiar about this place. The scent,
+perhaps? A wave of nostalgia rips through your mind like a
+chain reaction. You remember the years of your youth,
+studying alchemic formulae with your fellow students.
+
+You realize at last, you are at %i.
+But it feels colder and emptier than in
+those halcyon days.]],
+      },
+      locate_next = {
+         text = "You have returned to %i once again.",
+      },
+      nemesis_first = {
+         synopsis = "[%nC aims to end all fleshy forms of life, starting with you.]",
+         output = "text",
+         text = [[An enormous pile of viscous ooze slides towards you.
+It starts pulsing furiously, emitting sqelching sounds
+interspersed with words of human speech. The sparks of
+electicity jumping across the surface of the fluid
+indicate that this must be %n, the sentient substance.
+
+"So %l has sent another %r to challenge me?
+How futile. You fools cannot defeat me, but your primitive
+organic brains cannot comprehend that all is already lost.
+
+"I will exterminate all you disgusting creatures of flesh
+and blood. Then by the power of %o, I will
+transmute your remains into orderly ingots of iron. All
+who oppose me will be annihilated.
+
+"Starting with you."]],
+      },
+      nemesis_next = {
+         text = "\"You have contaminated my workspace long enough! Time to exterminate you.\"",
+      },
+      nemesis_other = {
+         text = "\"Fool, you escaped only to return! You organic beings never learn.\"",
+      },
+      nemesis_wantsit = {
+         text = "\"%r, I shall take back %o and dissolve your body!\"",
+      },
+      nexttime = {
+         text = "You return to %H, and you know that %l will be here.",
+      },
+      offeredit= {
+         synopsis = "[%lC tells you to guard %o, and to return when you have triumphed.]",
+         output = "text",
+         text = [[When %l sees %o, she smiles, and says:
+
+    Excellent work, %p. Thanks to you, %n will never
+    torment the life on this planet ever again.
+
+    As for %o, take it with you, and use it on your
+    quest for the Amulet of Yendor. As we rebuild our facilities,
+    we need the favor of the gods more than ever, and they would
+    appreciate having the Amulet in their grasp.
+
+    Furthermore, until we can clean our laboratory of contamination,
+    we won't be conducting experiments on %o.]],
+      },
+      offeredit2 = {
+         synopsis = "[\"You keep %o.  Return to %Z to search for the Amulet.\"]",
+         output = "text",
+         text = [[%l gazes deeply at %o, closes her eyes, and sighs.
+Then she hands %o back to you.
+
+"Please, take it with you, and continue your search for
+the Amulet.  You can go back to %Z
+through the magic portal which brought you here."]],
+      },
+      othertime = {
+         text = "Perhaps for the last time, you approach %H.",
+      },
+      posthanks = {
+         text = "\"Hello again %p. How is your quest for the Amulet of Yendor?\"",
+      },
+   },
    Bar = {
       assignquest = {
          synopsis = "[\"Find %n, defeat %ni, and return %o to us.\"]",
@@ -1323,6 +1569,536 @@ may be the last time you stand before %l.]],
          text = "\"Well met, %p.  How goeth thy search for the Amulet of Yendor?\"",
       },
    },
+   Leg = {
+      -- Some of these are actually from Cicero's speeches and writing
+      assignquest = {
+         -- Against Catiline, speech 2, chapter 4
+         -- written by M. Tullius Cicero, translated by C. D. Yonge
+         -- http://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A1999.02.0019%3Atext%3DCatil.%3Aspeech%3D2%3Achapter%3D4
+         synopsis = "[%n conspired to destroy the Republic and must be severely punished.]",
+         output = "text",
+         text = [["You should all see that a conspiracy has been openly formed against
+the republic; unless, indeed, there be any one who
+thinks that those who are like %n do not agree with
+%n. There is not any longer room for lenity; the business
+itself demands severity. One thing, even now, I will grant, let
+them depart, let them be gone. Let them not suffer the unhappy
+%n to pine away for want of them. I will tell them the
+road. He went by the Aurelian road. If they make haste, they
+will catch him by the evening. O happy republic, if it can
+cast forth these dregs of the republic! Even now, when %n
+alone is got rid of; the republic seems to me relieved and
+refreshed; for what evil or wickedness can be devised or
+imagined which he did not conceive? What prisoner, what
+gladiator, what thief; what assassin, what parricide, what forger
+of wills, what cheat, what debauchee, what spendthrift, what
+adulterer, what abandoned woman, what corrupter of youth,
+what profligate, what scoundrel can be found in all Italy, who
+does not avow that he has been on terms of intimacy with
+%n? What murder has been committed for years without
+him? What nefarious act of infamy that has not been done by
+him?"]]
+      },
+      badalign = {
+         -- De Officiis, Book 3, Section 30
+         -- written by M. Tullius Cicero, translated by Walter Miller
+         -- https://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A2007.01.0048%3Abook%3Dpos%3D3%3Asection%3D30
+         synopsis = "[Atone for your misdeeds: injustice is fatal to social life and fellowship]",
+         output = "text",
+         text = [[%l sighs with disappointment and tells you to atone for your misdeeds,
+explaining that:
+
+"For a man to take something from his neighbour and to profit by his
+neighbour's loss is more contrary to Nature than is death or poverty
+or pain or anything else that can affect either our person or our
+property. For, in the first place, injustice is fatal to social life
+and fellowship between man and man. For, if we are so disposed that
+each, to gain some personal profit, will defraud or injure his neighbour,
+then those bonds of human society, which are most in accord with Nature's
+laws, must of necessity be broken."]]
+      },
+      badlevel = {
+         -- De Officiis, Book 2, Section 43
+         -- written by M. Tullius Cicero, translated by Walter Miller
+         -- https://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A2007.01.0048%3Abook%3D2%3Asection%3D43
+         synopsis = "[Strive to be what you wish to be thought to be: gain the rank of %Ra]",
+         output = "text",
+         text = [[%l tells you to return when you are %Ra, explaining that:
+
+"As Socrates used to express it so admirably, 'the
+nearest way to glory - a short cut, as it were - is to strive to
+be what you wish to be thought to be.' For if anyone thinks that he
+can win lasting glory by pretence, by empty show, by
+hypocritical talk and looks, he is very much mistaken. True
+glory strikes deep root and spreads its branches wide;
+but all pretences soon fall to the ground like fragile flowers,
+and nothing counterfeit can be lasting."]]
+      },
+      discourage = {
+         "\"I am not evil, %l is slandering me for political gain.\"",
+         "\"Join me, and we can liberate Rome together!\"",
+         "\"While the plebians drown in poverty, %l lets the rich hoard their wealth.\"",
+         "\"If you leave now, I will ensure all your debts are cancelled.\"",
+         "\"You don't have to be a tool in the hands of %l.\"",
+         "\"I am the true consul of Rome, so obey your leader!\"",
+         "\"If you insist on striking me, I am not a traitor for striking back.\"",
+         "\"%l is nothing more than a squatter. And what does that make you?\"",
+         "\"They call me a public enemy. But I am doing what the public truly needs.\"",
+         "\"The Republic is dying, and only we can save it. Join me!\"",
+      },
+      encourage = {
+          --Against Catiline, speech 1, edited to not address Catiline directly
+         "\"O tempora, o mores!\"",
+         "\"When will %n cease abusing our patience?\"",
+         "\"How long is that madness of %n still to mock us?\"",
+         "\"When is there to be an end to that unbridled audacity of %n?\"",
+         "\"There has now for many years been no crime committed, but by %n.\"",
+         "\"Shall we, who are consuls, tolerate %n, openly desirous to destroy the whole world?\"",
+         "\"How often already has that dagger been wrested from %ns hands?\"",
+         -- De Officiis, Book 2, Section 46
+         -- written by M. Tullius Cicero, translated by Walter Miller
+         -- https://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A2007.01.0048%3Abook%3D2%3Asection%3D46
+         "\"Brain-work is far more important than mere hand-work.\"",
+         -- De Officiis, Book 1, Section 41
+         -- written by M. Tullius Cicero, translated by Walter Miller
+         -- https://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A2007.01.0048%3Abook%3D1%3Asection%3D41
+         "\"Fraud seems to belong to the cunning fox, force to the lion; both are wholly unworthy of man.\"",
+         -- De Officiis, Book 1, Section 43
+         -- written by M. Tullius Cicero, translated by Walter Miller
+         -- https://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A2007.01.0048%3Abook%3D1%3Asection%3D43
+         "\"Nothing is generous, if it is not at the same time just.\"",
+      },
+      firsttime = {
+         synopsis = "[You have reached %H but the doors are boarded up.]",
+         output = "text",
+         text = [[You are instantly transported back to %H
+in Rome. But all is not well in the eternal city. The doors are
+boarded up, and the streets are nearly empty. Where are the
+workers, the caravans, the traders. And where are your fellow
+%cP?
+
+The only people walking nearby are soldiers. No! That cannot be!
+It's illegal to carry weapons in the pomerium! Something is
+rotten in the Roman Republic, and mercenaries of the disease
+have spotted you!]],
+      },
+      goal_first = {
+         synopsis = "[You stand at the walls of %ns fortified camp]",
+         output = "text",
+         text = [[You stand at the walls of %ns fortified camp. You hear
+the sounds of soldiers marching and shouting. You tense up.
+The traitors of the Republic are preparing for the destruction
+of civilization.]]
+      },
+      goal_next = {
+         text = "You are back at %ns fortified camp."
+      },
+      gotit = {
+         synopsis = "[Power flows through you as you touch %o]",
+         output = "text",
+         text = [[An overwhelming power flows through you as you touch
+%o. But who is truly deserving of this power? You
+feel compelled to return to %l and discuss the ethical
+implications of using something so potent.]]
+      },
+      guardtalk_after = {
+         "\"Ave, %p. How goes your quest?\"",
+         "\"Now that %n is defeated, perhaps the eternal city can find peace.\"",
+         "\"I heard there is a triumvirate forming in the Senate.\"",
+         "\"%l once told me that to live is to think.\"",
+         "\"You missed Pompey's third triumph? It was quite the show!\"",
+      },
+      guardtalk_before = {
+         "\"Ave, %p. Good to see you again.\"",
+         "\"%n has left the eternal city, but plots against us still.\"",
+         "\"I heard there is a triumvirate forming in the Senate.\"",
+         "\"Here is Rhodes, jump here!\"",
+         "\"You missed Pompey's third triumph? It was quite the show!\"",
+      },
+      hasamulet = {
+         synopsis = "[The gods have our good qualities, so go offer the Amulet to %d.]",
+         output = "text",
+         -- De Natura Deorum ("On the Nature of the Gods") Book 2
+         -- written by M. Tullius Cicero, translated by Charles Duke Yonge
+         -- https://en.wikisource.org/wiki/On_the_Nature_of_the_Gods_(Yonge)/Book_2
+         text = [[%l tells you to go to the Astral Plane and offer the Amulet to %d.
+You appear a bit doubtful that %d should have it, so %l
+quotes his friend Balbus:
+
+"The same reason, the same verity, the same law, which ordains good
+and prohibits evil, exists in the Gods as it does in men. From them,
+consequently, we have prudence and understanding, for which reason
+our ancestors erected temples to the Mind, Faith, Virtue, and Concord.
+Shall we not then allow the Gods to have these perfections, since we
+worship the sacred and august images of them? But if understanding,
+faith, virtue, and concord reside in human kind, how could they come
+on earth, unless from heaven? And if we are possessed of wisdom, reason,
+and prudence, the Gods must have the same qualities in a greater degree;
+and not only have them, but employ them in the best and greatest works.
+The universe is the best and greatest work; therefore it must be governed
+by the wisdom and providence of the Gods."]]
+      },
+      killed_nemesis = {
+         synopsis = "[%nC curses %l as %nh dies.]",
+         output = "text",
+         text = [[As %n sinks to the ground, blood gushing from %nj open mouth, %nh
+curses %l:
+
+    "You have ruined my life %l! But by the gods, I shall torment you
+    for eternity, when your slander finally sends you to the underworld!"
+
+As %nj knees collapse, %n looks with dread at the sky, then finally falls over dead.]],
+      },
+      leader_first = {
+         -- Against Catiline, speech 1, chapter 11, slightly edited
+         -- written by M. Tullius Cicero, translated by C. D. Yonge, with some subsequent edits
+         -- http://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A1999.02.0019%3Atext%3DCatil.%3Aspeech%3D2%3Achapter%3D11
+         synopsis = "[%lC checks whether you are ready to save Republic.]",
+         output = "text",
+         text = [["Welcome back, %p. It is excellent to see you again, but alas, a great
+conflict has broken out in the Republic.
+
+On the one side are fighting modesty, on the other wantonness;
+on the one chastity, on the other uncleanness;
+on the one honesty, on the other fraud;
+on the one piety, on the other wickedness;
+on the one consistency, on the other insanity;
+on the one honour, on the other baseness;
+on the one continence, on the other lust;
+in short, equity, temperance, fortitude, prudence, all the virtues contend against
+iniquity with luxury, against indolence, against rashness, against all the vices;
+lastly, abundance contends against destitution,
+good plans against baffled designs,
+wisdom against madness,
+well-founded hope against universal despair.
+
+Are you ready, %p, to lead Rome to victory in this war?"]],
+      },
+      leader_last = {
+         -- Against Catiline, speech 1, chapter 7
+         -- written by M. Tullius Cicero, translated by C. D. Yonge
+         -- http://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A1999.02.0019%3Atext%3DCatil.%3Aspeech%3D1%3Achapter%3D7
+         synopsis = "[Everyone hates and fears you, you must leave.]",
+         output = "text",
+         text = [["On my honour, if my slaves feared me as all your fellow-citizens
+fear you, I should think I must leave my house. Do not you think
+you should leave the city? If I saw that I was even undeservedly
+so suspected and bated by my fellow-citizens, I would rather flee
+from their sight than be gazed at by the hostile eyes of every one.
+And do you, who, from the consciousness of your wickedness, know
+that the hatred of all men is just and has been long due to you,
+hesitate to avoid the sight and presence of those men whose minds
+and senses you offend? If your parents feared and hated you, and if
+you could by no means pacify them, you would, I think, depart
+somewhere out of their sight. Now, your country, which is the
+common parent of all of us, hates and fears you, and has no other
+opinion of you, than that you are meditating parricide in her case;
+and will you neither feel awe of her authority, nor deference for
+her judgment, nor fear of her power?"]],
+      },
+      leader_next = {
+         text = "\"Welcome again, %p. I hope you are ready now.\"",
+      },
+      leader_other = {
+         text = "\"Once again, you stand among the Senate %p. Are you ready now?\"",
+      },
+      locate_first = {
+         synopsis = "[You have reached %i.]",
+         output = "text",
+         text = [[You emerge upon %i. Tall trees reach towards the sky, like arms of shadow
+trying to grab the sun. %ns fortified camp cannot be far - and neither
+can %ns soldiers.]],
+      },
+      locate_next = {
+         text = "Again, you stand upon %i.",
+      },
+      nemesis_first = {
+         synopsis = "[%nC demands that you leave and betray %l.]",
+         output = "text",
+         text = [["So, %l has manipulated another %r into attacking me. Trust me, %r,
+your associate %l is a liar and traitor to the Republic, dragging my name
+into the mud for political gain. Attack me and I will defend myself as much
+as necessary. But leave, and I will reward you once I restore the Republic."]],
+      },
+      nemesis_next = {
+         text = "\"%r, leave me be. %l is tricking you into a fight you cannot win.\"",
+      },
+      nemesis_other = {
+         text = "\"You can still turn back, %r. You can tear apart %ls web of lies.\"",
+      },
+      nemesis_wantsit = {
+         text = [["You dare steal %o from me? Give it back, and I may show you mercy."]],
+      },
+      nexttime = {
+         text = "Once again you stand at %H.",
+      },
+      offeredit = {
+         -- On the Responses of the Haruspices, section 41
+         -- written by M. Tullius Cicero, translated by C. D. Yonge
+         -- http://www.perseus.tufts.edu/hopper/text.jsp?doc=Perseus%3Atext%3A1999.02.0020%3Atext%3DHar.%3Asection%3D41
+         synopsis = "[Keep %o with you, and take it away from %H.]",
+         output = "text",
+         text = [[%l tells you to keep %o and take it away from %H, explaining that:
+
+    "Tiberius Gracchus overturned the constitution of the state,
+    a man of such great force of character, and eloquence, and
+    dignity, that he fell short in no respect of the surpassing
+    and eminent virtue of his father, and of his grandfather,
+    Africanus, except in the fact of his revolting from the senate.
+    Caius Gracchus followed in his steps. How great was his genius!
+    How great his energy! How impetuous his eloquence! So that all men
+    grieved that all those good qualities and accomplishments were not
+    joined to a better disposition and to better intentions."]],
+      },
+      offeredit2 = {
+         -- De Officiis, Book 2, Section 43
+         -- written by M. Tullius Cicero, translated by Walter Miller
+         -- https://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A2007.01.0048%3Abook%3D2%3Asection%3D43
+         synopsis = "[%l dislikes %o. Take it with you to %Z and find the Amulet.]",
+         output = "text",
+         text = [[%l sneers at %o, and tells you to take it back to
+%Z the way you came, explaining that:
+
+         "Tiberius Gracchus, Publius's son, will be held in honour as long
+         as the memory of Rome shall endure; but his sons were not approved
+         by patriots while they lived, and since they are dead they are
+         numbered among those whose murder was justifiable.]],
+      },
+      othertime = {
+         text = [[Again, you stand at %H.  You vaguely sense that this
+may be the last time you stand before %l.]],
+      },
+      posthanks = {
+         text = "\"Ave, %p.  How goes your search for the Amulet of Yendor?\"",
+      },
+   },
+   Mer = {
+      assignquest = {
+         synopsis = "[Travel to %i, and continue to %ns palace. Defeat %ni and secure %o.]",
+         output = "text",
+         text = [["You've amassed quite the fortune, %p. But all we hold dear
+is in peril.
+
+Recently, my business rival %n broke into an ancient tomb.
+There he discovered a relic forgotten by time, %o,
+capable of turning everything and everyone into gold!
+
+With this new power, %n has struck terror into everyone
+from Massalia to Tyre. He turned many promising %cP
+into gold statues, and sent an army of gold golems to attack
+his competitors. Perhaps worst of all, by dumping this much gold
+on the market, he has made all our coins worthless!
+
+Today %n is sitting atop piles of gold in his palace.
+You must go there %p, and take %o away from him!
+
+The fate of the economy depends on it!"]]
+      },
+      badalign = {
+         synopsis = "[Return when you are truly %a.]",
+         output = "text",
+         text = [["We need an honest business partner for this particular
+transaction. Someone who will fulfill the terms of the
+contract, down to the letter. Unfortunately, you have
+gotten unreliable. Do not return until you have truly
+become %a."]]
+      },
+      badlevel = {
+         synopsis = "[You are not ready to face %n.  Come back when you are %Ra.]",
+         output = "text",
+         text = [["You strike a hard bargain, %p, but we need someone
+with a stronger resume to challenge %n. Go, advance
+your skills and knowledge. When you have earned the
+rank of %R, you might be ready."]]
+      },
+      discourage = {
+         "\"Will you please leave your items outside? Fewer bloodstains to clean that way.\"",
+         "\"Hello %p! I was looking for another %r, one who stands a chance.\"",
+         "\"Seen any untended shops recently? If not, I can take yours!\"",
+         "\"For you, good creature; only your corpse for %o.\"",
+         "\"%oC, in exchange for your corpse, a real bargain.\"",
+         "\"You are no better than a shoplifter. Curse you!\"",
+         "\"I am after your hide, not your money!\"",
+         "\"Don't worry, I'll gratefully inherit all your possessions.\"",
+         "\"For you, scum; only your corpse and a diamond for %o.\"",
+         "\"Business is good, and will be even better once I kill you.\"",
+      },
+      encourage = {
+         "\"When you are in trouble, call upon %d for help.\"",
+         "\"With %o upon his head, %n is dangerous to fight up close.\"",
+         "\"%n is rich, but even a fish cannot swim if laden with gold.\"",
+         "\"No deal is good enough for %n. He must be defeated quickly.\"",
+         "\"Consider this a high-risk, high-reward business venture.\"",
+         "\"I'm betting on your success, %p.\"",
+         "\"If you don't succeed, the market will fall into chaos.\"",
+         "\"Watch out for %ns soldiers.\"",
+         "\"Try fighting %n at a distance.\"",
+         "\"We'll be as rich as gods if you prevail.\"",
+      },
+      firsttime = {
+         synopsis = "[You have reached %H but strange beings stalk the streets.]",
+         output = "text",
+         text = [[How peculiar, you've been transported back to %H. But
+something is amiss - where are all your fellow %cP?
+The roads are usually quite busy this time of year.
+
+And by %d, what are those strange beings walking
+about? Those aren't men, but machinations!]],
+      },
+      goal_first = {
+         synopsis = "[There are many gold statues here, with screaming faces.]",
+         output = "text",
+         text = [[You are struck by the sheer opulence of the palace.
+%ns lair is overflowing with gold and jewels,
+enough to pay for a thousand trips to Babylon.
+
+There are even statues made of gold. They are
+incredibly detailed, they almost look real. But
+for some reason they all appear to be screaming
+in silence.]]
+      },
+      goal_next = {
+         text = "Again, you return to %ns palace."
+      },
+      gotit = {
+         synopsis = "[%o seems dangerous, it was not safe with %n.]",
+         output = "text",
+         text = [[You feel a sense of dread as you pick up %o.
+But dangerous as it is, this relic is safer in your possession
+than in the hands of %n.]]
+      },
+      guardtalk_after = {
+         "\"Hello %p, found any rare scrolls on your journey?\"",
+         "\"Thirsty after all that fighting? Try some of my wine.\"",
+         "\"Precious gems for sale! Void of glass, guaranteed!\"",
+         "\"You liquidated %n? Thank %d, there's hope yet.\"",
+         "\"Can I borrow some gold, %p? I'll pay you back double.\"",
+      },
+      guardtalk_before = {
+         "\"Welcome back %p, found any rare scrolls on your journey?\"",
+         "\"I'd offer you a free drink, but %n bankrupted my tavern!\"",
+         "\"Precious gems for sale! Void of glass, guaranteed!\"",
+         "\"%n is an even bigger problem than shoplifting.\"",
+         "\"Can I borrow some gold, %p? I'll pay you back double.\"",
+      },
+      hasamulet = {
+         synopsis = "[Take the Amulet to the heavens, offer it to %d.]",
+         output = "text",
+         text = [["Excellent work, %p! Your assets in %H are collecting
+a hefty interest. But now that you have recovered the
+Amulet of Yendor, it is clear that %d has greater
+fortunes in store for you. The legends say that if you
+climb up to the heavens with the Amulet and offer it
+to %d, you shall earn a reward more precious than
+any gold or jewel."]]
+      },
+      killed_nemesis = {
+         synopsis = "[%n dies.]",
+         output = "text",
+         text = [[%n shouts:
+
+    "Thank you for shopping in %ns death emporium!"
+
+Then he breathes his last and his body falls without ceremony.]]
+      },
+      leader_first = {
+         synopsis = "[%lC checks whether you are ready to save the economy.]",
+         output = "text",
+         text = [["%p, you have returned! I thought you'd never
+return to the known world. Unfortunately, %n
+has created a lot of market uncertainty.
+If he is not defeated, the entire economy
+will pay a terrible price. So, are you ready
+to save the financial system?"]],
+      },
+      leader_last = {
+         synopsis = "[You have failed and %lC never wants to see you again.]",
+         output = "text",
+         text = [["You have offered us the worst deal since
+the Trojan War. And we refuse. We are never doing
+business with you again, we will not even lend
+you a single gold piece.
+
+Leave %H, and never return."]]
+      },
+      leader_next = {
+         text = "\"Hello. By %d, I hope you are ready now, %p.\""
+      },
+      leader_other = {
+         text = "\"We need you, %p, are you ready now?\""
+      },
+      locate_first = {
+         synopsis = "[You feel a cold breeze around %i.]",
+         output = "text",
+         text = [["You feel a cold breeze around you as you approach %i.
+%ns palace can't be far."]]
+      },
+      locate_next = {
+         text = "You feel a chill down your spine as you return to %i."
+      },
+      nemesis_first = {
+         synopsis = "[%n threatens to kill everyone in %H.]",
+         output = "text",
+         text = [["Hello, %p! Welcome to %ns death emporium!
+
+Unfortunately, if you're here for %o,
+you'll have to pay dearly. The gold statues it produces
+are the finest quality, much more shiny and beautiful
+than mere flesh and blood. In fact, I'm thinking of
+heading down to %H and turning everyone
+there into sculptures.
+
+The gods themselves couldn't make me part with
+%o. And if you dare try, I'm sure
+you know how I feel about the problem
+of shoplifting."]],
+      },
+      nemesis_next = {
+         text = "\"I rather dislike rude customers.\"",
+      },
+      nemesis_other = {
+         text = "\"You sneaky minx! Get out of here while you still can!\"",
+      },
+      nemesis_wantsit = {
+         text = "\"You be careful with my %o. I absolutely despise non-paying customers!\"",
+      },
+      nexttime = {
+         text = "Once again, you are standing in %H.",
+      },
+      offeredit = {
+         synopsis = "[%lC wants to keep %o and find the Amulet of Yendor.]",
+         output = "text",
+         text = [[%lC smiles nervously as you approach.
+
+"You retrieved %o? How... profitable...
+Honestly, I am just happy that %n cannot use it.
+You can keep it. %o is safer with you.
+Now you better get back to your
+distant trade route.
+
+I'll keep your assets safe for you. When you return
+with the Amulet of Yendor, I can give you a financial
+report.
+
+And, %p? Be wary. All that glitters is not gold."]],
+      },
+      offeredit2 = {
+         synopsis = "[Be careful with %o and find the Amulet of Yendor.]",
+         output = "text",
+         text = [["By %d! Do not throw %o, that's dangerous!
+That crown can earn enormous profits, but also
+cause terrible loss. You should take it back with
+you to %Z, to aid in your expedition for the Amulet.
+You can return through the magic portal that brought
+you here."]],
+      },
+      othertime = {
+         text = [[You stand in %H again. You worry that this might be the last time you see your homeland.]],
+      },
+      posthanks = {
+         text = "\"Greetings, %p. How is your search for the Amulet of Yendor?\"",
+      },
+   },
    Mon = {
       assignquest = {
          synopsis = "[Find %i, then continue to %ns lair.  Defeat %ni and return with %o.]",
@@ -1599,11 +2375,10 @@ when you have attained the post of %R."]],
          "\"Wear %o.  It will assist you against the undead.\"",
       },
       firsttime = {
-         synopsis = "[You are at %H; the doors are closed.  %lC needs your help!]",
+         synopsis = "[You are at %H.  %lC needs your help!]",
          output = "text",
          text = [[You find yourself standing in sight of %H.  Something
-is obviously wrong here.  The doors to %H, which usually
-stand open, are closed.  Strange human shapes shamble around
+is obviously wrong here.  Strange human shapes shamble around
 outside.
 
 You realize that %l needs your assistance!]],

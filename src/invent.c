@@ -229,12 +229,12 @@ loot_classify(Loot *sort_item, struct obj *obj)
             k = 1; /* regular container or unknown bag of tricks */
         else
             switch (otyp) {
-            case WOODEN_FLUTE:
+            case FLUTE:
             case MAGIC_FLUTE:
             case TOOLED_HORN:
             case FROST_HORN:
             case FIRE_HORN:
-            case WOODEN_HARP:
+            case HARP:
             case MAGIC_HARP:
             case BUGLE:
             case LEATHER_DRUM:
@@ -977,6 +977,7 @@ addinv_core1(struct obj *obj)
         if (u.uhave.amulet)
             impossible("already have amulet?");
         u.uhave.amulet = 1;
+        make_divine_hallucinated(1);
         record_achievement(ACH_AMUL);
     } else if (obj->otyp == CANDELABRUM_OF_INVOCATION) {
         if (u.uhave.menorah)
@@ -1344,6 +1345,7 @@ freeinv_core(struct obj *obj)
         if (!u.uhave.amulet)
             impossible("don't have amulet?");
         u.uhave.amulet = 0;
+        make_divine_hallucinated(0);
     } else if (obj->otyp == CANDELABRUM_OF_INVOCATION) {
         if (!u.uhave.menorah)
             impossible("don't have candelabrum?");
@@ -3181,7 +3183,7 @@ itemactions(struct obj *otmp)
     else if (otmp->otyp == SADDLE)
         ia_addmenu(win, IA_APPLY_OBJ, 'a', "Place this saddle on a pet");
     else if (otmp->otyp == MAGIC_WHISTLE
-             || otmp->otyp == TIN_WHISTLE)
+             || otmp->otyp == PEA_WHISTLE)
         ia_addmenu(win, IA_APPLY_OBJ, 'a', "Blow this whistle");
     else if (otmp->otyp == EUCALYPTUS_LEAF)
         ia_addmenu(win, IA_APPLY_OBJ, 'a', "Use this leaf as a whistle");
@@ -3200,7 +3202,7 @@ itemactions(struct obj *otmp)
                 simpleonames(otmp));
         ia_addmenu(win, IA_APPLY_OBJ, 'a', buf);
     } else if (otmp->otyp == OIL_LAMP || otmp->otyp == MAGIC_LAMP
-               || otmp->otyp == BRASS_LANTERN) {
+               || otmp->otyp == LANTERN) {
         Sprintf(buf, "%s this light source", light);
         ia_addmenu(win, IA_APPLY_OBJ, 'a', buf);
     } else if (otmp->otyp == POT_OIL && objects[otmp->otyp].oc_name_known) {
@@ -3218,6 +3220,8 @@ itemactions(struct obj *otmp)
                    "Clean yourself off with this towel");
     else if (otmp->otyp == CRYSTAL_BALL)
         ia_addmenu(win, IA_APPLY_OBJ, 'a', "Peer into this crystal ball");
+    else if (otmp->otyp == CONICAL_FLASK)
+        ia_addmenu(win, IA_APPLY_OBJ, 'a', "Test mixing potions with this flask");
     else if (otmp->otyp == MAGIC_MARKER)
         ia_addmenu(win, IA_APPLY_OBJ, 'a',
                    "Write on something with this marker");
@@ -3228,7 +3232,7 @@ itemactions(struct obj *otmp)
     else if (otmp->otyp == HORN_OF_PLENTY
              && objects[otmp->otyp].oc_name_known)
         ia_addmenu(win, IA_APPLY_OBJ, 'a', "Blow into the horn of plenty");
-    else if (otmp->otyp >= WOODEN_FLUTE && otmp->otyp <= DRUM_OF_EARTHQUAKE)
+    else if (otmp->otyp >= FLUTE && otmp->otyp <= DRUM_OF_EARTHQUAKE)
         ia_addmenu(win, IA_APPLY_OBJ, 'a', "Play this musical instrument");
     else if (otmp->otyp == LAND_MINE || otmp->otyp == BEARTRAP)
         ia_addmenu(win, IA_APPLY_OBJ, 'a', "Arm this trap");
@@ -3368,7 +3372,7 @@ itemactions(struct obj *otmp)
     if (otmp->owornmask & W_ACCESSORY)
         ia_addmenu(win, IA_TAKEOFF_OBJ, 'R', "Remove this accessory");
     if (otmp->otyp == OIL_LAMP || otmp->otyp == MAGIC_LAMP
-        || otmp->otyp == BRASS_LANTERN) {
+        || otmp->otyp == LANTERN) {
         Sprintf(buf, "Rub this %s", simpleonames(otmp));
         ia_addmenu(win, IA_RUB_OBJ, 'R', buf);
     } else if (otmp->oclass == GEM_CLASS && is_graystone(otmp))
@@ -3422,7 +3426,7 @@ itemactions(struct obj *otmp)
     if (otmp == uwep || cantwield(gy.youmonst.data)) {
         ; /* either already wielded or can't wield anything; skip 'w' */
     } else if (otmp->oclass == WEAPON_CLASS || is_weptool(otmp)
-               || is_wet_towel(otmp) || otmp->otyp == HEAVY_IRON_BALL) {
+               || is_wet_towel(otmp) || otmp->otyp == HEAVY_BALL) {
         Sprintf(buf, "Wield this %s as your weapon",
                 (otmp->quan > 1L) ? "stack" : "item");
         ia_addmenu(win, IA_WIELD_OBJ, 'w', buf);
@@ -4620,6 +4624,8 @@ dfeature_at(coordxy x, coordxy y, char *buf)
         dfeature = ice_descr(x, y, altbuf), cmap = -1; /* "ice" */
     else if (is_pool(x, y))
         dfeature = "pool of water";
+    else if (IS_PUDDLE(ltyp))
+        dfeature = "shallow pool of water";
     else if (IS_SINK(ltyp))
         cmap = S_sink; /* "sink" */
     else if (IS_ALTAR(ltyp)) {
@@ -4942,6 +4948,10 @@ mergable(
     if (obj->oclass == COIN_CLASS)
         return TRUE;
 
+    /* different types of poison will never merge */
+    if (obj->opoisoned != otmp->opoisoned)
+        return FALSE;
+
     if (obj->cursed != otmp->cursed || obj->blessed != otmp->blessed)
         return FALSE;
     if ((obj->how_lost & ~LOSTOVERRIDEMASK) != 0)
@@ -4973,7 +4983,7 @@ mergable(
         || (obj->bknown != otmp->bknown && !Role_if(PM_CLERIC) &&
             (Blind || Hallucination))
         || obj->oeroded != otmp->oeroded || obj->oeroded2 != otmp->oeroded2
-        || obj->greased != otmp->greased)
+        || obj->material != otmp->material || obj->greased != otmp->greased)
         return FALSE;
 
     if ((erosion_matters(obj))
@@ -5336,7 +5346,7 @@ useupf(struct obj *obj, long numused)
 static NEARDATA const char *names[] = {
     0, "Illegal objects", "Weapons", "Armor", "Rings", "Amulets", "Tools",
     "Comestibles", "Potions", "Scrolls", "Spellbooks", "Wands", "Coins",
-    "Gems/Stones", "Boulders/Statues", "Iron balls", "Chains", "Venoms"
+    "Gems/Stones", "Boulders/Statues", "Heavy balls", "Chains", "Venoms"
 };
 static NEARDATA const char oth_symbols[] = { CONTAINED_SYM, '\0' };
 static NEARDATA const char *oth_names[] = { "Bagged/Boxed items" };

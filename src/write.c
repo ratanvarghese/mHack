@@ -50,6 +50,8 @@ cost(struct obj *otmp)
         return 20;
     case SCR_GENOCIDE:
         return 30;
+    case SCR_ALCHEMY:
+        return 1000; /* Intentionally too difficult to write. */
     case SCR_BLANK_PAPER:
     default:
         impossible("You can't write such a weird scroll!");
@@ -290,7 +292,11 @@ dowrite(struct obj *pen)
 
     /* we're really going to write now, so calculate cost
      */
-    actualcost = rn1(basecost / 2, basecost / 2);
+    if(Role_if(PM_LEGISLATOR)) {
+        actualcost = basecost / 2;
+    } else {
+        actualcost = rn1(basecost / 2, basecost / 2);
+    }
     curseval = bcsign(pen) + bcsign(paper);
     exercise(A_WIS, TRUE);
     /* dry out marker */

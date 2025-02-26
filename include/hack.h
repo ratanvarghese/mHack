@@ -66,8 +66,9 @@
 #define CXN_PFX_THE 4   /* prefix with "the " (unless pname) */
 #define CXN_ARTICLE 8   /* include a/an/the prefix */
 #define CXN_NOCORPSE 16 /* suppress " corpse" suffix */
+#define CXN_FORCEMAT 32 /* force the material name */
 
-/* weight increment of heavy iron ball */
+/* weight increment of heavy ball */
 #define IRON_BALL_W_INCR 160
 
 /* number of turns it takes for vault guard to show up */
@@ -763,7 +764,7 @@ struct rogueroom {
     int nroom; /* Only meaningful for "real" rooms */
 };
 
-#define NUM_ROLES (13)
+#define NUM_ROLES (16)
 struct role_filter {
     boolean roles[NUM_ROLES + 1];
     short mask;
@@ -854,6 +855,22 @@ struct sortloot_item {
                       * 4: worn accessory (amulet, rings, blindfold). */
 };
 typedef struct sortloot_item Loot;
+
+struct alchemic_recipe {
+    uint16 input0;
+    uint16 input1;
+    uint16 output;
+    uint16 flags;
+};
+
+/* Flags for alchemic_recipe */
+#define ALCHEMIC_RECIPE_ASSIGNED     0x01 /* Has this recipe been assigned in o_init.c? */
+#define ALCHEMIC_RECIPE_KNOWN        0x02 /* Has the player learned this recipe? */
+#define ALCHEMIC_RECIPE_DIFFICULT    0x04 /* Does this recipe cause blasts at low skill? */
+#define ALCHEMIC_RECIPE_ARTIFACT0    0x08 /* Does this recipe require an artifact input0? */
+#define ALCHEMIC_RECIPE_ARTIFACT1    0x10 /* Does this recipe require an artifact input1? */
+#define ALCHEMIC_RECIPE_ARTIFACT     0x18 /* Does this recipe require an artifact? */
+#define ALCHEMIC_RECIPE_DISCOVERY    0x20 /* Is this recipe a discovery? */
 
 typedef struct strbuf {
     int    len;
@@ -1491,8 +1508,9 @@ typedef uint32_t mmflags_nht;     /* makemon MM_ flags */
     ((int) ((var) < (lo) ? (lo) : (var) > (hi) ? (hi) : (var)))
 
 #define ARM_BONUS(obj) \
-    (objects[(obj)->otyp].a_ac + (obj)->spe                             \
-     - min((int) greatest_erosion(obj), objects[(obj)->otyp].a_ac))
+    (objects[(obj)->otyp].a_ac + (obj)->spe + material_bonus(obj) \
+     - min((int) greatest_erosion(obj), \
+          objects[(obj)->otyp].a_ac + material_bonus(obj)))
 
 #define makeknown(x) discover_object((x), TRUE, TRUE)
 #define distu(xx, yy) dist2((coordxy) (xx), (coordxy) (yy), u.ux, u.uy)

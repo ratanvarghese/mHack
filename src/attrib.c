@@ -29,6 +29,11 @@ static const struct innate {
                  { 10, &(HFast), "quick", "slow" },
                  { 0, 0, 0, 0 } },
 
+  alc_abil[] = { { 8, &(HCold_resistance), "warm", "cooler" },
+                 { 16, &(HFire_resistance), "cool", "warmer" },
+                 { 24, &(HShock_resistance), "insulated", "conductive" },
+                 { 0, 0, 0, 0 } },
+
   bar_abil[] = { { 1, &(HPoison_resistance), "", "" },
                  { 7, &(HFast), "quick", "slow" },
                  { 15, &(HStealth), "stealthy", "" },
@@ -43,6 +48,13 @@ static const struct innate {
                  { 0, 0, 0, 0 } },
 
   kni_abil[] = { { 7, &(HFast), "quick", "slow" }, { 0, 0, 0, 0 } },
+
+  leg_abil[] = { { 1, &(HSleep_resistance), "", "" },
+                 { 10, &(HFast), "quick", "slow" },
+                 { 15, &(HWarning), "sensitive", "" },
+                 { 0, 0, 0, 0 } },
+
+  mer_abil[] = { { 10, &(HFast), "quick", "slow" }, { 0, 0, 0, 0 } },
 
   mon_abil[] = { { 1, &(HFast), "", "" },
                  { 1, &(HSleep_resistance), "", "" },
@@ -316,10 +328,22 @@ poisoned(
     int typ,
     const char *pkiller,   /* for score+log file if fatal */
     int fatal,             /* if fatal is 0, limit damage to adjattrib */
-    boolean thrown_weapon) /* thrown weapons are less deadly */
+    boolean thrown_weapon, /* thrown weapons are less deadly */
+    int pot_typ)           /* type of potion used in poison */
 {
     int i, loss, kprefix = KILLED_BY_AN;
     boolean blast = !strcmp(reason, "blast");
+    struct obj *pseudo;
+
+    /* Handle odd types of potions coating weapons. */
+    if (pot_typ != POT_SICKNESS) {
+        pseudo = mksobj(pot_typ, FALSE, FALSE);
+        pseudo->blessed = 0;
+        pseudo->cursed = 1;
+        /* potionhit frees pseudo */
+        potionhit(&gy.youmonst, pseudo, POTHIT_MONST_WEP);
+        return;
+    }
 
     /* inform player about being poisoned unless that's already been done;
        "blast" has given a "blast of poison gas" message; "poison arrow",
@@ -788,10 +812,13 @@ role_abil(int r)
         const struct innate *abil;
     } roleabils[] = {
         { PM_ARCHEOLOGIST, arc_abil },
+        { PM_ALCHEMIST, alc_abil },
         { PM_BARBARIAN, bar_abil },
         { PM_CAVE_DWELLER, cav_abil },
         { PM_HEALER, hea_abil },
         { PM_KNIGHT, kni_abil },
+        { PM_LEGISLATOR, leg_abil },
+        { PM_MERCHANT, mer_abil },
         { PM_MONK, mon_abil },
         { PM_CLERIC, pri_abil },
         { PM_RANGER, ran_abil },

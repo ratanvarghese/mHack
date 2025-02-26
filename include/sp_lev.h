@@ -152,6 +152,7 @@ typedef struct {
 
 typedef struct {
     Str_or_Len name;
+    Str_or_Len material;
     int corpsenm;
     short id, spe;
     packed_coord coord;
@@ -197,6 +198,7 @@ typedef struct _room {
     xint16 xalign, yalign;
     xint16 rtype, chance, rlit, needfill;
     boolean joined;
+    boolean special_nowall;
 } room;
 
 struct mapfragment {

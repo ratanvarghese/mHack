@@ -40,6 +40,7 @@ static const char *const artifact_names[] = {
 #define     PHYS(a,b)   {0,AD_PHYS,a,b}         /* physical */
 #define     DRLI(a,b)   {0,AD_DRLI,a,b}         /* life drain */
 #define     COLD(a,b)   {0,AD_COLD,a,b}
+#define     ACID(a,b)   {0,AD_ACID,a,b}
 #define     FIRE(a,b)   {0,AD_FIRE,a,b}
 #define     ELEC(a,b)   {0,AD_ELEC,a,b}         /* electrical shock */
 #define     STUN(a,b)   {0,AD_STUN,a,b}         /* magical attack */
@@ -153,6 +154,11 @@ static NEARDATA struct artifact artilist[] = {
       FIRE(5, 0), FIRE(0, 0), NO_CARY, 0, A_NONE, NON_PM, NON_PM,
       0, 5, 3000L, NO_COLOR, FIRE_BRAND),
 
+    /* Similar to the brands, but weaker and aligned*/
+    A("Sourcoil", RUBBER_HOSE, (SPFX_RESTR | SPFX_ATTK | SPFX_DEFN), 0, 0,
+      ACID(5, 0), ACID(0, 0), NO_CARY, 0, A_CHAOTIC, PM_ALCHEMIST, NON_PM,
+      2, 5, 1000L, NO_COLOR, SOURCOIL),
+
     A("Dragonbane", BROADSWORD,
       (SPFX_RESTR | SPFX_DCLAS | SPFX_REFLECT), 0, S_DRAGON,
       PHYS(5, 0), NO_DFNS, NO_CARY, 0, A_NONE, NON_PM, NON_PM,
@@ -162,11 +168,11 @@ static NEARDATA struct artifact artilist[] = {
       PHYS(5, 0), NO_DFNS, NO_CARY, BANISH, A_LAWFUL, PM_CLERIC, NON_PM,
       1, 3, 2500L, NO_COLOR, DEMONBANE),
 
-    A("Werebane", SILVER_SABER, (SPFX_RESTR | SPFX_DFLAG2), 0, M2_WERE,
+    A("Werebane", SABER, (SPFX_RESTR | SPFX_DFLAG2), 0, M2_WERE,
       PHYS(5, 0), DFNS(AD_WERE), NO_CARY, 0, A_NONE, NON_PM, NON_PM,
       1, 4, 1500L, NO_COLOR, WEREBANE),
 
-    A("Grayswandir", SILVER_SABER, (SPFX_RESTR | SPFX_HALRES), 0, 0,
+    A("Grayswandir", SABER, (SPFX_RESTR), 0, 0,
       PHYS(5, 0), NO_DFNS, NO_CARY, 0, A_LAWFUL, NON_PM, NON_PM,
       0, 10, 8000L, NO_COLOR, GRAYSWANDIR),
 
@@ -205,7 +211,7 @@ static NEARDATA struct artifact artilist[] = {
 
     /* Sunsword emits light when wielded (handled in the core rather than
        via artifact fields), but that light has no particular color */
-    A("Sunsword", LONG_SWORD, (SPFX_RESTR | SPFX_DFLAG2), 0, M2_UNDEAD,
+    A("Sunsword", LONG_SWORD, (SPFX_RESTR | SPFX_DFLAG2 | SPFX_HALRES), 0, M2_UNDEAD,
       PHYS(5, 0), DFNS(AD_BLND), NO_CARY, BLINDING_RAY, A_LAWFUL, NON_PM,
       NON_PM,
       0, 6, 1500L, NO_COLOR, SUNSWORD),
@@ -221,8 +227,14 @@ static NEARDATA struct artifact artilist[] = {
       NON_PM,
       0, 12, 2500L, NO_COLOR, ORB_OF_DETECTION),
 
+    A("The Stone of Philosophers", AMETHYST,
+      (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL), (SPFX_PCTRL), 0,
+      NO_ATTK, NO_DFNS, CARY(AD_ACID), TRANSMUTE, A_NEUTRAL, PM_ALCHEMIST,
+      NON_PM,
+      0, 12, 5000L, NO_COLOR, STONE_OF_PHILOSOPHERS),
+
     A("The Heart of Ahriman", LUCKSTONE,
-      (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL), SPFX_STLTH, 0,
+      (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL), (SPFX_STLTH | SPFX_HALRES), 0,
       /* this stone does double damage if used as a projectile weapon */
       PHYS(5, 0), NO_DFNS, NO_CARY, LEVITATION, A_NEUTRAL, PM_BARBARIAN,
       NON_PM,
@@ -255,6 +267,16 @@ static NEARDATA struct artifact artilist[] = {
       (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL | SPFX_SPEAK), SPFX_ESP, 0,
       NO_ATTK, NO_DFNS, CARY(AD_MAGM), 0, A_LAWFUL, PM_KNIGHT, NON_PM,
       0, 12, 1500L, NO_COLOR, MAGIC_MIRROR_OF_MERLIN),
+
+    A("The Stylus of Gracchus", MAGIC_MARKER,
+      (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL), 0, 0,
+      NO_ATTK, NO_DFNS, NO_CARY, CONFLICT, A_LAWFUL, PM_LEGISLATOR, NON_PM,
+      0, 12, 1500L, NO_COLOR, STYLUS_OF_GRACCHUS),
+
+    A("The Crown of Midas", DUNCE_CAP,
+      (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL | SPFX_GOLD), 0, 0,
+      NO_ATTK, DFNS(AD_STON), NO_CARY, 0, A_NEUTRAL, PM_MERCHANT, NON_PM,
+      0, 12, 20000L, NO_COLOR, CROWN_OF_MIDAS),
 
     A("The Eyes of the Overworld", LENSES,
       (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL | SPFX_XRAY), 0, 0, NO_ATTK,
@@ -324,6 +346,7 @@ static NEARDATA struct artifact artilist[] = {
 #undef PHYS
 #undef DRLI
 #undef COLD
+#undef ACID
 #undef FIRE
 #undef ELEC
 #undef STUN
