@@ -174,7 +174,7 @@ const struct Role roles[NUM_ROLES+1] = {
       PM_HILL_GIANT,
       S_HUMANOID,
       S_GIANT,
-      ART_SCEPTRE_OF_MIGHT,
+      ART_DOOM_HORN,
       MH_HUMAN | MH_DWARF | MH_GNOME | ROLE_MALE | ROLE_FEMALE | ROLE_LAWFUL
           | ROLE_NEUTRAL,
       /* Str Int Wis Dex Con Cha */
@@ -414,7 +414,7 @@ const struct Role roles[NUM_ROLES+1] = {
       PM_WRAITH,
       S_ZOMBIE,
       S_WRAITH,
-      ART_MITRE_OF_HOLINESS,
+      ART_SCEPTRE_OF_MIGHT,
       MH_HUMAN | MH_ELF | ROLE_MALE | ROLE_FEMALE | ROLE_LAWFUL | ROLE_NEUTRAL
           | ROLE_CHAOTIC,
       /* Str Int Wis Dex Con Cha */

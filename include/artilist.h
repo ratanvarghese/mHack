@@ -242,8 +242,13 @@ static NEARDATA struct artifact artilist[] = {
 
     A("The Sceptre of Might", MACE,
       (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL | SPFX_DALIGN), 0, 0, PHYS(5, 0),
-      DFNS(AD_MAGM), NO_CARY, CONFLICT, A_LAWFUL, PM_CAVE_DWELLER, NON_PM,
+      DFNS(AD_MAGM), NO_CARY, ENERGY_BOOST, A_LAWFUL, PM_CLERIC, NON_PM,
       0, 12, 2500L, NO_COLOR, SCEPTRE_OF_MIGHT),
+
+    A("The Doom Horn", TOOLED_HORN,
+      (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL | SPFX_DALIGN), 0, 0, NO_ATTK,
+      NO_DFNS, CARY(AD_DISN), DISINTEGRATION_FIELD, A_LAWFUL, PM_CAVE_DWELLER, NON_PM,
+      0, 12, 2500L, NO_COLOR, DOOM_HORN),
 
 #if 0   /* OBSOLETE -- from 3.1.0 to 3.2.x, this was quest artifact for the
          * Elf role; in 3.3.0 elf became a race available to several roles
@@ -282,13 +287,13 @@ static NEARDATA struct artifact artilist[] = {
       (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL | SPFX_XRAY), 0, 0, NO_ATTK,
       DFNS(AD_MAGM), NO_CARY, ENLIGHTENING, A_NEUTRAL, PM_MONK, NON_PM,
       0, 12, 2500L, NO_COLOR, EYES_OF_THE_OVERWORLD),
-
+/*
     A("The Mitre of Holiness", HELM_OF_BRILLIANCE,
       (SPFX_NOGEN | SPFX_RESTR | SPFX_DFLAG2 | SPFX_INTEL | SPFX_PROTECT), 0,
       M2_UNDEAD, NO_ATTK, NO_DFNS, CARY(AD_FIRE), ENERGY_BOOST, A_LAWFUL,
       PM_CLERIC, NON_PM,
       0, 12, 2000L, NO_COLOR, MITRE_OF_HOLINESS),
-
+*/
     A("The Longbow of Diana", BOW,
       (SPFX_NOGEN | SPFX_RESTR | SPFX_INTEL | SPFX_REFLECT), SPFX_ESP, 0,
       PHYS(5, 0), NO_DFNS, NO_CARY, CREATE_AMMO, A_CHAOTIC, PM_RANGER, NON_PM,

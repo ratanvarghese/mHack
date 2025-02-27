@@ -22,6 +22,9 @@ Grayswandir no longer grants hallucination resistance.
 Sunword grants hallucination resistance when wielded.
 The Heart of Ahriman grants hallucination resistance when carried.
 The Ranger pantheon is changed to Taurus, Sagittarius and Ursa Major.
+The Priest quest artifact is changed to the Sceptre of Might.
+	When invoked, it performs an energy boost instead of causing conflict.
+The Mitre of Holiness is removed from the game entirely.
 
 Fixes to Post-X.X.X Problems that Were Exposed Via git Repository
 ------------------------------------------------------------------
@@ -136,6 +139,8 @@ Added Legislator role.
 Added the Stylus of Gracchus
 	It can be invoked to cause conflict. It can be recharged an unlimited number of
 	times, but after the second recharge it does not hold much ink.
+Added the Doom Horn: an artifact tooled horn which can create a disintegration field.
+	The Caveperson quest artifact is changed to the Doom Horn.
 
 Platform- and/or Interface-Specific New Features
 ------------------------------------------------
