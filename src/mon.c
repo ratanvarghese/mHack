@@ -588,6 +588,18 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
             obj->cursed = obj->blessed = FALSE;
         }
         goto default_1;
+    case PM_IXOTH:
+        obj = mksobj_at(RED_DRAGON_SCALES, x, y, TRUE, FALSE);
+        obj->spe = 0;
+        obj->cursed = obj->blessed = FALSE;
+        goto default_1;
+    case PM_CHROMATIC_DRAGON:
+        /*Assumes that gray dragon scales are first, yellow are last.*/
+        num = rn1(YELLOW_DRAGON_SCALES - GRAY_DRAGON_SCALES + 1,GRAY_DRAGON_SCALES);
+        obj = mksobj_at(num, x, y, TRUE, FALSE);
+        obj->spe = 0;
+        obj->cursed = obj->blessed = FALSE;
+        goto default_1;
     case PM_WATER_ELEMENTAL:
         if (levl[mtmp->mx][mtmp->my].typ == ROOM) {
             levl[mtmp->mx][mtmp->my].typ = PUDDLE;
@@ -902,8 +914,8 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_ARCH_PRIEST: case PM_ORION: case PM_MASTER_OF_THIEVES:
     case PM_LORD_SATO: case PM_TWOFLOWER: case PM_NORN:
     case PM_NEFERET_THE_GREEN: case PM_MINION_OF_HUHETOTL: case PM_UNBIOCTIUM:
-    case PM_THOTH_AMON: case PM_CHROMATIC_DRAGON: case PM_CYCLOPS:
-    case PM_IXOTH: case PM_CATILINE: case PM_SOSTRATUS:
+    case PM_THOTH_AMON: /*case PM_CHROMATIC_DRAGON:*/ case PM_CYCLOPS:
+    /*case PM_IXOTH:*/ case PM_CATILINE: case PM_SOSTRATUS:
     case PM_MASTER_KAEN: case PM_NALZOK:
     case PM_SCORPIUS: case PM_MASTER_ASSASSIN: case PM_ASHIKAGA_TAKAUJI:
     case PM_LORD_SURTUR: case PM_DARK_ONE: case PM_STUDENT: case PM_CHEMIST:
