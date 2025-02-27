@@ -70,7 +70,8 @@ enum invoke_prop_types {
     CREATE_AMMO,
     BANISH,
     BLINDING_RAY,
-    TRANSMUTE
+    TRANSMUTE,
+    DISINTEGRATION_FIELD
 };
 
 /* clang-format on */

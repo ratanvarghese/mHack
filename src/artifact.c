@@ -2129,6 +2129,11 @@ arti_invoke(struct obj *obj)
             }
             break;
         }
+        case DISINTEGRATION_FIELD: {
+            #define BLAST_O_DISN (20 + (AD_DISN - 1)) /* value kludge, see zap.c*/
+            explode(u.ux, u.uy, BLAST_O_DISN, d(16,6), TOOL_CLASS, EXPL_MAGICAL);
+            break;
+        }
         default:
             impossible("Unknown invoke power %d.", oart->inv_prop);
             break;

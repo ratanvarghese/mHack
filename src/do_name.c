@@ -434,7 +434,6 @@ oname(
         case ART_WEREBANE:
         case ART_DEMONBANE:
         case ART_GRAYSWANDIR:
-        case ART_MITRE_OF_HOLINESS:
             obj->material = SILVER;
             break;
         case ART_YENDORIAN_EXPRESS_CARD:
