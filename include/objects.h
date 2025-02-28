@@ -1388,6 +1388,9 @@ SPELL("stone to flesh",  "thick",
 SPELL("chain lightning", "checkered",
       P_ATTACK_SPELL,      25,  4, 2, 1, NODIR, CLR_GRAY,
                                                         SPE_CHAIN_LIGHTNING),
+SPELL("launch boulder", "mauve",
+      P_MATTER_SPELL,      25,  5, 2, 1, IMMEDIATE, CLR_MAGENTA,
+                                                        SPE_LAUNCH_BOULDER),
 
 #if 0 /* DEFERRED */
 /* from slash'em, create a tame critter which explodes when attacking,

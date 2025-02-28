@@ -3292,6 +3292,7 @@ extern int count_traps(int);
 extern void b_trapped(const char *, int) NONNULLARG1;
 extern boolean unconscious(void);
 extern void blow_up_landmine(struct trap *) NONNULLARG1;
+extern void describe_bowling(struct obj *, coordxy, coordxy) NONNULLARG1;
 extern int launch_obj(short, coordxy, coordxy, coordxy, coordxy, int);
 extern boolean launch_in_progress(void);
 extern void force_launch_placement(void);
