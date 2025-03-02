@@ -46,6 +46,7 @@ staticfn int throwspell(void);
 staticfn void cast_protection(void);
 staticfn void cast_chain_lightning(void);
 staticfn void cast_launch_boulder(void);
+staticfn void cast_swap_places(void);
 staticfn void spell_backfire(int);
 staticfn boolean spelleffects_check(int, int *, int *);
 staticfn const char *spelltypemnemonic(int);
@@ -1154,6 +1155,33 @@ cast_launch_boulder(void)
 }
 
 staticfn void
+cast_swap_places(void)
+{
+    coord cc;
+    struct monst *mtmp;
+    const char* prompt = "Swap places what direction?";
+    const char* emsg = "Invalid swap direction";
+    if(get_adjacent_loc(prompt, emsg, u.ux, u.uy, &cc)) {
+        mtmp = m_at(cc.x, cc.y);
+        if(mtmp) {
+            if(is_displacer(mtmp->data)) {
+                pline("%s resists swapping places.", YMonnam(mtmp));
+            } else {
+                mtmp->mtrapped = 0;
+                if (mdisplacem(&gy.youmonst, mtmp, TRUE) == M_ATTK_HIT) {
+                    pline("You swap places with %s.", y_monnam(mtmp));
+                    displace_onto_trap(mtmp);
+                } else {
+                    pline("You fail to swap places with %s.", YMonnam(mtmp));
+                }
+            }
+        } else {
+            pline("I don't see a monster there.");
+        }
+    }
+}
+
+staticfn void
 cast_protection(void)
 {
     int l = u.ulevel, loglev = 0,
@@ -1633,6 +1661,9 @@ spelleffects(int spell_otyp, boolean atme, boolean force)
         break;
     case SPE_LAUNCH_BOULDER:
         cast_launch_boulder();
+        break;
+    case SPE_SWAP_PLACES:
+        cast_swap_places();
         break;
     default:
         impossible("Unknown spell %d attempted.", spell);

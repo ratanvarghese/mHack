@@ -1169,6 +1169,7 @@ extern boolean u_maybe_impaired(void);
 extern const char *u_locomotion(const char *) NONNULLARG1;
 extern boolean handle_tip(int);
 extern void domove(void);
+extern void displace_onto_trap(struct monst *) NONNULLARG1;
 extern void runmode_delay_output(void);
 extern void overexert_hp(void);
 extern boolean overexertion(void);
