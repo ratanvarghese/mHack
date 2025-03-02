@@ -102,10 +102,19 @@ pick_familiar_pm(struct obj *otmp, boolean quietly)
                 pline("... into a pile of dust.");
             return (struct permonst *) 0;
         }
-    } else if (!rn2(3)) {
-        pm = &mons[pet_type()];
     } else {
-        pm = rndmonst();
+        char familiar_classes[] = {
+            (Inhell ? S_DEMON : S_ANGEL), (Inhell ? S_DEMON : S_ANGEL),
+            S_DRAGON, S_ELEMENTAL, S_GIANT, S_JABBERWOCK,
+            S_LICH, S_NAGA, S_OGRE, S_TROLL, S_XORN, S_GOLEM
+        };
+        int i;
+        char c;
+        for(i = 0; i < 12 && !pm; i++) {
+            c = familiar_classes[rn2(sizeof familiar_classes)];
+            pm = mkclass_aligned(c, 0, u.ualign.type);
+        }
+
         if (!pm && !quietly)
             There("seems to be nothing available for a familiar.");
     }
