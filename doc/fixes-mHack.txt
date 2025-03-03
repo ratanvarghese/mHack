@@ -25,6 +25,17 @@ The Ranger pantheon is changed to Taurus, Sagittarius and Ursa Major.
 The Priest quest artifact is changed to the Sceptre of Might.
 	When invoked, it performs an energy boost instead of causing conflict.
 The Mitre of Holiness is removed from the game entirely.
+The spell of dig is level 3.
+Adjust probabilities of various spellbooks.
+The spell of create familiar only creates co-aligned monsters of specific classes.
+	This is inspired one of Tomsod's YANIs listed on the wiki.
+	Only monster classes &, A, D, E, H, J, L, N, O, T, X and ' will be created.
+	& will only be created if in Gehennom, A will only be created if not in Gehennom.
+	This also applies to expert zaps of the wand of create monster (see wands
+	skill below).
+The spell of extra healing has a stronger effect with higher skill.
+	This is inspired by other variants.
+The spell of invisibility is level 3.
 
 Fixes to Post-X.X.X Problems that Were Exposed Via git Repository
 ------------------------------------------------------------------
@@ -141,6 +152,18 @@ Added the Stylus of Gracchus
 	times, but after the second recharge it does not hold much ink.
 Added the Doom Horn: an artifact tooled horn which can create a disintegration field.
 	The Caveperson quest artifact is changed to the Doom Horn.
+Added the spell of launch boulder, a level 5 matter spell.
+	This will drop a boulder on an adjacent square and launch it similar to a
+	rolling boulder trap.
+Added the spell of swap places, a level 4 escape spell.
+	This allows the player to magically displace an adjacent monster. Monsters
+	naturally capable of displacement will resist.
+Added the spell of rejuvenation, a level 7 healing spell.
+	This is inspired one of Tomsod's YANIs listed on the wiki, but with a twist.
+	This will heal up to 400 HP, but then drain 3 experience levels. Drain resistance
+	prevents both the healing and the draining. Players of experience level 5 or
+	lower are also prevented from going through either effect.
+	This spell is the new crowning gift for Monks.
 
 Platform- and/or Interface-Specific New Features
 ------------------------------------------------
