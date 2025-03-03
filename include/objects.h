@@ -1392,7 +1392,7 @@ SPELL("launch boulder", "mauve",
       P_MATTER_SPELL,      25,  5, 5, 1, IMMEDIATE, CLR_MAGENTA,
                                                         SPE_LAUNCH_BOULDER),
 SPELL("swap places", "beige",
-      P_ESCAPE_SPELL,      25,  5, 4, 1, IMMEDIATE, CLR_MAGENTA,
+      P_ESCAPE_SPELL,      25,  5, 4, 1, IMMEDIATE, CLR_WHITE,
                                                         SPE_SWAP_PLACES),
 
 
