@@ -827,9 +827,9 @@ gcrownu(void)
         && !carrying(SPE_FINGER_OF_DEATH)) {
         class_gift = SPE_FINGER_OF_DEATH;
     } else if (Role_if(PM_MONK) && (!uwep || !uwep->oartifact)
-               && !carrying(SPE_RESTORE_ABILITY)) {
+               && !carrying(SPE_REJUVENATION)) {
         /* monks rarely wield a weapon */
-        class_gift = SPE_RESTORE_ABILITY;
+        class_gift = SPE_REJUVENATION;
     } else if (Role_if(PM_ALCHEMIST)
         && !u_wield_art(ART_VORPAL_BLADE)
         && !u_wield_art(ART_STORMBRINGER)

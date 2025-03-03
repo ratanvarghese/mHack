@@ -47,6 +47,7 @@ staticfn void cast_protection(void);
 staticfn void cast_chain_lightning(void);
 staticfn void cast_launch_boulder(void);
 staticfn void cast_swap_places(void);
+staticfn void cast_rejuvenation(void);
 staticfn void spell_backfire(int);
 staticfn boolean spelleffects_check(int, int *, int *);
 staticfn const char *spelltypemnemonic(int);
@@ -1182,6 +1183,22 @@ cast_swap_places(void)
 }
 
 staticfn void
+cast_rejuvenation(void)
+{
+    if (resists_drli(&gy.youmonst) || item_catches_drain(&gy.youmonst)) {
+        pline("Something is preventing you from getting younger!");
+    } else if (u.ulevel < 5) {
+        pline("You are too young to rejuvenate.");
+    } else {
+        pline("You are getting younger!");
+        healup(400, 0, TRUE, TRUE);
+        losexp("reverse aging");
+        losexp("reverse aging");
+        losexp("reverse aging");
+    }
+}
+
+staticfn void
 cast_protection(void)
 {
     int l = u.ulevel, loglev = 0,
@@ -1664,6 +1681,9 @@ spelleffects(int spell_otyp, boolean atme, boolean force)
         break;
     case SPE_SWAP_PLACES:
         cast_swap_places();
+        break;
+    case SPE_REJUVENATION:
+        cast_rejuvenation();
         break;
     default:
         impossible("Unknown spell %d attempted.", spell);

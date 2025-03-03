@@ -1394,6 +1394,9 @@ SPELL("launch boulder", "mauve",
 SPELL("swap places", "beige",
       P_ESCAPE_SPELL,      25,  5, 4, 1, IMMEDIATE, CLR_WHITE,
                                                         SPE_SWAP_PLACES),
+SPELL("rejuvenation", "burgundy",
+      P_HEALING_SPELL,      25,  5, 7, 1, IMMEDIATE, CLR_BROWN,
+                                                        SPE_REJUVENATION),
 
 
 #if 0 /* DEFERRED */
