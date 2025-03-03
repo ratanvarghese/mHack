@@ -45,6 +45,9 @@ staticfn char *spellretention(int, char *);
 staticfn int throwspell(void);
 staticfn void cast_protection(void);
 staticfn void cast_chain_lightning(void);
+staticfn void cast_launch_boulder(void);
+staticfn void cast_swap_places(void);
+staticfn void cast_rejuvenation(void);
 staticfn void spell_backfire(int);
 staticfn boolean spelleffects_check(int, int *, int *);
 staticfn const char *spelltypemnemonic(int);
@@ -1095,6 +1098,105 @@ cast_chain_lightning(void)
     tmp_at(DISP_END, 0);
 }
 
+staticfn void
+cast_launch_boulder(void)
+{
+    coord cc, cdest;
+    int max_range, range;
+    coordxy dest_x, dest_y;
+    const char* prompt = "Launch in what direction?";
+    const char* emsg = "Invalid launch direction";
+    struct obj *otmp = NULL;
+    if(!Is_rogue_level(&u.uz) && has_ceiling(&u.uz)
+        && (!In_endgame(&u.uz) || Is_earthlevel(&u.uz))) {
+        if (get_adjacent_loc(prompt, emsg, u.ux, u.uy, &cc)) {
+            if (drop_boulder_on_monster(cc.x, cc.y, FALSE, TRUE)) {
+                pline_The("%s rumbles around you!", ceiling(u.ux, u.uy));
+                switch (P_SKILL(spell_skilltype(SPE_LAUNCH_BOULDER))) {
+                case P_BASIC:
+                    max_range = 6;
+                    break;
+                case P_SKILLED:
+                    max_range = 8;
+                    break;
+                case P_EXPERT:
+                case P_MASTER:
+                case P_GRAND_MASTER:
+                    max_range = 10;
+                    break;
+                case P_UNSKILLED:
+                default:
+                    max_range = 4;
+                    break;
+                }
+                for(range = 0; range < max_range; range++) {
+                    dest_x = cc.x + (u.dx * range);
+                    dest_y = cc.y + (u.dy * range);
+                    if (isok(dest_x, dest_y)) {
+                        cdest.x = dest_x;
+                        cdest.y = dest_y;
+                    } else {
+                        break;
+                    }
+                }
+                otmp = sobj_at(BOULDER, cc.x, cc.y);
+                if(otmp) {
+                    describe_bowling(otmp, cc.x, cc.y);
+                }
+                launch_obj(BOULDER, cc.x, cc.y, cdest.x, cdest.y, ROLL);
+            }
+        }
+    } else {
+        if(Hallucination) {
+            You_hear("the %s laughing at you.", ceiling(u.ux, u.uy));
+        } else {
+            pline("Nothing happens.");
+        }
+    }
+}
+
+staticfn void
+cast_swap_places(void)
+{
+    coord cc;
+    struct monst *mtmp;
+    const char* prompt = "Swap places what direction?";
+    const char* emsg = "Invalid swap direction";
+    if(get_adjacent_loc(prompt, emsg, u.ux, u.uy, &cc)) {
+        mtmp = m_at(cc.x, cc.y);
+        if(mtmp) {
+            if(is_displacer(mtmp->data)) {
+                pline("%s resists swapping places.", YMonnam(mtmp));
+            } else {
+                mtmp->mtrapped = 0;
+                if (mdisplacem(&gy.youmonst, mtmp, TRUE) == M_ATTK_HIT) {
+                    pline("You swap places with %s.", y_monnam(mtmp));
+                    displace_onto_trap(mtmp);
+                } else {
+                    pline("You fail to swap places with %s.", YMonnam(mtmp));
+                }
+            }
+        } else {
+            pline("I don't see a monster there.");
+        }
+    }
+}
+
+staticfn void
+cast_rejuvenation(void)
+{
+    if (resists_drli(&gy.youmonst) || item_catches_drain(&gy.youmonst)) {
+        pline("Something is preventing you from getting younger!");
+    } else if (u.ulevel < 5) {
+        pline("You are too young to rejuvenate.");
+    } else {
+        pline("You are getting younger!");
+        healup(400, 0, TRUE, TRUE);
+        losexp("reverse aging");
+        losexp("reverse aging");
+        losexp("reverse aging");
+    }
+}
 
 staticfn void
 cast_protection(void)
@@ -1573,6 +1675,15 @@ spelleffects(int spell_otyp, boolean atme, boolean force)
         break;
     case SPE_CHAIN_LIGHTNING:
         cast_chain_lightning();
+        break;
+    case SPE_LAUNCH_BOULDER:
+        cast_launch_boulder();
+        break;
+    case SPE_SWAP_PLACES:
+        cast_swap_places();
+        break;
+    case SPE_REJUVENATION:
+        cast_rejuvenation();
         break;
     default:
         impossible("Unknown spell %d attempted.", spell);

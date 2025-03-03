@@ -2147,54 +2147,63 @@ domove_swap_with_pet(
                      (mtmp->mpeaceful && !mtmp->mtame) ? "peaceful" : 0,
                      has_mgivenname(mtmp) ? SUPPRESS_SADDLE : 0, FALSE));
 
-        /* check for displacing it into pools and traps */
-        switch (minliquid(mtmp) ? Trap_Killed_Mon
-                : mintrap(mtmp, NO_TRAP_FLAGS)) {
-        case Trap_Effect_Finished:
-            break;
-        case Trap_Caught_Mon: /* trapped */
-        case Trap_Moved_Mon: /* changed levels */
-            /* there's already been a trap message, reinforce it */
-            abuse_dog(mtmp);
-            adjalign(-3);
-            break;
-        case Trap_Killed_Mon:
-            /* drowned or died...
-             * you killed your pet by direct action, so get experience
-             * and possibly penalties;
-             * we want the level gain message, if it happens, to occur
-             * before the guilt message below
-             */
-            {
-                /* minliquid() and mintrap() call mondead() rather than
-                   killed() so we duplicate some of the latter here */
-                int tmp, mndx;
-
-                if (!u.uconduct.killer++)
-                    livelog_printf(LL_CONDUCT, "killed for the first time");
-                mndx = monsndx(mtmp->data);
-                tmp = experience(mtmp, (int) svm.mvitals[mndx].died);
-                more_experienced(tmp, 0);
-                newexplevel(); /* will decide if you go up */
-            }
-            /* That's no way to treat a pet!  Your god gets angry.
-             *
-             * [This has always been pretty iffy.  Why does your
-             * patron deity care at all, let alone enough to get mad?]
-             */
-            if (rn2(4)) {
-                You_feel("guilty about losing your pet like this.");
-                u.ugangr++;
-                adjalign(-15);
-            }
-            break;
-        default:
-            impossible("that's strange, unknown mintrap result!");
-            break;
-        }
+        displace_onto_trap(mtmp);
     }
     return !didnt_move;
 }
+
+void
+displace_onto_trap(struct monst *mtmp)
+{
+    /* check for displacing it into pools and traps */
+    switch (minliquid(mtmp) ? Trap_Killed_Mon
+            : mintrap(mtmp, NO_TRAP_FLAGS)) {
+    case Trap_Effect_Finished:
+        break;
+    case Trap_Caught_Mon: /* trapped */
+    case Trap_Moved_Mon: /* changed levels */
+        /* there's already been a trap message, reinforce it */
+        if(mtmp->mtame) {
+            abuse_dog(mtmp);
+            adjalign(-3);
+        }
+        break;
+    case Trap_Killed_Mon:
+        /* drowned or died...
+         * you killed your pet by direct action, so get experience
+         * and possibly penalties;
+         * we want the level gain message, if it happens, to occur
+         * before the guilt message below
+         */
+        {
+            /* minliquid() and mintrap() call mondead() rather than
+               killed() so we duplicate some of the latter here */
+            int tmp, mndx;
+
+            if (!u.uconduct.killer++)
+                livelog_printf(LL_CONDUCT, "killed for the first time");
+            mndx = monsndx(mtmp->data);
+            tmp = experience(mtmp, (int) svm.mvitals[mndx].died);
+            more_experienced(tmp, 0);
+            newexplevel(); /* will decide if you go up */
+        }
+        /* That's no way to treat a pet!  Your god gets angry.
+         *
+         * [This has always been pretty iffy.  Why does your
+         * patron deity care at all, let alone enough to get mad?]
+         */
+        if (rn2(4) && mtmp->mtame) {
+            You_feel("guilty about losing your pet like this.");
+            u.ugangr++;
+            adjalign(-15);
+        }
+        break;
+    default:
+        impossible("that's strange, unknown mintrap result!");
+        break;
+    }
+}
+
 
 /* force-fight (x,y) which doesn't have anything to fight */
 staticfn boolean

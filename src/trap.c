@@ -3208,6 +3208,20 @@ force_launch_placement(void)
     }
 }
 
+void
+describe_bowling(struct obj *singleobj, coordxy x1, coordxy y1) {
+    if (cansee(x1, y1)) {
+        You_see("%s start to roll.", an(xname(singleobj)));
+    } else if (Hallucination) {
+        Soundeffect(se_someone_bowling, 60);
+        You_hear("someone bowling.");
+    } else {
+        Soundeffect(se_rumbling, 60);
+        You_hear("rumbling %s.", (distu(x1, y1) <= 4 * 4) ? "nearby"
+                                   : "in the distance");
+    }
+}
+
 /*
  * Move obj from (x1,y1) to (x2,y2)
  *
@@ -3276,16 +3290,7 @@ launch_obj(
     switch (style) {
     case ROLL | LAUNCH_UNSEEN:
         if (otyp == BOULDER) {
-            if (cansee(x1, y1)) {
-                You_see("%s start to roll.", an(xname(singleobj)));
-            } else if (Hallucination) {
-                Soundeffect(se_someone_bowling, 60);
-                You_hear("someone bowling.");
-            } else {
-                Soundeffect(se_rumbling, 60);
-                You_hear("rumbling %s.", (distu(x1, y1) <= 4 * 4) ? "nearby"
-                                           : "in the distance");
-            }
+            describe_bowling(singleobj, x1, y1);
         }
         style &= ~LAUNCH_UNSEEN;
         goto roll;

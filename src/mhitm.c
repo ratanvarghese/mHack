@@ -183,20 +183,26 @@ mdisplacem(
 {
     struct permonst *pa, *pd;
     int tx, ty, fx, fy;
+    boolean uatk = (magr == &gy.youmonst);
 
     /* sanity checks; could matter if we unexpectedly get a long worm */
     if (!magr || !mdef || magr == mdef)
         return M_ATTK_MISS;
     pa = magr->data, pd = mdef->data;
     tx = mdef->mx, ty = mdef->my; /* destination */
-    fx = magr->mx, fy = magr->my; /* current location */
-    if (m_at(fx, fy) != magr || m_at(tx, ty) != mdef)
+    if(uatk) {
+        fx = u.ux, fy = u.uy;
+    } else {
+        fx = magr->mx, fy = magr->my; /* current location */
+    }
+
+    if ((m_at(fx, fy) != magr && !uatk) || m_at(tx, ty) != mdef)
         return M_ATTK_MISS;
 
     /* The 1 in 7 failure below matches the chance in do_attack()
      * for pet displacement.
      */
-    if (!rn2(7))
+    if (!rn2(7) && !uatk)
         return M_ATTK_MISS;
 
     /* Grid bugs cannot displace at an angle. */
@@ -244,12 +250,16 @@ mdisplacem(
         }
     }
 
-    remove_monster(fx, fy); /* pick up from orig position */
+    if(!uatk) {
+        remove_monster(fx, fy); /* pick up from orig position */
+    }
     if (mdef->wormno)
         remove_worm(mdef);
     else
         remove_monster(tx, ty);
-    place_monster(magr, tx, ty); /* put down at target spot */
+    if(!uatk) {
+        place_monster(magr, tx, ty); /* put down at target spot */
+    }
     place_monster(mdef, fx, fy);
     if (mdef->wormno) /* now put down tail */
         place_worm_tail_randomly(mdef, fx, fy);
@@ -260,6 +270,10 @@ mdisplacem(
     if (gv.vis && !quietly)
         pline("%s moves %s out of %s way!", Monnam(magr), mon_nam(mdef),
               is_rider(pa) ? "the" : mhis(magr));
+    if(uatk) {
+        u.ux = tx, u.uy = ty;
+        u_on_newpos(u.ux, u.uy);
+    }
     newsym(fx, fy);  /* see it       */
     newsym(tx, ty);  /*   all happen */
     flush_screen(0); /* make sure it shows up */
