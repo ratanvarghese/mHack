@@ -13,6 +13,7 @@
 #define MAGIC_COOKIE 1000
 
 staticfn int zaptype(int);
+staticfn int calc_healamt(int);
 staticfn void probe_objchain(struct obj *) NO_NNARGS;
 staticfn boolean zombie_can_dig(coordxy x, coordxy y);
 staticfn void polyuse(struct obj *, int, int) NO_NNARGS;
@@ -91,6 +92,35 @@ zaptype(int type)
                      * will yield 0..9 (hero wand zap) for it */
     type = abs(type);
     return type;
+}
+
+/* calculate healing amount */
+staticfn int
+calc_healamt(int otyp)
+{
+    int n, sides;
+    if(otyp == SPE_EXTRA_HEALING) {
+        switch(P_SKILL(P_HEALING_SPELL)) {
+        case P_ISRESTRICTED:
+        case P_UNSKILLED:
+            n = 4;
+            break;
+        case P_BASIC:
+            n = 6;
+            break;
+        case P_SKILLED:
+            n = 8;
+            break;
+        default:
+        case P_EXPERT:
+            n = 10;
+        }
+        sides = 8;
+    } else {
+        n = 6;
+        sides = 4;
+    }
+    return d(n, sides);
 }
 
 /*
@@ -431,7 +461,7 @@ bhitm(struct monst *mtmp, struct obj *otmp)
         break;
     case SPE_HEALING:
     case SPE_EXTRA_HEALING: {
-        int healamt = d(6, otyp == SPE_EXTRA_HEALING ? 8 : 4);
+        int healamt = calc_healamt(otyp);
 
         reveal_invis = TRUE;
         if (mtmp->data != &mons[PM_PESTILENCE]) {
