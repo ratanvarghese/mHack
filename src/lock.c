@@ -196,7 +196,7 @@ breakchestlock(struct obj *box, boolean destroyit)
                    otherwise it would fail since otmp is not in inventory */
                 useup(otmp);
             }
-            if (box->otyp == ICE_BOX && otmp->otyp == CORPSE) {
+            if (box->otyp == ICE_BOX && (otmp->otyp == CORPSE || is_meaty(otmp))) {
                 otmp->age = svm.moves - otmp->age; /* actual age */
                 start_corpse_timeout(otmp);
             }
@@ -444,6 +444,14 @@ pick_lock(
             There("isn't any sort of lock up %s.",
                   Levitation ? "here" : "there");
             return PICKLOCK_LEARNED_SOMETHING;
+        }else if(Upolyd && gy.youmonst.data == &mons[PM_CLOCKWORK_AUTOMATON] &&
+            picktyp == SKELETON_KEY){
+            Sprintf(qbuf, "Wind up your clockwork?");
+            c = ynq(qbuf);
+            if(c == 'q')
+                return PICKLOCK_DID_NOTHING;
+            if(c == 'y' && start_clockwinding(pick))
+                return PICKLOCK_DID_SOMETHING;
         } else if (is_lava(u.ux, u.uy)) {
             pline("Doing that would probably melt %s.", yname(pick));
             return PICKLOCK_LEARNED_SOMETHING;

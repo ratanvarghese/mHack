@@ -10,6 +10,8 @@
 
 extern const char *const hu_stat[]; /* defined in eat.c */
 
+extern const char *const cahu_stat[]; /* also defined in eat.c */
+
 /* also used in insight.c */
 const char *const enc_stat[] = {
     "",         "Burdened",  "Stressed",
@@ -882,7 +884,10 @@ bot_via_windowport(void)
        not need ANY_UINT handling at all */
     gb.blstats[idx][BL_HUNGER].a.a_int = (int) u.uhs;
     Strcpy(gb.blstats[idx][BL_HUNGER].val,
-           (u.uhs != NOT_HUNGRY) ? hu_stat[u.uhs] : "");
+            (u.uhs != NOT_HUNGRY)
+                ? ((Upolyd && gy.youmonst.data == &mons[PM_CLOCKWORK_AUTOMATON])
+                    ? cahu_stat[u.uhs] : hu_stat[u.uhs])
+                : "");
     gv.valset[BL_HUNGER] = TRUE;
 
     /* Carrying capacity */

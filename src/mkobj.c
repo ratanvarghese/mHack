@@ -902,6 +902,10 @@ mksobj_init(struct obj **obj, boolean artif)
                 otmp->corpsenm = PM_HUMAN;
             }
             /* timer set below */
+            if (otmp->corpsenm == PM_OTYUGH){
+              otmp->orotten = TRUE; 
+              otmp->age -= 100;
+            }
             break;
         case EGG:
             otmp->corpsenm = NON_PM; /* generic egg */
@@ -1299,6 +1303,10 @@ set_corpsenm(struct obj *obj, int id)
     obj->corpsenm = id;
     switch (obj->otyp) {
     case CORPSE:
+ /* case MEATBALL:
+    case MEAT_STICK:
+    case MEAT_RING:*/
+    case ENORMOUS_MEATBALL:
         start_corpse_timeout(obj);
         obj->owt = weight(obj);
         break;
@@ -2454,7 +2462,7 @@ peek_at_iced_corpse_age(struct obj *otmp)
 {
     long age, retval = otmp->age;
 
-    if (otmp->otyp == CORPSE && otmp->on_ice) {
+    if ((otmp->otyp == CORPSE || is_meaty(otmp)) && otmp->on_ice) {
         /* Adjust the age; must be same as obj_timer_checks() for off ice*/
         age = svm.moves - otmp->age;
         retval += age * (ROT_ICE_ADJUSTMENT - 1) / ROT_ICE_ADJUSTMENT;
@@ -2479,7 +2487,8 @@ obj_timer_checks(
     boolean buried = (otmp->where == OBJ_BURIED);
 
     /* Check for corpses just placed on or in ice */
-    if (otmp->otyp == CORPSE && (on_floor || buried) && is_ice(x, y)) {
+    if ((otmp->otyp == CORPSE || is_meaty(otmp))
+        && (on_floor || buried) && is_ice(x, y)) {
         tleft = stop_timer(action, obj_to_any(otmp));
         if (tleft == 0L) {
             action = REVIVE_MON;
@@ -2505,7 +2514,7 @@ obj_timer_checks(
         }
 
     /* Check for corpses coming off ice */
-    } else if (force < 0 || (otmp->otyp == CORPSE && otmp->on_ice
+    } else if (force < 0 || ((otmp->otyp == CORPSE || is_meaty(otmp)) && otmp->on_ice
                              && !((on_floor || buried) && is_ice(x, y)))) {
         tleft = stop_timer(action, obj_to_any(otmp));
         if (tleft == 0L) {

@@ -1075,7 +1075,8 @@ peffect_water(struct obj *otmp)
 {
     if (!otmp->blessed && !otmp->cursed) {
         pline("This tastes like %s.", hliquid("water"));
-        u.uhunger += rnd(10);
+        if (!Upolyd || gy.youmonst.data != &mons[PM_CLOCKWORK_AUTOMATON])
+            u.uhunger += rnd(10);
         newuhs(FALSE);
         return;
     }
@@ -1138,7 +1139,8 @@ peffect_booze(struct obj *otmp)
     /* the whiskey makes us feel better */
     if (!otmp->odiluted)
         healup(1, 0, FALSE, FALSE);
-    u.uhunger += 10 * (2 + bcsign(otmp));
+    if (!Upolyd || gy.youmonst.data != &mons[PM_CLOCKWORK_AUTOMATON])
+        u.uhunger += 10 * (2 + bcsign(otmp));
     newuhs(FALSE);
     exercise(A_WIS, FALSE);
     if (otmp->cursed) {
@@ -1983,6 +1985,9 @@ potionhit(struct monst *mon, struct obj *obj, int how)
     boolean hit_saddle = FALSE, your_fault = (how <= POTHIT_HERO_THROW);
     boolean injection = (how == POTHIT_HERO_WEP || how == POTHIT_MONST_WEP);
 
+    boolean disint = (touch_disintegrates(mon->data) && 
+        !oresist_disintegration(obj) && !mon->mcan && mon->mhp>6);
+
     if (isyou && !injection) {
         tx = u.ux, ty = u.uy;
         distance = 0;
@@ -2005,7 +2010,8 @@ potionhit(struct monst *mon, struct obj *obj, int how)
         distance = distu(tx, ty);
         if (!cansee(tx, ty)) {
             Soundeffect(se_potion_crash_and_break, 60);
-            pline("Crash!");
+            if (!cansee(mon->mx,mon->my))
+                pline(disint?"Vip!":"Crash!");
         } else {
             char *mnam = mon_nam(mon);
             char buf[BUFSZ];
@@ -2022,8 +2028,8 @@ potionhit(struct monst *mon, struct obj *obj, int how)
                 Strcpy(buf, mnam);
             }
             Soundeffect(se_potion_crash_and_break, 60);
-            pline_The("%s crashes on %s and breaks into shards.", botlnam,
-                      buf);
+            pline_The("%s crashes on %s and %s.",
+                botlnam, buf, disint?"disintegrates":"breaks into shards");
         }
         if (rn2(5) && mon->mhp > 1 && !hit_saddle)
             mon->mhp--;
@@ -2036,7 +2042,8 @@ potionhit(struct monst *mon, struct obj *obj, int how)
     }
 
     /* oil doesn't instantly evaporate; Neither does a saddle hit */
-    if (!injection && obj->otyp != POT_OIL && !hit_saddle && cansee(tx, ty))
+    if (!injection && obj->otyp != POT_OIL && !hit_saddle && cansee(tx, ty)
+        && !disint)
         pline("%s.", Tobjnam(obj, "evaporate"));
 
     if (isyou) {
@@ -2113,202 +2120,196 @@ potionhit(struct monst *mon, struct obj *obj, int how)
     } else {
         boolean angermon = your_fault, cureblind = FALSE;
 
-        switch (obj->otyp) {
-        case POT_FULL_HEALING:
-            cureblind = TRUE;
-            FALLTHROUGH;
-            /*FALLTHRU*/
-        case POT_EXTRA_HEALING:
-            if (!obj->cursed)
+        if (!disint) {
+            switch (obj->otyp) {
+            case POT_FULL_HEALING:
                 cureblind = TRUE;
-            FALLTHROUGH;
-            /*FALLTHRU*/
-        case POT_HEALING:
-            if (obj->blessed)
-                cureblind = TRUE;
-            if (mon->data == &mons[PM_PESTILENCE])
-                goto do_illness;
-            FALLTHROUGH;
-            /*FALLTHRU*/
-        case POT_RESTORE_ABILITY:
-        case POT_GAIN_ABILITY:
- do_healing:
-            angermon = FALSE;
-            if (mon->mhp < mon->mhpmax) {
-                healmon(mon, mon->mhpmax, 0);
-                if (canseemon(mon))
-                    pline("%s looks sound and hale again.", Monnam(mon));
-            }
-            if (cureblind)
-                mcureblindness(mon, canseemon(mon));
-            break;
-        case POT_SICKNESS:
-            if (mon->data == &mons[PM_PESTILENCE])
-                goto do_healing;
-            if (dmgtype(mon->data, AD_DISE)
-                /* won't happen, see prior goto */
-                || dmgtype(mon->data, AD_PEST)
-                /* most common case */
-                || resists_poison(mon)) {
-                if (canseemon(mon))
-                    pline("%s looks unharmed.", Monnam(mon));
+                FALLTHROUGH;
+                /*FALLTHRU*/
+            case POT_EXTRA_HEALING:
+                if (!obj->cursed)
+                    cureblind = TRUE;
+                FALLTHROUGH;
+                /*FALLTHRU*/
+            case POT_HEALING:
+                if (obj->blessed)
+                    cureblind = TRUE;
+                if (mon->data == &mons[PM_PESTILENCE])
+                    goto do_illness;
+                FALLTHROUGH;
+                /*FALLTHRU*/
+            case POT_RESTORE_ABILITY:
+            case POT_GAIN_ABILITY:
+     do_healing:
+                angermon = FALSE;
+                if (mon->mhp < mon->mhpmax) {
+                    healmon(mon, mon->mhpmax, 0);
+                    if (canseemon(mon))
+                        pline("%s looks sound and hale again.", Monnam(mon));
+                }
+                if (cureblind)
+                    mcureblindness(mon, canseemon(mon));
+                break;
+            case POT_SICKNESS:
+                if (mon->data == &mons[PM_PESTILENCE])
+                    goto do_healing;
+                if (dmgtype(mon->data, AD_DISE)
+                    /* won't happen, see prior goto */
+                    || dmgtype(mon->data, AD_PEST)
+                    /* most common case */
+                    || resists_poison(mon)) {
+                    if (canseemon(mon))
+                        pline("%s looks unharmed.", Monnam(mon));
+                    break;
+                }
+     do_illness:
+                if (mon->mhp > 2) {
+                    mon->mhp /= 2;
+                    if (canseemon(mon))
+                        pline("%s looks rather ill.", Monnam(mon));
+                }
+                break;
+            case POT_CONFUSION:
+            case POT_BOOZE:
+                if (!resist(mon, POTION_CLASS, 0, NOTELL))
+                    mon->mconf = TRUE;
+                break;
+            case POT_INVISIBILITY: {
+                boolean sawit = canspotmon(mon);
+
+                angermon = FALSE;
+                mon_set_minvis(mon);
+                if (sawit && !canspotmon(mon) && cansee(mon->mx, mon->my))
+                    map_invisible(mon->mx, mon->my);
                 break;
             }
- do_illness:
-            if (mon->mhp > 2) {
-                mon->mhp /= 2;
-                if (canseemon(mon))
-                    pline("%s looks rather ill.", Monnam(mon));
-            }
-            break;
-        case POT_CONFUSION:
-        case POT_BOOZE:
-            if (!resist(mon, POTION_CLASS, 0, NOTELL))
-                mon->mconf = TRUE;
-            break;
-        case POT_INVISIBILITY: {
-            boolean sawit = canspotmon(mon);
+            case POT_SLEEPING:
+                /* wakeup() doesn't rouse victims of temporary sleep */
+                if (sleep_monst(mon, rnd(12), POTION_CLASS)) {
+                    pline("%s falls asleep.", Monnam(mon));
+                    slept_monst(mon);
+                }
+                break;
+            case POT_PARALYSIS:
+                if (mon->mcanmove) {
+                    /* really should be rnd(5) for consistency with players
+                     * breathing potions, but...
+                     */
+                    paralyze_monst(mon, rnd(5));
+                }
+                break;
+            case POT_SPEED:
+                angermon = FALSE;
+                mon_adjust_speed(mon, 1, obj);
+                break;
+            case POT_BLINDNESS:
+                if (haseyes(mon->data) && !mon_perma_blind(mon)) {
+                    int btmp = 64 + rn2(32)
+                                + rn2(32) * !resist(mon, POTION_CLASS, 0, NOTELL);
 
-            angermon = FALSE;
-            mon_set_minvis(mon);
-            if (sawit && !canspotmon(mon) && cansee(mon->mx, mon->my))
-                map_invisible(mon->mx, mon->my);
-            break;
-        }
-        case POT_SLEEPING:
-            /* wakeup() doesn't rouse victims of temporary sleep */
-            if (sleep_monst(mon, rnd(12), POTION_CLASS)) {
-                pline("%s falls asleep.", Monnam(mon));
-                slept_monst(mon);
-            }
-            break;
-        case POT_PARALYSIS:
-            if (mon->mcanmove) {
-                /* really should be rnd(5) for consistency with players
-                 * breathing potions, but...
-                 */
-                paralyze_monst(mon, rnd(5));
-            }
-            break;
-        case POT_SPEED:
-            angermon = FALSE;
-            mon_adjust_speed(mon, 1, obj);
-            break;
-        case POT_BLINDNESS:
-            if (haseyes(mon->data) && !mon_perma_blind(mon)) {
-                int btmp = 64 + rn2(32)
-                            + rn2(32) * !resist(mon, POTION_CLASS, 0, NOTELL);
-
-                btmp += mon->mblinded;
-                mon->mblinded = min(btmp, 127);
-                mon->mcansee = 0;
-            }
-            break;
-        case POT_WATER:
-            if (mon_hates_blessings(mon) /* undead or demon */
-                || is_were(mon->data) || is_vampshifter(mon)) {
-                if (obj->blessed) {
+                    btmp += mon->mblinded;
+                    mon->mblinded = min(btmp, 127);
+                    mon->mcansee = 0;
+                }
+                break;
+            case POT_WATER:
+                if (mon_hates_blessings(mon) /* undead or demon */
+                    || is_were(mon->data) || is_vampshifter(mon)) {
+                    if (obj->blessed) {
+                        pline("%s %s in pain!", Monnam(mon),
+                              is_silent(mon->data) ? "writhes" : "shrieks");
+                        if (!is_silent(mon->data))
+                            wake_nearto(tx, ty, mon->data->mlevel * 10);
+                        mon->mhp -= d(2, 6);
+                        /* should only be by you */
+                        if (DEADMONSTER(mon))
+                            killed(mon);
+                        else if (is_were(mon->data) && !is_human(mon->data))
+                            new_were(mon); /* revert to human */
+                    } else if (obj->cursed) {
+                        angermon = FALSE;
+                        if (canseemon(mon))
+                            pline("%s looks healthier.", Monnam(mon));
+                        healmon(mon, d(2, 6), 0);
+                        if (is_were(mon->data) && is_human(mon->data)
+                            && !Protection_from_shape_changers)
+                            new_were(mon); /* transform into beast */
+                    }
+                } else if (mon->data == &mons[PM_GREMLIN]) {
+                    angermon = FALSE;
+                    (void) split_mon(mon, (struct monst *) 0);
+                } else if (completelyrusts(mon->data)) {
+                    if (canseemon(mon))
+                        pline("%s rusts.", Monnam(mon));
+                    mon->mhp -= d(1, 6);
+                    /* should only be by you */
+                    if (DEADMONSTER(mon))
+                        killed(mon);
+                }
+                break;
+            case POT_OIL:
+                if (obj->lamplit)
+                    explode_oil(obj, tx, ty);
+                break;
+            case POT_ACID:
+                if (!resists_acid(mon) && !resist(mon, POTION_CLASS, 0, NOTELL)) {
                     pline("%s %s in pain!", Monnam(mon),
                           is_silent(mon->data) ? "writhes" : "shrieks");
                     if (!is_silent(mon->data))
                         wake_nearto(tx, ty, mon->data->mlevel * 10);
-                    mon->mhp -= d(2, 6);
-                    /* should only be by you */
-                    if (DEADMONSTER(mon))
-                        killed(mon);
-                    else if (is_were(mon->data) && !is_human(mon->data))
-                        new_were(mon); /* revert to human */
-                } else if (obj->cursed) {
-                    angermon = FALSE;
-                    if (canseemon(mon))
-                        pline("%s looks healthier.", Monnam(mon));
-                    healmon(mon, d(2, 6), 0);
-                    if (is_were(mon->data) && is_human(mon->data)
-                        && !Protection_from_shape_changers)
-                        new_were(mon); /* transform into beast */
-                }
-            } else if (mon->data == &mons[PM_GREMLIN]) {
-                angermon = FALSE;
-                (void) split_mon(mon, (struct monst *) 0);
-            } else if (mon->data == &mons[PM_IRON_GOLEM]) {
-                if (canseemon(mon))
-                    pline("%s rusts.", Monnam(mon));
-                mon->mhp -= d(1, 6);
-                /* should only be by you */
-                if (DEADMONSTER(mon))
-                    killed(mon);
-            }
-            break;
-        case POT_OIL:
-            if (obj->lamplit)
-                explode_oil(obj, tx, ty);
-            break;
-        case POT_ACID:
-            if (!resists_acid(mon) && !resist(mon, POTION_CLASS, 0, NOTELL)) {
-                pline("%s %s in pain!", Monnam(mon),
-                      is_silent(mon->data) ? "writhes" : "shrieks");
-                if (!is_silent(mon->data))
-                    wake_nearto(tx, ty, mon->data->mlevel * 10);
-                mon->mhp -= d(obj->cursed ? 2 : 1, obj->blessed ? 4 : 8);
-                if (DEADMONSTER(mon)) {
-                    if (your_fault)
-                        killed(mon);
-                    else
-                        monkilled(mon, "", AD_ACID);
-                }
-            }
-            break;
-        case POT_POLYMORPH:
-            (void) bhitm(mon, obj);
-            break;
-        case POT_GAIN_LEVEL:
-            if (obj->cursed) {
-                if (Can_rise_up(mon->mx, mon->my, &u.uz)) {
-                    register int tolev = depth(&u.uz) - 1;
-                    d_level tolevel;
-                    get_level(&tolevel, tolev);
-                    if (on_level(&tolevel, &u.uz))
-                        break;
-                    if (canseemon(mon)) {
-                        pline("%s rises up, through the %s!", Monnam(mon),
-                            ceiling(mon->mx, mon->my));
+                    mon->mhp -= d(obj->cursed ? 2 : 1, obj->blessed ? 4 : 8);
+                    if (DEADMONSTER(mon)) {
+                        if (your_fault)
+                            killed(mon);
+                        else
+                            monkilled(mon, "", AD_ACID);
                     }
-                    migrate_to_level(mon, ledger_no(&tolevel), MIGR_RANDOM,
-                                    (coord *) 0);
-                    break;
-                } else if (canseemon(mon)) {
-                    pline("%s looks uneasy.", Monnam(mon));
-                    break;
                 }
+                break;
+            case POT_POLYMORPH:
+                (void) bhitm(mon, obj);
+                break;
+            case POT_GAIN_LEVEL:
+                if (obj->cursed) {
+                    if (Can_rise_up(mon->mx, mon->my, &u.uz)) {
+                        mon_thru_ceiling(mon);
+                        break;
+                    } else if (canseemon(mon)) {
+                        pline("%s looks uneasy.", Monnam(mon));
+                        break;
+                    }
+                }
+                if (canseemon(mon))
+                    pline("%s seems more experienced.", Monnam(mon));
+                grow_up(mon, (struct monst *) 0);
+                break;
+            /*
+            case POT_LEVITATION:
+            case POT_FRUIT_JUICE:
+            case POT_MONSTER_DETECTION:
+            case POT_OBJECT_DETECTION:
+                break;
+            */
             }
-            if (canseemon(mon))
-                pline("%s seems more experienced.", Monnam(mon));
-            grow_up(mon, (struct monst *) 0);
-            break;
-        /*
-        case POT_LEVITATION:
-        case POT_FRUIT_JUICE:
-        case POT_MONSTER_DETECTION:
-        case POT_OBJECT_DETECTION:
-            break;
-        */
-        }
-        /* target might have been killed */
-        if (!DEADMONSTER(mon)) {
-            if (angermon)
-                wakeup(mon, TRUE);
-            else
-                mon->msleeping = 0;
+            /* target might have been killed */
+            if (!DEADMONSTER(mon)) {
+                if (angermon)
+                    wakeup(mon, TRUE);
+                else
+                    mon->msleeping = 0;
+            }
         }
     }
 
-    /* Note: potionbreathe() does its own docall() */
-    if ((distance == 0 || (distance < 3 && !rn2((1+ACURR(A_DEX))/2)))
-        && !injection
-        && (!breathless(gy.youmonst.data) || haseyes(gy.youmonst.data)))
-        potionbreathe(obj);
-    else if (obj->dknown && cansee(tx, ty))
-        trycall(obj);
+    if (!disint) {
+        /* Note: potionbreathe() does its own docall() */
+        if ((distance == 0 || (distance < 3 && !rn2((1+ACURR(A_DEX))/2)))
+            && !injection
+            && (!breathless(gy.youmonst.data) || haseyes(gy.youmonst.data)))
+            potionbreathe(obj);
+        else if (obj->dknown && cansee(tx, ty))
+            trycall(obj);
+    }
 
     if (*u.ushops && obj->unpaid) {
         struct monst *shkp = shop_keeper(*in_rooms(u.ux, u.uy, SHOPBASE));
@@ -2326,6 +2327,22 @@ potionhit(struct monst *mon, struct obj *obj, int how)
     }
     obfree(obj, (struct obj *) 0);
 }
+
+void
+mon_thru_ceiling(struct monst *mon) {
+    int tolev = depth(&u.uz) - 1;
+    d_level tolevel;
+    get_level(&tolevel, tolev);
+    if (on_level(&tolevel, &u.uz))
+        return;
+    if (canseemon(mon)) {
+        pline("%s rises up, through the %s!", Monnam(mon),
+            ceiling(mon->mx, mon->my));
+    }
+    migrate_to_level(mon, ledger_no(&tolevel), MIGR_RANDOM,
+                    (coord *) 0);
+}
+
 
 /* vapors are inhaled or get in your eyes */
 void

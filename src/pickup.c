@@ -2678,7 +2678,7 @@ in_container(struct obj *obj)
     if (Icebox && !age_is_relative(obj)) {
         obj->age = svm.moves - obj->age; /* actual age */
         /* stop any corpse timeouts when frozen */
-        if (obj->otyp == CORPSE) {
+        if (is_meaty(obj)) {
             if (obj->timed) {
                 (void) stop_timer(ROT_CORPSE, obj_to_any(obj));
                 (void) stop_timer(REVIVE_MON, obj_to_any(obj));
@@ -2820,7 +2820,7 @@ removed_from_icebox(struct obj *obj)
 {
     if (!age_is_relative(obj)) {
         obj->age = svm.moves - obj->age; /* actual age */
-        if (obj->otyp == CORPSE) {
+        if (is_meaty(obj)) {
             struct monst *m = get_mtraits(obj, FALSE);
             boolean iceT = m ? (m->data == &mons[PM_ICE_TROLL])
                              : (obj->corpsenm == PM_ICE_TROLL);

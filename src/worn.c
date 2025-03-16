@@ -148,6 +148,7 @@ setnotworn(struct obj *obj)
 {
     const struct worn *wp;
     int p;
+    int was_blind = Blemmye_blindness(&gy.youmonst);
 
     if (!obj)
         return;
@@ -171,6 +172,15 @@ setnotworn(struct obj *obj)
         }
     if (!uarm)
         iflags.tux_penalty = FALSE;
+
+    if (was_blind && !Blind){
+        You("can see again.");
+        /* blindness has just been toggled */
+        if (Blind_telepat || Infravision)
+            see_monsters();
+        gv.vision_full_recalc = 1; /* recalc vision limits */
+        disp.botl = TRUE;
+    }
     update_inventory();
     recalc_telepat_range();
 }
@@ -810,6 +820,8 @@ m_dowear_type(
             /* (flimsy exception matches polyself handling) */
             if (has_horns(mon->data) && !is_flimsy(obj))
                 continue;
+            if (!has_head(mon->data))
+                continue;
             break;
         case W_ARMS:
             if (!is_shield(obj))
@@ -827,6 +839,8 @@ m_dowear_type(
             if (!is_suit(obj))
                 continue;
             if (racialexception && (racial_exception(mon, obj) < 1))
+                continue;
+            if (!has_head(mon->data))
                 continue;
             break;
         }
@@ -1226,7 +1240,7 @@ mon_break_armor(struct monst *mon, boolean polyspot)
             m_lose_armor(mon, otmp, polyspot);
         }
     }
-    if (handless_or_tiny || has_horns(mdat)) {
+    if (handless_or_tiny || has_horns(mdat) || !has_head(mdat)) {
         if ((otmp = which_armor(mon, W_ARMH)) != 0
             /* flimsy test for horns matches polyself handling */
             && (handless_or_tiny || !is_flimsy(otmp))) {

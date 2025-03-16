@@ -40,6 +40,7 @@ explosionmask(
                 res = EXPL_HERO;
             break;
         case AD_FIRE:
+        case AD_SCLD:
             if (Fire_resistance)
                 res = EXPL_HERO;
             break;
@@ -80,6 +81,7 @@ explosionmask(
                 res = EXPL_MON;
             break;
         case AD_FIRE:
+        case AD_SCLD:
             if (resists_fire(m))
                 res = EXPL_MON;
             break;

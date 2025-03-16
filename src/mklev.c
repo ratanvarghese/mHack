@@ -921,9 +921,16 @@ fill_ordinary_room(
 
     /* put statues inside */
     if (!rn2(20) && somexyspace(croom, &pos))
-        (void) mkcorpstat(STATUE, (struct monst *) 0,
-                            (struct permonst *) 0, pos.x,
-                            pos.y, CORPSTAT_INIT);
+    {
+        struct obj * otmp;
+        otmp = mkcorpstat(STATUE, (struct monst *) 0,
+                          (struct permonst *) 0, pos.x,
+                          pos.y, CORPSTAT_INIT);
+        if(otmp->corpsenm == PM_WATERSPOUT_GARGOYLE){
+            levl[otmp->ox][otmp->oy].typ = FOUNTAIN;
+            svl.level.flags.nfountains++;
+        }
+    }
 
     /*
      * bonus_items means that this is the room where the bonus item

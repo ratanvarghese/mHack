@@ -246,7 +246,8 @@ attack_checks(
         return TRUE;
     }
 
-    if (M_AP_TYPE(mtmp) && !Protection_from_shape_changers && !sensemon(mtmp)
+    if (M_AP_TYPE(mtmp) && (mtmp->m_ap_type != M_AP_MONSTER)
+        && !Protection_from_shape_changers && !sensemon(mtmp)
         && !glyph_is_warning(glyph)) {
         /* If a hidden mimic was in a square where a player remembers
          * some (probably different) unseen monster, the player is in
@@ -349,6 +350,11 @@ mon_maybe_unparalyze(struct monst *mtmp)
         if (!rn2(10)) {
             mtmp->mcanmove = 1;
             mtmp->mfrozen = 0;
+            if(mtmp->data == &mons[PM_CLOCKWORK_AUTOMATON] &&
+                !mtmp->mspec_used) {
+                mtmp->mfrozen = 1;
+                mtmp->mcanmove = 0;
+            }
         }
     }
 }
@@ -547,7 +553,7 @@ do_attack(struct monst *mtmp)
     u_wipe_engr(3);
 
     /* Is the "it died" check actually correct? */
-    if (mdat->mlet == S_LEPRECHAUN && !mtmp->mfrozen && !helpless(mtmp)
+    if (mdat == &mons[PM_LEPRECHAUN] && !mtmp->mfrozen && !helpless(mtmp)
         && !mtmp->mconf && mtmp->mcansee && !rn2(7)
         && (m_move(mtmp, 0) == MMOVE_DIED /* it died */
             || mtmp->mx != u.ux + u.dx
@@ -866,6 +872,38 @@ hmon_hitmon_barehands(struct _hitmon_data *hmd, struct monst *mon)
               : (((hmd->twohits == 0 || hmd->twohits == 1) ? W_RINGR : 0L)
                  | ((hmd->twohits == 0 || hmd->twohits == 2) ? W_RINGL : 0L));
     hmd->dmg += special_dmgval(&gy.youmonst, mon, spcdmgflg, &(hmd->hated_obj));
+
+    if (touch_disintegrates(hmd->mdat) && !mon->mcan && (mon->mhp>6)){
+        char unconventional[BUFSZ];
+        int dis_dmg;
+        Sprintf(unconventional,"barehandedly striking %s", 
+            a_monnam(mon));
+        if (!flags.verbose)
+            You("hit it.");
+        else
+            You("%s %s.", Role_if(PM_BARBARIAN) ? "smite" : "hit",
+            mon_nam(mon));
+        dis_dmg = instadisintegrate(unconventional);
+        hmd->dmg = min( dis_dmg, hmd->dmg);
+        unconventional[0] = '\0';
+        hmd->disint_obj = TRUE;
+        hmd->hittxt = TRUE;
+    } else {
+        if(touch_disintegrates(hmd->mdat) && !mon->mcan && (mon->mhp>6) &&
+          !oresist_disintegration(uarmg)){
+            int dis_dmg = uarmg->owt;
+            weight_dmg(dis_dmg);
+            if (!flags.verbose)
+                You("hit it.");
+            else
+                You("%s %s.", Role_if(PM_BARBARIAN) ? "smite" : "hit",
+                mon_nam(mon));
+            hmd->hittxt = TRUE;
+            destroy_arm(uarmg);
+            hmd->dmg = min( dis_dmg, hmd->dmg);
+            hmd->disint_obj = TRUE;
+        }
+    }
 }
 
 staticfn void
@@ -1316,6 +1354,13 @@ hmon_hitmon_misc_obj(
         hmd->hittxt = TRUE;
         hmd->get_dmg_bonus = FALSE;
         break;
+    case WATER_VENOM: /* thrown (or spit) */
+        hmd->dmg = 0;
+        if(completelyrusts(hmd->mdat)){
+            hmd->dmg = d(1,6);
+        } 
+        hmd->needrustmsg = TRUE;
+        break;
     default:
         /* non-weapons can damage because of their weight */
         /* (but not too much) */
@@ -1741,6 +1786,8 @@ hmon_hitmon(
     hmd.dryit = FALSE;
     hmd.doreturn = FALSE;
     hmd.retval = FALSE;
+    hmd.needrustmsg = FALSE;
+    hmd.disint_obj = FALSE;
     hmd.saved_oname[0] = '\0';
 
     hmon_hitmon_do_hit(&hmd, mon, obj);
@@ -1773,7 +1820,24 @@ hmon_hitmon(
             hmd.hittxt = shade_miss(&gy.youmonst, mon, obj, FALSE, TRUE);
     }
 
-    if (hmd.jousting) {
+    if (hmd.disint_obj && obj) {
+        if(obj->oclass == POTION_CLASS || obj->oclass == VENOM_CLASS ||
+            obj->otyp == EGG || obj->otyp == CREAM_PIE){
+            if (cansee(mon->mx, mon->my))
+                pline_The("%s %s in a %s of green light!", 
+                    xname(obj), vtense(xname(obj),"vanish"), 
+                    (obj->oclass == VENOM_CLASS)?"twinkle":"flash");
+            else
+                pline("Vip!");
+            hmd.hittxt=TRUE;
+        } else if (u.usteed && !thrown && hmd.dmg > 0 &&
+            weapon_type(obj) == P_LANCE && mon != u.ustuck && joust(mon,obj)) {
+            You("joust %s%s",
+                mon_nam(mon), canseemon(mon) ? exclam(hmd.dmg) : ".");
+            Your("%s vanishes on impact!", xname(obj));
+            hmd.hittxt = TRUE;
+        }
+    } else if (hmd.jousting) {
         hmon_hitmon_jousting(&hmd, mon, obj);
     } else if (hmd.unarmed && hmd.dmg > 1 && !thrown && !obj && !Upolyd) {
         hmon_hitmon_stagger(&hmd, mon, obj);
@@ -1805,6 +1869,27 @@ hmon_hitmon(
 
     hmon_hitmon_msg_hit(&hmd, mon, obj);
 
+    if (hmd.disint_obj && obj) {
+        if(!hmd.hittxt){
+            if(cansee(mon->mx,mon->my)){
+              pline_The("%s %s!", mshot_xname(obj),
+                  (obj->oartifact)?"dissolves":"disintegrates");
+            } else {
+              pline("Vip!%s", 
+                  (!thrown)? "  Your weapon vanishes from your grip!":"");
+            }
+        }
+        if (!thrown) {
+            u.twoweap = FALSE; /* untwoweapon() is too verbose here */
+            if (obj == uwep)
+                uwepgone();       /* set unweapon */
+            useupall(obj);
+            obj = 0;
+        } else {
+            /*obfree(obj, (struct obj *) 0 ); handled: elsewhere */
+        }
+    }
+
     if (hmd.dryit) { /* dryit implies wet towel, so 'obj' is still intact */
         assert(obj != NULL);
         dry_a_towel(obj, -1, TRUE);
@@ -1816,6 +1901,14 @@ hmon_hitmon(
     if (hmd.lightobj)
         hmon_hitmon_msg_lightobj(&hmd, mon, obj);
 
+    if (touch_disintegrates(hmd.mdat) && !oresist_disintegration(obj) &&
+        mon->mhp>6 && !mon->mcan){
+        hmd.disint_obj = TRUE;
+        hmd.destroyed = TRUE;
+        hmd.dmg = obj->owt;
+        weight_dmg(hmd.dmg);
+    }
+
     /* if a "no longer poisoned" message is coming, it will be last;
        obj->opoisoned was cleared above and any message referring to
        "poisoned <obj>" has now been given; we want just "<obj>" for
@@ -1823,6 +1916,18 @@ hmon_hitmon(
     if (hmd.unpoisonmsg) {
         assert(obj != NULL);
         Strcpy(hmd.saved_oname, cxname(obj));
+    }
+
+    if (hmd.needrustmsg){
+        water_damage(which_armor(mon, W_ARM), 0, FALSE);
+        if(hmd.mdat == &mons[PM_GREMLIN]){
+            (void)split_mon(mon, (struct monst *)0);
+        } else if ( completelyrusts(hmd.mdat) ) {
+            if (canseemon(mon))
+                pline("%s rusts.", Monnam(mon));
+            setmangry(mon, TRUE);
+            abuse_dog(mon);
+        } 
     }
 
     /* [note: thrown obj might go away during killed()/xkilled() call
@@ -1863,7 +1968,7 @@ hmon_hitmon(
     }
 
 
-    if (hmd.unpoisonmsg)
+    if (hmd.unpoisonmsg && !hmd.disint_obj)
         Your("%s %s no longer poisoned.", hmd.saved_oname,
              vtense(hmd.saved_oname, "are"));
 
@@ -2754,7 +2859,7 @@ mhitm_ad_sgld(
         if (pd->mlet == pa->mlet)
             return;
         if (!magr->mcan)
-            stealgold(magr);
+            stealgold(magr, FALSE);
     } else {
         /* mhitm */
         char buf[BUFSZ];
@@ -4749,6 +4854,685 @@ mhitm_ad_mtrl(
 }
 
 void
+mhitm_ad_egld(
+    struct monst *magr, /*struct attack *mattk,*/
+    struct monst *mdef, struct mhitm_data *mhm)
+{
+    struct permonst *pd = mdef->data;
+    if (magr == &gy.youmonst) {
+        /* uhitm */
+        /* partially copied from sgld */
+        struct obj *mongold = findgold(mdef->minvent, FALSE);
+
+        if (mongold) {
+            obj_extract_self(mongold);
+            if (merge_choice(gi.invent, mongold)
+                    || inv_cnt(FALSE) < invlet_basic) {
+                addinv(mongold);
+                You("nab some gold.");
+            } else {
+                You("grab %s's gold, but find no room in your knapsack.",
+                    mon_nam(mdef));
+                dropy(mongold);
+            }
+        }
+        exercise(A_DEX, TRUE);
+        mhm->damage = 0;
+
+    } else if (mdef == &gy.youmonst) {
+        if (u.umonnum == PM_GOLD_GOLEM) {
+            pline("%s gnaws on you!", Monnam(magr));
+            if (magr->mcan) {
+                mhm->damage = 1;
+            } else {
+                rehumanize();
+            }
+        } else {
+            char buf[BUFSZ];
+            struct obj * geatme;
+            int how = 0;
+            mhm->damage = 0;
+            buf[0] = 0;
+            if ((geatme =
+                findgold(svl.level.objects[u.ux][u.uy], FALSE))) {
+                obj_extract_self(geatme);
+                Sprintf(buf, "from %s your %s",
+                    (Levitation)?"beneath":"between", makeplural(body_part(FOOT)));
+            } else if ( (geatme = findgold(gi.invent, FALSE))) {
+                if (geatme->otyp == GOLD_PIECE) {
+                    int tmp;
+                    const int gold_price = objects[GOLD_PIECE].oc_cost;
+                    if (u.umonnum == PM_LEPRECHAUN){
+                        pline("%s tries to get your money, but fails...",
+                            Monnam(magr));
+                        return;
+                    }
+                    tmp = (somegold(money_cnt(gi.invent)) + gold_price - 1) / gold_price;
+                    tmp = min(tmp, geatme->quan);
+                    if (tmp < geatme->quan)
+                        geatme = splitobj(geatme, tmp);
+                    freeinv(geatme);
+                    disp.botl = TRUE;
+                } else
+                    obj_extract_self(geatme);
+            }
+            if (geatme){
+                if (!(magr->mcan || geatme->otyp == AMULET_OF_STRANGULATION ||
+                      geatme->otyp == RIN_SLOW_DIGESTION)){
+                    magr->mspec_used += geatme->owt/2 + 1;  /* instead of meating */
+                    how = 1;
+                }
+                pline("%s %s %s%s!",
+                    Monnam(magr), (how)?"gobbles":"nabs", 
+                    yname(geatme), buf);
+                if (!how)
+                    mpickobj(magr, geatme);
+                return;
+            } 
+            if (u.umonnum == PM_LEPRECHAUN){
+                pline("%s tries to get your money, but fails...",
+                    Monnam(magr));
+                return;
+            }
+            stealgold(magr, TRUE);
+        }
+    } else {
+        /* mhitm */
+        if (pd ==  &mons[PM_GOLD_GOLEM]) {
+            if(gv.vis) {
+                pline("%s %s %s.", Monnam(magr),
+                    (magr->mcan)?"gnaws on":"chews through",mon_nam(mdef));
+            }
+            if(magr->mcan) {
+                mdef->mhp -= mhm->damage;
+            } else {
+                xkilled(mdef, XKILL_NOMSG);
+            }
+            if (mdef->mhp > 0)
+                return;
+            else if (mdef->mtame && !gv.vis)
+                pline("May %s rest in (gold) pieces.", mon_nam(mdef));
+            mhm->hitflags = (M_ATTK_DEF_DIED | (grow_up(magr, mdef) ? 0
+                                                : M_ATTK_AGR_DIED));
+        } else {
+            struct obj * geatme;
+            int how = 0;
+            if ((geatme =
+                findgold(svl.level.objects[mdef->mx][mdef->my],FALSE))) {
+                obj_extract_self(geatme);
+                //if (canseemon(mdef))
+                //    Sprintf(buf, "from under %s", mon_nam(mdef));
+            } else if (( geatme = findgold(mdef->minvent, FALSE))) {
+                if (geatme->otyp == GOLD_PIECE){
+                    int tmp;
+                    const int gold_price = objects[GOLD_PIECE].oc_cost;
+                    if (mdef->data == &mons[PM_LEPRECHAUN] ) {
+                        pline("%s tries to get %s money, but fails...",
+                            Monnam(magr), s_suffix(mon_nam(mdef)));
+                        return;
+                    }
+                    tmp = (somegold(money_cnt(mdef->minvent)) + gold_price - 1)
+                      / gold_price;
+                    tmp = min(tmp, geatme->quan);
+                    if (tmp < geatme->quan)
+                        geatme = splitobj(geatme, tmp);
+                    obj_extract_self(geatme);
+                } else
+                    obj_extract_self(geatme); 
+            }
+            if (geatme){
+                if (!(magr->mcan || geatme->otyp == AMULET_OF_STRANGULATION ||
+                      geatme->otyp == RIN_SLOW_DIGESTION)){
+                  magr->mspec_used += geatme->owt/2 + 1;  /* instead of meating */
+                  how = 1;
+                }
+                pline("%s %s %s!",
+                    Monnam(magr), (how)?"gobbles":"nabs", yname(geatme));
+                if (!how)
+                    mpickobj(magr, geatme);
+                return;
+            }
+
+            if (mdef->data == &mons[PM_LEPRECHAUN] ){
+                pline("%s tries to get %s money, but fails...",
+                    Monnam(magr), s_suffix(mon_nam(mdef)));
+                return;
+            } else {
+                /* copied from sgld */
+                char buf[BUFSZ];
+
+                mhm->damage = 0;
+                if (magr->mcan)
+                    return;
+                /* technically incorrect; no check for stealing gold from
+                 * between mdef's feet...
+                 */
+                {
+                    struct obj *gold = findgold(mdef->minvent, FALSE);
+
+                    if (!gold)
+                        return;
+                    obj_extract_self(gold);
+                    add_to_minv(magr, gold);
+                    
+                    m_consume_obj(magr, gold);
+                    magr->mhp += d(1, 8);
+                    if(magr->mhp > magr->mhpmax) {
+                        magr->mhp = magr->mhpmax;
+                    }
+                }
+                mdef->mstrategy &= ~STRAT_WAITFORU;
+                Strcpy(buf, Monnam(magr));
+                if (gv.vis && canseemon(mdef)) {
+                    pline("%s steals some gold from %s.", buf, mon_nam(mdef));
+                }
+                if (!tele_restrict(magr)) {
+                    boolean couldspot = canspotmon(magr);
+
+                    mhm->hitflags = M_ATTK_AGR_DONE;
+                    (void) rloc(magr, RLOC_NOMSG);
+                    /* TODO: use RLOC_MSG instead? */
+                    if (gv.vis && couldspot && !canspotmon(magr))
+                        pline("%s suddenly disappears!", buf);
+                }
+            }
+        }
+    }
+}
+
+void
+mhitm_ad_disn(
+    struct monst *magr, struct attack *mattk,
+    struct monst *mdef, struct mhitm_data *mhm)
+{
+    if (magr == &gy.youmonst) {
+        /* uhitm */
+    } else if (mdef == &gy.youmonst) {
+        /* mhitu */
+
+        hitmsg(magr, mattk);
+        if (!magr->mcan && magr->mhp>6) {
+            int mass = 0, touched = 0;
+            struct obj * destroyme = 0;
+            if (Disint_resistance) {
+                return;
+            } 
+            if (uarms) {
+                if(!oresist_disintegration(uarms))
+                    destroyme = uarms;
+            } else {
+                switch (rn2(10)){ /* where it hits you */
+                    case 0: /* head */
+                    case 1:
+                        if (uarmc && (uarmc->otyp == DWARVISH_CLOAK ||
+                              uarmc->otyp == MUMMY_WRAPPING)){
+                            if(!oresist_disintegration(uarmc)){
+                              destroyme = uarmc;
+                            }
+                        } else if (uarmh) {
+                            if(!oresist_disintegration(uarmh)){
+                              destroyme = uarmh;
+                            }
+                        } else
+                            touched = 1;
+                        break;
+                    case 2: /* feet */
+                        if (uarmf) {
+                            if(!oresist_disintegration(uarmf))
+                                destroyme = uarmf;
+                        } else
+                            touched = 1;
+                        break;
+                    case 3: /* hands (right) */
+                    case 4:
+                        if (uwep) {
+                            if (!oresist_disintegration(uwep)){
+                                struct obj * otmp = uwep; 
+                                mass = otmp->owt;
+                                u.twoweap = FALSE;
+                                uwepgone();
+                                useup(otmp);
+                                mhm->damage = 0;
+                            }
+                        } else if (uarmg) {
+                            if (!oresist_disintegration(uarmg))
+                                destroyme = uarmg;
+                        } else
+                            touched = 1;
+                        break;
+                    default: /* main body hit */
+                        if (uarmc){
+                            if(!oresist_disintegration(uarmc))
+                                destroyme = uarmc;
+                        } else if (uarm){
+                            if(!oresist_disintegration(uarm))
+                                destroyme = uarm;
+                        } else if (uarmu) {
+                            if(!oresist_disintegration(uarmu))
+                                destroyme = uarmu;
+                        } else
+                            touched = 1;
+                        break;
+                }
+            }
+            if (destroyme){
+                mass = destroyme->owt;
+                destroy_arm(destroyme);
+                mhm->damage = 0;
+            } else if(touched){
+                int recip_damage = instadisintegrate(mon_nam(magr));
+                if (recip_damage){
+                    mhm->damage=0;
+                    magr->mhp -= recip_damage;
+                }
+            }
+            if (mass){
+                weight_dmg(mass);
+                magr->mhp -= mass;
+            }
+        }
+    } else {
+        /* mhitm */
+        /* only hit torso aromor */
+        if (!magr->mcan && magr->mhp > 6){
+            struct obj * otch = 0;
+            int recip_dam = 0;
+            if ((otch = which_armor(mdef, W_ARMS))) { 
+                if(oresist_disintegration(otch))
+                  otch = 0;
+            } else if ((otch = which_armor(mdef, W_ARMC))) {
+                if (oresist_disintegration(otch))
+                    otch = 0;
+            } else if ((otch = which_armor(mdef, W_ARM))) {
+                if (oresist_disintegration(otch))
+                  otch = 0;
+            } else if ((otch = which_armor(mdef, W_ARMU))) {
+                if (oresist_disintegration(otch))
+                  otch = 0;
+            } else {
+                recip_dam = minstadisintegrate(mdef);
+            }
+            if (recip_dam) {
+                mhm->damage = 0;
+            } else if (otch) {
+                recip_dam = otch->owt;
+                weight_dmg(recip_dam);
+                if(canseemon(mdef))
+                  pline("%s %s disintegrates!", 
+                      s_suffix(Monnam(mdef)), distant_name(otch, xname));
+                m_useup(mdef,otch);
+                mhm->damage = 0;
+            }
+            magr->mhp -= recip_dam;
+            if (!mdef->mhp)
+                mhm->hitflags = (M_ATTK_DEF_DIED | (grow_up(magr, mdef) ? 0
+                                                    : M_ATTK_AGR_DIED));
+        }
+    }
+}
+
+void
+mhitm_ad_scld(
+    struct monst *magr, struct attack *mattk,
+    struct monst *mdef, struct mhitm_data *mhm)
+{
+    boolean negated = (mhitm_mgc_atk_negated(magr, mdef, FALSE)
+                       || magr->mspec_used);
+    if (magr == &gy.youmonst) {
+        /* uhitm */
+        if (negated) {
+            mhm->damage = 0;
+            return;
+        }
+        if (!Blind)
+            pline("%s is being steamed!", Monnam(mdef));
+        int orig_dmg = mhm->damage;
+        if (resists_fire(mdef)) {
+            if (!Blind)
+                pline_The("steam doesn't scald %s!", mon_nam(mdef));
+            shieldeff(mdef->mx, mdef->my);
+            mhm->damage = 0;
+        }
+        /* only potions damage resistant players in destroy_item */
+        mhm->damage += destroy_items(mdef, AD_FIRE, orig_dmg);
+        if(!rn2(10))
+            water_damage(which_armor(mdef, W_ARM), 0, FALSE);
+    } else if (mdef == &gy.youmonst) {
+        /* mhitu */
+        hitmsg(magr,mattk);
+        if (!magr->mcan) {
+            pline("You're %s!", on_fire(gy.youmonst.data, mattk));
+            int orig_dmg = mhm->damage;
+            if (Fire_resistance) {
+                pline_The("steam doesn't feel hot.");
+                mhm->damage = 0;
+            } 
+            if((int) magr->m_lev > rn2(20))
+                destroy_items(&gy.youmonst, AD_FIRE, orig_dmg);
+            if(!rn2(10))
+                (void) water_damage(uarm, 0, FALSE);
+        } else {
+            pline("It feels merely creepy.");
+            mhm->damage = 0;
+        }
+    } else {
+        /* mhitm */
+        if (magr->mcan) {
+            mhm->damage = 0;
+            return;
+        }
+        if (canseemon(mdef))
+            pline("%s is %s!", Monnam(mdef),
+                on_fire(mdef->data, mattk));
+        int orig_dmg = mhm->damage;
+        if (resists_fire(mdef)) {
+            if (canseemon(mdef))
+            pline_The("steam doesn't seem to burn %s much!",
+                                mon_nam(mdef));
+            shieldeff(mdef->mx, mdef->my);
+            mhm->damage = 0;
+        }
+        /* only potions damage resistant players in destroy_item */
+        mhm->damage += destroy_items(mdef, AD_FIRE, orig_dmg);
+        if(!rn2(10))
+            water_damage(which_armor(mdef, W_ARM), 0, FALSE);
+    }
+}
+
+void
+mhitm_ad_hngy(
+    struct monst *magr, /*struct attack *mattk,*/
+    struct monst *mdef, struct mhitm_data *mhm)
+{
+    if (magr == &gy.youmonst) {
+        /* uhitm */
+    } else if (mdef == &gy.youmonst) {
+        /* mhitu */
+    } else {
+        /* mhitm */
+        mhm->damage = 0;
+        if (magr->mcan || !mdef->mtame)
+            return;
+        EDOG(mdef)->hungrytime -= 50;
+        magr->mspec_used = magr->mspec_used + 50;
+        if (canseemon(mdef))
+            pline("%s %s rumbles.",
+                s_suffix(Monnam(mdef)), mbodypart(mdef,STOMACH));
+    }
+}
+
+void
+mhitm_ad_flvr(
+    struct monst *magr, struct attack *mattk,
+    struct monst *mdef, struct mhitm_data *mhm)
+{
+    boolean negated = (mhitm_mgc_atk_negated(magr, mdef, FALSE)
+                       || magr->mspec_used);
+
+    if (magr == &gy.youmonst) {
+        /* uhitm */
+        if (negated) {
+            mhm->damage = 0;
+            return;
+        }
+        switch (rn2(6)){
+            case 0: /* up, copied from muse: MUSE_POT_GAIN_LEVEL */
+                if (Can_rise_up(mdef->mx, mdef->my, &u.uz)){
+                    register int tolev=depth(&u.uz)-1;
+                    d_level tolevel;
+                    get_level(&tolevel, tolev);
+                    if(on_level(&tolevel, &u.uz)) goto uhitm_flvr_strange;
+                    if (canseemon(mdef))
+                        pline("%s rises up, through the %s!",
+                            Monnam(mdef), ceiling(mdef->mx, mdef->my));
+                    migrate_to_level(mdef, ledger_no(&tolevel),
+                        MIGR_RANDOM, (coord *)0);
+                    break;
+                }
+                else {
+                    goto uhitm_flvr_strange;
+                }
+                break;
+            case 1: /* down */
+                if (Can_fall_thru(&u.uz) /* && !In_sokoban(&u.uz)*/ ){
+                    register int tolev=depth(&u.uz)+1;
+                    d_level tolevel;
+                    get_level(&tolevel, tolev);
+                    if (mon_has_amulet(mdef) || In_endgame(&u.uz) 
+                        || on_level(&tolevel, &u.uz))
+                        goto uhitm_flvr_strange;
+                    if (canseemon(mdef))
+                      pline("%s sinks down, through the %s!", 
+                          Monnam(mdef), surface(mdef->mx, mdef->my));
+                    migrate_to_level(mdef,ledger_no(&tolevel),
+                        MIGR_RANDOM, (coord *)0);
+                    break;
+                }
+                else goto uhitm_flvr_strange;
+            case 2: /* top, teleport to dlev1, top level of branch? */
+            case 3: /* bottom, teleport to Moloch's sanctum, bot lev of branch? */ 
+            case 4: /* strange */
+uhitm_flvr_strange:
+                if (canseemon(mdef))
+                    pline("%s reacts strangely.", Monnam(mdef));
+                mdef->mconf = 1;
+                mdef->mstrategy &= ~STRAT_WAITFORU;
+                break;
+          case 5: /* charm, fall through */ 
+                mhitm_ad_flvr(magr, mattk, mdef, mhm);
+        }
+    } else if (mdef == &gy.youmonst) {
+        /* mhitu */
+        if (magr->mcan || !rn2(50) || magr->mspec_used) { 
+            mhm->damage = 0; 
+            return;
+        }
+        hitmsg(magr, mattk);
+        switch (rn2(6)) {
+            case 0: /* up, copied from muse: MUSE_POT_GAIN_LEVEL */
+                if((ledger_no(&u.uz) == 1 && u.uhave.amulet) ||
+                    Can_rise_up(u.ux, u.uy, &u.uz)) {
+                    magr->mspec_used = magr->mspec_used + (mhm->damage + rn2(6));
+                    if(ledger_no(&u.uz) == 1) {
+                        You("rise up, through the %s!", ceiling(u.ux,u.uy));
+                        schedule_goto(&earth_level, UTOTYPE_NONE, (char *) 0, (char *) 0);
+                        return;
+                    } else {
+                        register int newlev = depth(&u.uz)-1;
+                        d_level newlevel;
+                        get_level(&newlevel, newlev);
+                        if(on_level(&newlevel, &u.uz)) {
+                            goto mhitu_flvr_strange; 
+                            break;
+                        } else
+                            You("rise up, through the %s!", ceiling(u.ux,u.uy));
+                        schedule_goto(&newlevel, UTOTYPE_NONE, (char *) 0, (char *) 0);
+                        return;
+                    }
+                } else
+                    goto mhitu_flvr_strange;
+                break;
+            case 1: /* down */
+                if (Can_fall_thru(&u.uz) && !In_sokoban(&u.uz) ) {
+                    d_level dtmp;
+                    magr->mspec_used = magr->mspec_used + (mhm->damage + rn2(6));
+                    pline("You sink down, through the %s!",surface(u.ux,u.uy));
+                    if(*u.ushops)
+                        shopdig(1);
+                    if (Is_stronghold(&u.uz)) {
+                        find_hell(&dtmp);
+                    } else {
+                        dtmp.dnum = u.uz.dnum;
+                        dtmp.dlevel = dunlev(&u.uz)+1;
+                    }
+                    schedule_goto(&dtmp, UTOTYPE_NONE, (char *) 0, (char *) 0);
+                    return;
+                } else
+                    goto mhitu_flvr_strange;
+                break;
+            case 2: /* top, teleport to dlev1, top level of branch? */
+            case 3: /* bottom, teleport to sanctum, bot lev of branch? */
+                if(!In_sokoban(&u.uz) && !(In_quest(&u.uz)) && !In_endgame(&u.uz)) {
+                    int i,j;
+                    struct monst * mamu;
+                    d_level newlev;
+                    if (u.uhave.amulet)
+                        mamu = 0;
+                    else {
+                        for(i=u.ux-1;i<u.ux+1;++i)
+                            for(j=u.uy;j<u.uy+1;++j)
+                                if((mamu = m_at(i,j)) && (levl_follower(mamu)) &&
+                                    (!magr->iswiz && mon_has_amulet(magr))){
+                                  i=u.ux+2;
+                                  break;
+                                } else {
+                                  mamu = 0;
+                                }
+                    }
+                    j = 0; /* Truth of Truth/Beauty */
+                    if (u.uhave.amulet || mamu){
+                        You("are back at the bottom!");
+                        newlev = sanctum_level;
+                    } else if ((u.uevent.invoked && !mamu) || rn2(2)){
+                        if (Is_knox(&u.uz)) goto mhitu_flvr_strange;
+                        You("are back at the top!");
+                        get_level(&newlev, 1);
+                        j = 1;
+                    } else {
+                        get_level(&newlev, deepest_lev_reached(FALSE));
+                        You("have reached the %s",
+                            on_level(&newlev,&sanctum_level)?"bottom!":"...bottom?");
+                    }
+                    if(on_level(&newlev,&u.uz))
+                        goto mhitu_flvr_strange;
+                    schedule_goto(&newlev, UTOTYPE_NONE, (char *) 0, (char *) 0);
+                    if (j){
+                        if (Hallucination) 
+                          make_hallucinated(0,FALSE,0);
+                        exercise(A_WIS, TRUE);
+                        You("see the Truth!");
+                    } else {
+                        if (adjattrib(A_CHA, 1, FALSE))
+                            pline("You gain an air of Beauty.");
+                    }
+                    return;
+                }
+                break;
+            case 4: /* strange */
+mhitu_flvr_strange:
+                magr->mspec_used = magr->mspec_used + (mhm->damage + rn2(6));
+                if(Confusion||Hallucination)
+                    pline("Things are getting even stranger.");
+                else
+                    pline("Things are getting strange.");
+                make_confused(HConfusion + mhm->damage + rn2(3), FALSE);
+                if (!(u.umonnum == PM_BLACK_LIGHT ||
+                      u.umonnum == PM_VIOLET_FUNGUS ||
+                      dmgtype(gy.youmonst.data, AD_STUN))) {
+                    make_hallucinated(HHallucination + (long)mhm->damage+rn2(3),FALSE,0L);
+                }
+                break;
+            case 5: /* charm */ 
+                goto mhitu_flvr_strange;
+        }
+        mhm->damage=0;
+    } else {
+        /* mhitm */
+        if (magr->mcan) {
+            mhm->damage = 0;
+            return;
+        }
+        /* TODO: flesh this out a lot more! */
+        switch (rn2(6)){
+            case 0:  /* up, copied from muse: MUSE_POT_GAIN_LEVEL */
+                if (Can_rise_up(mdef->mx, mdef->my, &u.uz)){
+                    mon_thru_ceiling(mdef);
+                }
+                else {
+                    goto mhitm_flvr_strange;
+                }
+                break;
+            case 1: /* down */
+                if (Can_fall_thru(&u.uz) /* && !In_sokoban(&u.uz)*/ ){
+                    int tolev=depth(&u.uz)+1;
+                    d_level tolevel;
+                    get_level(&tolevel, tolev);
+                    if (mon_has_amulet(mdef) || In_endgame(&u.uz) 
+                        || on_level(&tolevel, &u.uz))
+                      goto mhitm_flvr_strange;
+                    if (canseemon(mdef))
+                        pline("%s sinks down, through the %s!", 
+                            Monnam(mdef), surface(mdef->mx, mdef->my));
+                    migrate_to_level(mdef,ledger_no(&tolevel),
+                        MIGR_RANDOM, (coord *)0);
+                    break;
+                }
+                else
+                    goto mhitm_flvr_strange;
+            case 2: /* top, teleport to dlev1, top level of branch? */
+            case 3: /* bottom, teleport to Moloch's sanctum, bot lev of branch? */ 
+            case 4: /* strange */
+mhitm_flvr_strange:
+                if (canseemon(mdef))
+                   pline("%s reacts strangely.", Monnam(mdef));
+                mdef->mconf = 1;
+                mdef->mstrategy &= ~STRAT_WAITFORU;
+                break;
+            case 5: /* charm, fall through */ 
+                goto mhitm_flvr_strange;
+        }
+    }
+}
+
+void
+mhitm_ad_shoe(
+    struct monst *magr, struct attack *mattk,
+    struct monst *mdef, struct mhitm_data *mhm)
+{
+    if (magr == &gy.youmonst) {
+        /* uhitm */
+    } else if (mdef == &gy.youmonst) {
+        /* mhitu */
+        /* curse shoes, steal alt shoes, fumblize shoes, damage shoes */
+        if (uarmf && !magr->mcan){
+            mhm->damage = 0; 
+            if (canseemon(magr))
+                pline("%s damages %s with %s little tools!",
+                    Monnam(magr), yname(uarmf), mhis(magr));
+            else
+                You_feel("some malicious cobbling!");
+            switch(rnd(3)){
+                case 0:
+                    if (uarmf->otyp != LOW_BOOTS  && uarmf->otyp != HIGH_BOOTS &&
+                        uarmf->otyp != DWARVISH_BOOTS && uarmf->otyp != FUMBLE_BOOTS){
+                        struct obj* otmp = uarmf;
+                        Boots_off();
+                        otmp->otyp = (!rn2(4)) ? FUMBLE_BOOTS :
+                          (otmp->otyp == KICKING_BOOTS) ? DWARVISH_BOOTS : LOW_BOOTS;
+                        setworn(otmp, W_ARMF);
+                        Boots_on();
+                    }
+                    break;
+                case 1:
+                    if (uarmf->blessed){
+                        unbless(uarmf);
+                    } else if(!(uarmf->cursed)){
+                        curse(uarmf);
+                    }
+                    break;
+                case 2:
+                    --uarmf->spe;
+                    adj_abon(uarmf, -1); /* in case a boot is added that needs it */
+                    break;
+            }
+        }
+        hitmsg(magr, mattk);
+    } else {
+        /* mhitm */
+    }
+}
+
+void
 mhitm_adtyping(
     struct monst *magr, struct attack *mattk,
     struct monst *mdef, struct mhitm_data *mhm)
@@ -4797,6 +5581,12 @@ mhitm_adtyping(
     case AD_DGST: mhitm_ad_dgst(magr, mattk, mdef, mhm); break;
     case AD_HALU: mhitm_ad_halu(magr, mattk, mdef, mhm); break;
     case AD_MTRL: mhitm_ad_mtrl(magr, mattk, mdef, mhm); break;
+    case AD_EGLD: mhitm_ad_egld(magr, /*mattk,*/ mdef, mhm); break;
+    case AD_DISN: mhitm_ad_disn(magr, mattk, mdef, mhm); break;
+    case AD_SCLD: mhitm_ad_scld(magr, mattk, mdef, mhm); break;
+    case AD_HNGY: mhitm_ad_hngy(magr, /*mattk,*/ mdef, mhm); break;
+    case AD_FLVR: mhitm_ad_flvr(magr, mattk, mdef, mhm); break;
+    case AD_SHOE: mhitm_ad_shoe(magr, mattk, mdef, mhm); break;
     default:
         mhm->damage = 0;
     }
@@ -4981,8 +5771,9 @@ gulpum(struct monst *mdef, struct attack *mattk)
         /* engulfing a cockatrice or digesting a Rider or Medusa */
         fatal_gulp = (touch_petrifies(pd) && !Stone_resistance)
                      || (mattk->adtyp == AD_DGST
-                         && (is_rider(pd) || (pd == &mons[PM_MEDUSA]
-                                              && !Stone_resistance)));
+                         && ((is_rider(pd) || (pd == &mons[PM_MEDUSA]
+                                              && !Stone_resistance))
+                                          || touch_disintegrates(pd)));
 
         if (mattk->adtyp == AD_DGST && (!Slow_digestion || fatal_gulp))
             eating_conducts(pd);
@@ -4999,7 +5790,11 @@ gulpum(struct monst *mdef, struct attack *mattk)
                     : u_enfold ? "enclosing"
                       : "engulfing",
                     mnam, u_digest ? " whole" : "");
-            instapetrify(kbuf);
+            if(touch_disintegrates(pd)) {
+                instadisintegrate(kbuf);
+            } else {
+                instapetrify(kbuf);
+            }
         } else {
             start_engulf(mdef);
             switch (mattk->adtyp) {
@@ -5139,6 +5934,18 @@ gulpum(struct monst *mdef, struct attack *mattk)
                     golemeffects(mdef, (int) mattk->adtyp, dam);
                 } else
                     dam = 0;
+                break;
+            case AD_SCLD:
+                if (rn2(2)) {
+                    if (resists_fire(mdef)) {
+                        pline("%s seems mildly hot.", Monnam(mdef));
+                        dam = 0;
+                    } else
+                        pline("%s is severly scalded!", Monnam(mdef));
+                    if(!rn2(3))
+                        water_damage(which_armor(mdef, W_ARM), 0, FALSE);
+                } else
+                    dam=0;
                 break;
             case AD_DREN:
                 if (!rn2(4))
@@ -5592,7 +6399,37 @@ hmonas(struct monst *mon)
                         if (hated_obj && flags.verbose)
                             searmsg(&gy.youmonst, mon, hated_obj, FALSE);
                     }
-                    sum[i] = damageum(mon, mattk, specialdmg);
+                    if (touch_disintegrates(mon->data) && !mon->mcan && mon->mhp>1){
+                        int dis_dmg = 0;
+                        if(mattk->aatyp == AT_KICK && uarmf){
+                            if(!oresist_disintegration(uarmf)){
+                              dis_dmg += uarmf->owt;
+                              destroy_arm(uarmf);
+                            }
+                        } else if(uarmg && (mattk->aatyp == AT_WEAP ||
+                                mattk->aatyp == AT_CLAW || mattk->aatyp == AT_TUCH)){
+                            if(!oresist_disintegration(uarmg)){
+                              dis_dmg += uarmg->owt;
+                              destroy_arm(uarmg);
+                            } 
+                        } else if(mattk->aatyp == AT_BUTT && uarmh) {
+                            if(!oresist_disintegration(uarmh)){
+                              dis_dmg += (uarmh->owt);
+                              destroy_arm(uarmh);
+                            }
+                        } else {
+                            char kbuf[BUFSZ];
+                            Sprintf(kbuf, "touching %s", a_monnam(mon));
+                            mon->mhp -= instadisintegrate(kbuf);
+                        }
+                        sum[i] = 1;
+                        if(dis_dmg){
+                            weight_dmg(dis_dmg);
+                        }
+                        mon->mhp -= dis_dmg;
+                        if (mon->mhp < 1) mon->mhp = 1;
+                    } else
+                        sum[i] = damageum(mon, mattk, specialdmg);
                 }
             } else { /* !dhit */
                 missum(mon, mattk, (tmp + armorpenalty > dieroll));
@@ -5707,6 +6544,10 @@ hmonas(struct monst *mon)
                 if (mon->data == &mons[PM_SHADE]) {
                     /* no specialdmg check needed */
                     Your("attempt to surround %s is harmless.", mon_nam(mon));
+                }
+                if((gy.youmonst.data == &mons[PM_BANDERSNATCH]) && 
+                    !yeasty_food(mon->data)) {
+                    /* TODO: fail message? */
                 } else if (failed_grab(&gy.youmonst, mon, mattk)) {
                     ; /* non-shade miss; message already given */
                 } else {
@@ -6018,7 +6859,10 @@ passive(
             if (!Stunned)
                 make_stunned((long) tmp, TRUE);
             break;
+        case AD_SCLD:
         case AD_FIRE:
+            if(!rn2(10))
+                water_damage(which_armor(mon, W_ARM), 0, FALSE);
             if (monnear(mon, u.ux, u.uy)) {
                 if (Fire_resistance) {
                     shieldeff(u.ux, u.uy);

@@ -383,6 +383,9 @@ can_blnd(
     if (magr && magr->data == &mons[PM_RAVEN] && mdef->data == &mons[PM_RAVEN])
         return FALSE;
 
+    if (magr && magr->data == &mons[PM_UMBRAL_HULK])
+        return FALSE;
+
     switch (aatyp) {
     case AT_EXPL:
     case AT_BOOM:
@@ -1357,6 +1360,7 @@ static const short grownups[][2] = {
     { PM_DEMILICH, PM_MASTER_LICH },
     { PM_MASTER_LICH, PM_ARCH_LICH },
     { PM_VAMPIRE, PM_VAMPIRE_LEADER },
+    { PM_VAMPIRE_LEADER, PM_NOSFERATU },
     { PM_BAT, PM_GIANT_BAT },
     { PM_BABY_GRAY_DRAGON, PM_GRAY_DRAGON },
     { PM_BABY_GOLD_DRAGON, PM_GOLD_DRAGON },
@@ -1538,7 +1542,11 @@ on_fire(struct permonst *mptr, struct attack *mattk)
         what = "heating up";
         break;
     default:
-        what = (mattk->aatyp == AT_HUGS) ? "being roasted" : "on fire";
+        if(mattk->adtyp == AD_SCLD) {
+            what = "being scalded";
+        } else {
+            what = (mattk->aatyp == AT_HUGS) ? "being roasted" : "on fire";
+        }
         break;
     }
     return what;

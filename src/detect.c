@@ -835,6 +835,11 @@ monster_detect(struct obj *otmp, /* detecting object (if any) */
             if (otmp && otmp->cursed && helpless(mtmp)) {
                 mtmp->msleeping = mtmp->mfrozen = 0;
                 mtmp->mcanmove = 1;
+                if(mtmp->data == &mons[PM_CLOCKWORK_AUTOMATON] &&
+                    !mtmp->mspec_used) {
+                    mtmp->mfrozen = 1;
+                    mtmp->mcanmove = 0;
+                }
                 woken = TRUE;
             }
         }

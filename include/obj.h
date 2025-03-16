@@ -414,6 +414,7 @@ struct obj {
 /* misc helpers, simple enough to be macros */
 #define is_flimsy(otmp)                           \
     (otmp->material <= LEATHER || (otmp)->otyp == RUBBER_HOSE)
+#define is_seethru(otmp) (otmp->material == SLIME || otmp->material == GLASS)
 #define is_plural(o) \
     ((o)->quan != 1L                                                    \
      /* "the Eyes of the Overworld" are plural, but                     \
@@ -426,6 +427,17 @@ struct obj {
                        || (o)->otyp == SPE_POLYMORPH \
                        || (o)->otyp == POT_POLYMORPH \
                        || (o)->otyp == AMULET_OF_UNCHANGING)
+
+/* note: worn amulet of life saving must be preserved in order to operate */
+#define oresist_disintegration(obj)                                       \
+    (objects[obj->otyp].oc_oprop == DISINT_RES || obj_resists(obj, 5, 50) \
+     || is_quest_artifact(obj) || obj->oclass == AMULET_CLASS)
+# define weight_dmg(i) {  \
+  i = (i<=100)?1:i/100; \
+  i = rnd(i); \
+  if(i > 6) i = 6; \
+}
+
 
 /* achievement tracking; 3.6.x did this differently */
 #define is_mines_prize(o) ((o)->o_id == svc.context.achieveo.mines_prize_oid)

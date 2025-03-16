@@ -205,6 +205,20 @@ dosounds(void)
     int hallu, vx, vy;
     struct monst *mtmp;
 
+    if(!rn2(200) && !u.uswallow && !Underwater && !Hearing_muffled ){
+        for (mtmp = fmon; mtmp; mtmp = mtmp->nmon){
+            if (mtmp->data == &mons[PM_JUBJUB_BIRD] && 
+                !mtmp->mcan && !mtmp->mspec_used && 
+                !couldsee(mtmp->mx, mtmp->my)){
+                You_hear("a sound like a pencil that squeaks on a slate!");
+                make_confused(HConfusion + rn1(8,8), FALSE);
+                mtmp->mspec_used += 8;
+                break;
+            }
+        }
+    }
+
+
     if (Deaf || !flags.acoustics || u.uswallow || Underwater)
         return;
 
@@ -745,7 +759,8 @@ domonnoise(struct monst *mtmp)
            night */
         boolean isnight = night();
         boolean kindred = (Upolyd && (u.umonnum == PM_VAMPIRE
-                                      || u.umonnum == PM_VAMPIRE_LEADER));
+                                      || u.umonnum == PM_VAMPIRE_LEADER
+                                      || u.umonnum == PM_NOSFERATU));
         boolean nightchild = (Upolyd && (u.umonnum == PM_WOLF
                                          || u.umonnum == PM_WINTER_WOLF
                                          || u.umonnum == PM_WINTER_WOLF_CUB));

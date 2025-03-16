@@ -1388,10 +1388,15 @@ seffect_scare_monster(struct obj **sobjp)
             if (confused || scursed) {
                 mtmp->mflee = mtmp->mfrozen = mtmp->msleeping = 0;
                 mtmp->mcanmove = 1;
+            if(mtmp->data == &mons[PM_CLOCKWORK_AUTOMATON] &&
+                !mtmp->mspec_used) {
+              mtmp->mfrozen = 1;
+              mtmp->mcanmove = 0;
             } else if (!resist(mtmp, sobj->oclass, 0, NOTELL))
                 monflee(mtmp, 0, FALSE, FALSE);
             if (!mtmp->mtame)
                 ct++; /* pets don't laugh at you */
+            }
         }
     }
     if (otyp == SCR_SCARE_MONSTER || !ct) {
@@ -2444,6 +2449,62 @@ set_lit(coordxy x, coordxy y, genericptr_t val)
         levl[x][y].lit = 0;
         snuff_light_source(x, y);
     }
+}
+
+void
+litroom_mon(boolean on, struct obj *obj, int xx, int yy)
+{
+    struct monst * mlit = m_at(xx,yy);
+    char u_see_effects = !Blind;
+    
+    /*
+     *  If we are darkening the room and the hero is punished but not
+     *  blind, then we have to pick up and replace the ball and chain so
+     *  that we don't remember them if they are out of sight.
+     */
+    if (Punished && !on && !Blind)
+        move_bc(1, 0, uball->ox, uball->oy, uchain->ox, uchain->oy);
+
+    if (Is_rogue_level(&u.uz)) {
+        /* Can't use do_clear_area because MAX_RADIUS is too small */
+        /* rogue lighting must light the entire room */
+        int rnum = levl[xx][yy].roomno - ROOMOFFSET;
+        int rx, ry;
+        if(rnum >= 0) {
+            for(rx = svr.rooms[rnum].lx-1; rx <= svr.rooms[rnum].hx+1; rx++)
+                for(ry = svr.rooms[rnum].ly-1; ry <= svr.rooms[rnum].hy+1; ry++){
+                    if (on)
+                        set_lit(rx, ry, (genericptr_t)(&u_see_effects));
+                    else
+                        set_lit(rx, ry, 0);
+                }
+            svr.rooms[rnum].rlit = on;
+        }
+        /* hallways remain dark on the rogue level */
+    } else
+        do_clear_area(xx,yy,
+            (obj && obj->oclass==SCROLL_CLASS && obj->blessed) ? 5 : 3,
+            set_lit, (on ? (genericptr_t)&u_see_effects : 0 ) );
+    /*
+     *  If we are not blind, then force a redraw on all positions in sight
+     *  by temporarily blinding the hero.  The vision recalculation will
+     *  correctly update all previously seen positions *and* correctly
+     *  set the waslit bit [could be messed up from above].
+     */
+    if (!Blind) {
+        vision_recalc(2);
+        /* replace ball&chain */
+        if (Punished && !on)
+            move_bc(0, 0, uball->ox, uball->oy, uchain->ox, uchain->oy);
+    }
+    if (on && canseemon(mlit)){
+        pline("A lit field surrounds %s!", mon_nam(mlit));
+    }
+    if (!on && u_see_effects==2){
+        pline("A shroud of darkness settles %s!", 
+            (distu(xx,yy) > 15)?"in the distance":"nearby");
+    }
+    gv.vision_full_recalc = 1;  /* delayed vision recalculation */
 }
 
 void

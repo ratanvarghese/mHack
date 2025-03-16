@@ -385,10 +385,20 @@ Cloak_off(void)
     struct obj *otmp = uarmc;
     int otyp = otmp->otyp;
     long oldprop = u.uprops[objects[otyp].oc_oprop].extrinsic & ~WORN_CLOAK;
+    int was_blind = Blemmye_blindness(&gy.youmonst);
 
     svc.context.takeoff.mask &= ~W_ARMC;
     /* For mummy wrapping, taking it off first resets `Invisible'. */
     setworn((struct obj *) 0, W_ARMC);
+    if (!Blind && was_blind) {
+        if (flags.verbose)
+            You("can see again.");
+        if (Blind_telepat || Infravision)
+            see_monsters();
+        vision_recalc(0);  /* recalc vision limits */
+        disp.botl = 1;
+    }
+
     switch (otyp) {
     case ORCISH_CLOAK:
     case DWARVISH_CLOAK:
@@ -778,6 +788,7 @@ int
 Shirt_off(void)
 {
     svc.context.takeoff.mask &= ~W_ARMU;
+    int was_blind = Blind;
 
     /* no shirt currently requires special handling when taken off, but we
        keep this uncommented in case somebody adds a new one which does */
@@ -790,6 +801,15 @@ Shirt_off(void)
     }
 
     setworn((struct obj *) 0, W_ARMU);
+    if (!Blind && was_blind) {
+        if (flags.verbose)
+            You("can see again.");
+        if (Blind_telepat || Infravision)
+            see_monsters();
+        vision_recalc(0);   /* recalc vision limits */
+        disp.botl = 1;
+    }
+
     return 0;
 }
 
@@ -910,10 +930,21 @@ Armor_off(void)
 {
     struct obj *otmp = uarm;
     boolean was_arti_light = otmp && otmp->lamplit && artifact_light(otmp);
+    boolean was_blind = Blemmye_blindness(&gy.youmonst);
 
     svc.context.takeoff.mask &= ~W_ARM;
     setworn((struct obj *) 0, W_ARM);
     svc.context.takeoff.cancelled_don = FALSE;
+
+    if (!Blind && was_blind) {
+        if (flags.verbose)
+            You("can see again.");
+        if (Blind_telepat || Infravision)
+            see_monsters();
+        vision_recalc(0); /* recalc vision limits */
+        disp.botl = 1;
+    }
+
 
     /* taking off yellow dragon scales/mail might be fatal; arti_light
        comes from gold dragon scales/mail so they don't overlap, but
@@ -940,10 +971,20 @@ Armor_gone(void)
 {
     struct obj *otmp = uarm;
     boolean was_arti_light = otmp && otmp->lamplit && artifact_light(otmp);
+    int was_blind = Blemmye_blindness(&gy.youmonst);
 
     svc.context.takeoff.mask &= ~W_ARM;
     setnotworn(uarm);
     svc.context.takeoff.cancelled_don = FALSE;
+
+    if (!Blind && was_blind) {
+        if (flags.verbose)
+            You("can see again.");
+        if (Blind_telepat || Infravision)
+            see_monsters();
+        vision_recalc(0); /* recalc vision limits */
+        disp.botl = 1;
+    }
 
     /* losing yellow dragon scales/mail might be fatal; arti_light
        comes from gold dragon scales/mail so they don't overlap, but
@@ -1533,6 +1574,25 @@ Blindf_off(struct obj *otmp)
     }
 }
 
+boolean 
+Blemmye_blindness(struct monst * mon)
+{
+  struct obj * otmp;
+  if (mon->data != &mons[PM_BLEMMYE])
+    return FALSE;
+  otmp = (mon == &gy.youmonst) ? uarmu : which_armor(mon, W_ARMU);
+  if (otmp && !is_seethru(otmp))
+    return TRUE;
+  otmp = (mon == &gy.youmonst) ? uarm : which_armor(mon, W_ARM);
+  if (otmp && !is_seethru(otmp))
+    return TRUE;
+  otmp = (mon == &gy.youmonst) ? uarmc : which_armor(mon, W_ARMC);
+  if (otmp && !is_seethru(otmp))
+    return TRUE;
+  return FALSE;
+}
+
+
 /* called in moveloop()'s prologue to set side-effects of worn start-up items;
    also used by poly_obj() when a worn item gets transformed */
 void
@@ -2064,6 +2124,9 @@ canwearobj(struct obj *otmp, long *mask, boolean noisy)
                           helm_simple_name(otmp),
                           plur(num_horns(gy.youmonst.data)));
             err++;
+        } else if (Upolyd && !has_head(gy.youmonst.data)) {
+            You("cannot wear %s, because you have no head.",
+                helm_simple_name(otmp));
         } else
             *mask = W_ARMH;
     } else if (is_shield(otmp)) {
@@ -2208,6 +2271,7 @@ accessory_or_armor_on(struct obj *obj)
 {
     long mask = 0L;
     boolean armor, ring, amulet, eyewear;
+    int was_blind = Blemmye_blindness(&gy.youmonst);
 
     if (obj->owornmask & (W_ACCESSORY | W_ARMOR)) {
         already_wearing(c_that_);
@@ -2402,10 +2466,15 @@ accessory_or_armor_on(struct obj *obj)
         if (delay) {
             nomul(delay);
             gm.multi_reason = "dressing up";
-            gn.nomovemsg = "You finish your dressing maneuver.";
+            if (!was_blind && Blemmye_blindness(&gy.youmonst))
+                gn.nomovemsg = "You finish your dressing maneuver. You can no longer see.";
+            else
+                gn.nomovemsg = "You finish your dressing maneuver.";
         } else {
             unmul(""); /* call afternmv, clear it+nomovemsg+multi_reason */
             on_msg(obj);
+            if (!was_blind && Blemmye_blindness(&gy.youmonst))
+                You("can no longer see.");
         }
         svc.context.takeoff.mask = svc.context.takeoff.what = 0L;
         /* gw.wasinwater = 0U; // can't clear this yet; Boots_on() needs it

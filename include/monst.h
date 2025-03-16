@@ -205,6 +205,13 @@ struct monst {
 #define MSLOW 1 /* slowed monster */
 #define MFAST 2 /* speeded monster */
 
+#define CLOCKWORK_PANIC   20
+#define CLOCKWORK_LOW    400
+#define CLOCKWORK_MED   1000
+#define CLOCKWORK_HIGH  1800
+#define CLOCKWORK_MAX   2000
+#define CLOCKWORK_WIND    50
+
 #define MON_WEP(mon) ((mon)->mw)
 #define MON_NOWEP(mon) ((mon)->mw = (struct obj *) 0)
 
