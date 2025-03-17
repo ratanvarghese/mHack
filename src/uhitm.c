@@ -5533,6 +5533,48 @@ mhitm_ad_shoe(
 }
 
 void
+mhitm_ad_tckl(
+    struct monst *magr, struct attack *mattk,
+    struct monst *mdef, struct mhitm_data *mhm)
+{
+    if (magr == &gy.youmonst) {
+    /* uhitm */
+        if (mdef->mcanmove && !rn2(3) && mhm->damage < mdef->mhp) {
+            if (!Blind)
+                pline("%s is mercilessly tickled by you!", Monnam(mdef));
+            mdef->mcanmove = 0;
+            mdef->mfrozen = rnd(10);
+        }
+    } else if (mdef == &gy.youmonst) {
+    /* mhitu */
+        hitmsg(magr, mattk);
+        if (!magr->mcan && gm.multi >= 0 && !rn2(3)) {
+            if (Free_action)
+                You("feel something horrible probing your flesh!");
+            else {
+                if (Blind)
+                    You("are mercilessly tickled!");
+                else
+                    You("are mercilessly tickled by %s!", mon_nam(magr));
+                gn.nomovemsg = 0;  /* default: "you can move again" */
+                nomul(-rnd(10));
+                exercise(A_DEX, FALSE);
+                exercise(A_CON, FALSE);
+            }
+        }
+    } else {
+    /* mhitm */
+        if(!magr->mcan && mdef->mcanmove) {
+            if (gv.vis) {
+                pline("%s mercilessly tickles %s.", Monnam(mdef), mon_nam(magr));
+            }
+            mdef->mcanmove = 0;
+            mdef->mfrozen = rnd(10);
+        }
+    }
+}
+
+void
 mhitm_adtyping(
     struct monst *magr, struct attack *mattk,
     struct monst *mdef, struct mhitm_data *mhm)
@@ -5587,6 +5629,7 @@ mhitm_adtyping(
     case AD_HNGY: mhitm_ad_hngy(magr, /*mattk,*/ mdef, mhm); break;
     case AD_FLVR: mhitm_ad_flvr(magr, mattk, mdef, mhm); break;
     case AD_SHOE: mhitm_ad_shoe(magr, mattk, mdef, mhm); break;
+    case AD_TCKL: mhitm_ad_tckl(magr, mattk, mdef, mhm); break;
     default:
         mhm->damage = 0;
     }

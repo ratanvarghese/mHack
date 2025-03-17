@@ -52,7 +52,9 @@ static const char *const shkbooks[] = {
     "Ballingeary", "Kilgarvan", "Cahersiveen",    "Glenbeigh",
     "Kilmihil",    "Kiltamagh", "Droichead Atha", "Inniscrone",
     "Clonegal",    "Lisnaskea", "Culdaff",        "Dunfanaghy",
-    "Inishbofin",  "Kesh",      0
+    "Inishbofin",  "Kesh",
+    /* Mythos */
+    "T'farcevol Drawoh", "Thims Nothsa",           0
 };
 
 static const char *const shkarmors[] = {

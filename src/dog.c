@@ -1096,7 +1096,9 @@ dogfood(struct monst *mon, struct obj *obj)
             return TABU;
         if (mptr == &mons[PM_GELATINOUS_CUBE] && is_organic(obj))
             return ACCFOOD;
-        if (mon->data == &mons[PM_GOLD_BUG] && is_golden(obj))
+        if ((mon->data == &mons[PM_GOLD_BUG]
+            || mon->data == &mons[PM_SHUGGOTH]
+            || mon->data == &mons[PM_GIANT_SHUGGOTH]) && is_golden(obj))
             return DOGFOOD;
         if (metallivorous(mptr) && is_metallic(obj)
             && (is_rustprone(obj) || mptr != &mons[PM_RUST_MONSTER])) {

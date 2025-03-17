@@ -666,6 +666,7 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
         mksobj_at(TINNING_KIT, x, y, TRUE, FALSE);
         break;
     case PM_IRON_GOLEM:
+    case PM_STEEL_GOLEM:
         num = d(2, 6);
         while (num--) {
             obj = mkobj_at(RANDOM_CLASS, x, y, FALSE);
@@ -758,6 +759,30 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
         }
         free_mgivenname(mtmp);
         break;
+    case PM_RUBY_GOLEM:
+        obj = mksobj_at(RUBY, x, y, FALSE, FALSE);
+        obj->quan = (long) d(2,4);
+        obj->owt = weight(obj);
+        free_mgivenname(mtmp);
+        break;
+    case PM_DIAMOND_GOLEM:
+        obj = mksobj_at(DIAMOND, x, y, FALSE, FALSE);
+        obj->quan = (long) d(2,4);
+        obj->owt = weight(obj);
+        free_mgivenname(mtmp);
+        break;
+    case PM_SAPPHIRE_GOLEM:
+        obj = mksobj_at(SAPPHIRE, x, y, FALSE, FALSE);
+        obj->quan = (long) d(2,4);
+        obj->owt = weight(obj);
+        free_mgivenname(mtmp);
+        break;
+    case PM_CRYSTAL_GOLEM:
+        obj = mksobj_at(FIRST_REAL_GEM + rn2(LAST_REAL_GEM-FIRST_REAL_GEM), x, y, FALSE, FALSE);
+        obj->quan = (long) d(2,4);
+        obj->owt = weight(obj);
+        free_mgivenname(mtmp);
+        break;
     /* expired puddings will congeal into a large blob;
        like dragons, relies on the order remaining consistent */
     case PM_GRAY_OOZE:
@@ -782,6 +807,7 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
 #if (NH_DEVEL_STATUS != NH_STATUS_RELEASED)
     case PM_GIANT_ANT: case PM_KILLER_BEE: case PM_SOLDIER_ANT:
     case PM_FIRE_ANT: case PM_GIANT_BEETLE: case PM_QUEEN_BEE:
+    case PM_MIGO_DRONE: case PM_MIGO_WARRIOR: case PM_MIGO_QUEEN:
 
     case PM_QUIVERING_BLOB: case PM_ACID_BLOB: case PM_GELATINOUS_CUBE:
     case PM_CHICKATRICE: case PM_COCKATRICE: case PM_PYROLISK:
@@ -805,6 +831,7 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_HOBBIT: case PM_DWARF: case PM_BUGBEAR: case PM_DWARF_LEADER:
     case PM_DWARF_RULER:
     case PM_MIND_FLAYER: case PM_MASTER_MIND_FLAYER: case PM_MANES:
+    case PM_DEEP_ONE: case PM_DEEPER_ONE: case PM_DEEPEST_ONE:
     case PM_HOMUNCULUS: case PM_IMP: case PM_LEMURE: case PM_QUASIT:
     case PM_TENGU: case PM_BLUE_JELLY: case PM_SPOTTED_JELLY:
     case PM_OCHRE_JELLY: case PM_KOBOLD: case PM_LARGE_KOBOLD:
@@ -817,6 +844,7 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_ORC_CAPTAIN:
     case PM_ROCK_PIERCER: case PM_IRON_PIERCER: case PM_GLASS_PIERCER:
     case PM_ROTHE: case PM_MUMAK: case PM_LEOCROTTA: case PM_WUMPUS:
+    case PM_COW: case PM_BULL:
     case PM_TITANOTHERE: case PM_BALUCHITHERIUM: case PM_MASTODON:
     case PM_SEWER_RAT: case PM_GIANT_RAT: case PM_RABID_RAT:
     case PM_WERERAT:
@@ -840,6 +868,7 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_KI_RIN: case PM_ARCHON:
 
     case PM_BAT: case PM_GIANT_BAT: case PM_RAVEN: case PM_VAMPIRE_BAT:
+    case PM_PARROT: case PM_BYAKHEE: case PM_NIGHTGAUNT:
     case PM_PLAINS_CENTAUR: case PM_FOREST_CENTAUR: case PM_MOUNTAIN_CENTAUR:
 
     case PM_BABY_GRAY_DRAGON: case PM_BABY_GOLD_DRAGON:
@@ -873,6 +902,7 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_GUARDIAN_NAGA:
 
     case PM_OGRE: case PM_OGRE_LEADER: case PM_OGRE_TYRANT:
+    case PM_OGRE_SHAMAN: case PM_SHUGGOTH: case PM_GIANT_SHUGGOTH:
 
     case PM_QUANTUM_MECHANIC: case PM_GENETIC_ENGINEER: case PM_QUARK:
     case PM_RUST_MONSTER: case PM_TRANSMUTER: case PM_DISENCHANTER:
@@ -885,6 +915,7 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_OLOG_HAI: case PM_UMBER_HULK:
     case PM_UMBRAL_HULK: case PM_HUNGER_HULK:
 
+    case PM_FIRE_VAMPIRE: case PM_STAR_VAMPIRE:
     case PM_VLAD_THE_IMPALER:
 
     case PM_BARROW_WIGHT: case PM_WRAITH: case PM_NAZGUL:
@@ -893,6 +924,7 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_YETI: case PM_CARNIVOROUS_APE: case PM_SASQUATCH:
 
     case PM_GHOUL: case PM_SKELETON:
+    case PM_GHOUL_MAGII: case PM_GHOUL_MONARCH: case PM_GUG:
 
     case PM_STRAW_GOLEM: case PM_FLESH_GOLEM:
 
@@ -915,6 +947,7 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_PIT_FIEND: case PM_SANDESTIN: case PM_BALROG: case PM_JUIBLEX:
     case PM_YEENOGHU: case PM_ORCUS: case PM_GERYON: case PM_DISPATER:
     case PM_BAALZEBUB: case PM_ASMODEUS: case PM_DEMOGORGON:
+    case PM_CTHULHU:
     case PM_DEATH: case PM_PESTILENCE: case PM_FAMINE:
     case PM_MAIL_DAEMON: case PM_DJINNI:
 
@@ -3366,6 +3399,20 @@ corpse_chance(
             return FALSE;
         }
     }
+
+    /* Cthulhu Deliquesces... */
+    if (mdat == &mons[PM_CTHULHU]) {
+        if (cansee(mon->mx, mon->my)) {
+            pline("%s body deliquesces into a cloud of noxious gas!",
+                s_suffix(Monnam(mon)));
+        } else {
+            pline("You hear something hissing and bubbling!");
+        }
+        /* ...into a stinking cloud... */
+        (void) create_gas_cloud(mon->mx, mon->my, 3, 8);
+        return (FALSE);
+    }
+
 
     /* must duplicate this below check in xkilled() since it results in
      * creating no objects as well as no corpse

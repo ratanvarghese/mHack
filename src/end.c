@@ -329,7 +329,9 @@ done_in_by(struct monst *mtmp, int how)
         u.ugrave_arise = gu.urace.mummynum;
     else if (zombie_maker(mtmp) && gu.urace.zombienum != NON_PM)
         u.ugrave_arise = gu.urace.zombienum;
-    else if (mptr->mlet == S_VAMPIRE && Race_if(PM_HUMAN))
+    else if (mptr->mlet == S_VAMPIRE && Race_if(PM_HUMAN)
+             && mtmp->data != &mons[PM_FIRE_VAMPIRE]
+             && mtmp->data != &mons[PM_STAR_VAMPIRE])
         u.ugrave_arise = PM_VAMPIRE;
     else if (mptr == &mons[PM_GHOUL])
         u.ugrave_arise = PM_GHOUL;

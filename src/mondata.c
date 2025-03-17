@@ -89,9 +89,10 @@ determine_polymon(int material)
     case COPPER:
     case SILVER:
     case PLATINUM:
-    case GEMSTONE:
     case MINERAL:
         return PM_STONE_GOLEM;
+    case GEMSTONE:
+        return PM_CRYSTAL_GOLEM;
     case 0:
     case FLESH:
         /* there is no flesh type, but all food is type 0, so we use it */
@@ -1400,6 +1401,10 @@ static const short grownups[][2] = {
     { PM_KEYSTONE_KOP, PM_KOP_SERGEANT },
     { PM_KOP_SERGEANT, PM_KOP_LIEUTENANT },
     { PM_KOP_LIEUTENANT, PM_KOP_KAPTAIN },
+    { PM_DEEP_ONE, PM_DEEPER_ONE },
+    { PM_DEEPER_ONE, PM_DEEPEST_ONE },
+    { PM_MIGO_DRONE, PM_MIGO_WARRIOR },
+    { PM_MIGO_WARRIOR, PM_MIGO_QUEEN },
     { NON_PM, NON_PM }
 };
 
@@ -1535,6 +1540,10 @@ on_fire(struct permonst *mptr, struct attack *mattk)
     case PM_STONE_GOLEM:
     case PM_CLAY_GOLEM:
     case PM_GOLD_GOLEM:
+    case PM_RUBY_GOLEM:
+    case PM_DIAMOND_GOLEM:
+    case PM_SAPPHIRE_GOLEM:
+    case PM_CRYSTAL_GOLEM:
     case PM_AIR_ELEMENTAL:
     case PM_EARTH_ELEMENTAL:
     case PM_DUST_VORTEX:
@@ -1652,7 +1661,13 @@ monmaterial(int mndx)
     case PM_GLASS_GOLEM:
         return GLASS;
     case PM_IRON_GOLEM:
+    case PM_STEEL_GOLEM:
         return IRON;
+    case PM_RUBY_GOLEM:
+    case PM_DIAMOND_GOLEM:
+    case PM_SAPPHIRE_GOLEM:
+    case PM_CRYSTAL_GOLEM:
+        return GEMSTONE;
     default:
         return 0;
     }

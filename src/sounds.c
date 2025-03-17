@@ -404,6 +404,9 @@ growl_sound(struct monst *mtmp)
     case MS_SILENT:
         ret = "commotion";
         break;
+    case MS_PARROT:
+        ret = "squaark";
+        break;
     default:
         ret = "scream";
     }
@@ -904,6 +907,35 @@ domonnoise(struct monst *mtmp)
         } else {
             Soundeffect(se_squawk, 80);
             pline_msg = "squawks.";
+        }
+        break;
+    case MS_PARROT:
+        switch (rn2(8)) {
+            default:
+            case 0:
+                pline_msg = "squaaarks louldly!";
+                break;
+            case 1:
+                verbl_msg = "Poly want a lembas wafer!'";
+                break;
+            case 2:
+                verbl_msg = "Nobody expects the spanish inquisition!'";
+                break;
+            case 3:
+                verbl_msg = "Who's a good boy then?'";
+                break;
+            case 4:
+                verbl_msg = "Show us yer knickers!'";
+                break;
+            case 5:
+                verbl_msg = "You'll never make it!'";
+                break;
+            case 6:
+                pline_msg = "whistles suggestively!";
+                break;
+            case 7:
+                verbl_msg = "What sort of a sword do you call that!";
+                break;
         }
         break;
     case MS_HISS:

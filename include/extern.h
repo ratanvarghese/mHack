@@ -3434,7 +3434,8 @@ extern void mhitm_ad_flvr(struct monst *, struct attack *, struct monst *,
                            struct mhitm_data *) NONNULLPTRS;
 extern void mhitm_ad_shoe(struct monst *, struct attack *, struct monst *,
                            struct mhitm_data *) NONNULLPTRS;
-
+extern void mhitm_ad_tckl(struct monst *, struct attack *, struct monst *,
+                           struct mhitm_data *) NONNULLPTRS;
 extern void mhitm_adtyping(struct monst *, struct attack *, struct monst *,
                            struct mhitm_data *) NONNULLPTRS;
 extern boolean do_stone_u(struct monst *, int) NONNULLARG1;

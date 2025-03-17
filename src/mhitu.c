@@ -698,6 +698,14 @@ mattacku(struct monst *mtmp)
         newsym(mtmp->mx, mtmp->my);
     }
 
+    /*    Make Star Vampires visible the moment they hit/miss us */
+    if( mtmp->data == &mons[PM_STAR_VAMPIRE]
+     && mtmp->minvis
+     && cansee(mtmp->mx,mtmp->my)) {
+        mtmp->minvis = 0;
+        newsym(mtmp->mx,mtmp->my);
+    }
+
     /* when not cancelled and not in current form due to shapechange, many
        demons can summon more demons and were creatures can summon critters;
        also, were creature might change from human to animal or vice versa */
@@ -1468,6 +1476,8 @@ gulpmu(struct monst *mtmp, struct attack *mattk)
             exercise(A_STR, FALSE);
             monstunseesu(M_SEEN_ACID);
         }
+        if(!rn2(3))
+            (void) acid_damage(uarm);
         break;
     case AD_BLND:
         if (can_blnd(mtmp, &gy.youmonst, mattk->aatyp, (struct obj *) 0)) {

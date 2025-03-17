@@ -2796,6 +2796,12 @@ mon_reflects(struct monst *mon, const char *str)
         if (str)
             pline(str, s_suffix(mon_nam(mon)), "scales");
         return TRUE;
+    } else if (mon->data == &mons[PM_DIAMOND_GOLEM]
+               || mon->data == &mons[PM_SAPPHIRE_GOLEM]
+               || mon->data == &mons[PM_CRYSTAL_GOLEM]) {
+        if (str)
+            pline(str, s_suffix(mon_nam(mon)), "body");
+        return TRUE;
     }
     return FALSE;
 }
@@ -2828,6 +2834,12 @@ ureflects(const char *fmt, const char *str)
     } else if (gy.youmonst.data == &mons[PM_SILVER_DRAGON]) {
         if (fmt && str)
             pline(fmt, str, "scales");
+        return TRUE;
+    } else if (gy.youmonst.data == &mons[PM_DIAMOND_GOLEM]
+                || gy.youmonst.data == &mons[PM_SAPPHIRE_GOLEM]
+                || gy.youmonst.data == &mons[PM_CRYSTAL_GOLEM]) {
+        if (fmt && str)
+            pline(fmt, str, "body");
         return TRUE;
     }
     return FALSE;

@@ -188,6 +188,7 @@
     (((ptr)->mlet == S_LIGHT || (ptr) == &mons[PM_FLAMING_SPHERE] \
       || (ptr) == &mons[PM_SHOCKING_SPHERE]                       \
       || (ptr) == &mons[PM_BABY_GOLD_DRAGON]                      \
+      || (ptr) == &mons[PM_FIRE_VAMPIRE]                          \
       || (ptr) == &mons[PM_FIRE_VORTEX])                          \
          ? 1                                                      \
          : ((ptr) == &mons[PM_FIRE_ELEMENTAL]                     \
@@ -199,11 +200,13 @@
 #define likes_lava(ptr) \
     (ptr == &mons[PM_FIRE_ELEMENTAL] || ptr == &mons[PM_SALAMANDER])
 #define pm_invisible(ptr) \
-    ((ptr) == &mons[PM_STALKER] || (ptr) == &mons[PM_BLACK_LIGHT])
+    ((ptr) == &mons[PM_STALKER] || (ptr) == &mons[PM_BLACK_LIGHT] \
+     || (ptr) == &mons[PM_STAR_VAMPIRE] || (ptr) == &mons[PM_POLTERGEIST])
 
 /* could probably add more */
 #define likes_fire(ptr)                                                  \
     ((ptr) == &mons[PM_FIRE_VORTEX] || (ptr) == &mons[PM_FLAMING_SPHERE] \
+     || (ptr) == &mons[PM_FIRE_VAMPIRE]                                  \
      || likes_lava(ptr))
 
 #define touch_petrifies(ptr) \

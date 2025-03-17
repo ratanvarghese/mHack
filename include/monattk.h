@@ -90,6 +90,7 @@
 #define AD_FLVR 104  /* quark flavour attacks */
 #define AD_SHOE 105  /* brownie damages, steals, or fixes shoes */
 #define AD_HNGY 106  /* a mini version of FAMN, */
+#define AD_TCKL 107  /* Tickle (Nightgaunts) */
 
 #define AD_CLRC 240 /* random clerical spell */
 #define AD_SPEL 241 /* random magic spell */
