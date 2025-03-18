@@ -2592,7 +2592,7 @@
         M1_FLY | M1_BREATHLESS | M1_HUMANOID | M1_POIS | M1_REGEN,
         M2_STALK | M2_HOSTILE | M2_STRONG | M2_NASTY | M2_NEUTER,
         M3_INFRAVISIBLE, 15, CLR_RED, FIRE_VAMPIRE),
-    MON(NAM("star vampie"), S_VAMPIRE,
+    MON(NAM("star vampire"), S_VAMPIRE,
         LVL(18, 18, -5, 60, -5), (G_GENO | 1),
         A(ATTK(AT_TENT, AD_PHYS, 2, 6), ATTK(AT_TENT, AD_DRLI, 2, 6),
           ATTK(AT_TENT, AD_PHYS, 2, 6), ATTK(AT_TENT, AD_DRLI, 2, 6),
