@@ -3558,16 +3558,16 @@
         57, HI_LORD, DEMOGORGON),
     MON(NAM("Cthulhu"), S_DEMON,
         LVL(106, 15, -8, 95, 0), (G_HELL | G_NOCORPSE | G_NOGEN | G_UNIQ),
-        A(ATTK(AT_MAGC, AD_CLRC, 3, 37), ATTK(AT_CLAW, AD_PHYS, 3, 8),
-          ATTK(AT_BITE, AD_PHYS, 3,10), ATTK(AT_HUGS, AD_PHYS, 3, 6),
+        A(ATTK(AT_MAGC, AD_CLRC, 4, 6), ATTK(AT_CLAW, AD_PHYS, 6, 8),
+          ATTK(AT_BITE, AD_PHYS, 4,10), ATTK(AT_HUGS, AD_PHYS, 6, 6),
           ATTK(AT_TENT, AD_DRIN, 2, 1), ATTK(AT_GAZE, AD_CONF, 0, 0)),
         SIZ(3000, 500, MS_ROAR, MZ_GIGANTIC),
         MR_POISON | MR_STONE | MR_DISINT | MR_SLEEP | MR_ACID, 0,
         M1_SWIM | M1_AMPHIBIOUS | M1_BREATHLESS | M1_THICK_HIDE
-            | M1_SEE_INVIS| M1_NOHANDS | M1_POIS,
+            | M1_SEE_INVIS | M1_NOHANDS | M1_POIS,
         M2_NOPOLY | M2_DEMON | M2_STALK | M2_HOSTILE | M2_PNAME
             | M2_NASTY | M2_STRONG | M2_PRINCE | M2_NEUTER,
-        M3_WANTSAMUL | M3_INFRAVISIBLE | M3_INFRAVISION,
+        M3_WANTSAMUL | M3_INFRAVISIBLE | M3_INFRAVISION | M3_WAITFORU,
         57, HI_LORD, CTHULHU),
     /* Riders -- the Four Horsemen of the Apocalypse ("War" == player);
      * depicted with '&' but do not have M2_DEMON set.
