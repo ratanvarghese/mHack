@@ -63,6 +63,19 @@ staticfn boolean mhurtle_to_doom(struct monst *, int,
                              struct permonst **) NONNULLARG13;
 staticfn void first_weapon_hit(struct obj *) NONNULLARG1;
 staticfn boolean shade_aware(struct obj *) NO_NNARGS;
+staticfn void mhitm_ad_flvr_up(struct monst *, struct attack *, struct monst * /*,
+                           struct mhitm_data **/) NONNULLPTRS;
+staticfn void mhitm_ad_flvr_down(struct monst *, struct attack *, struct monst * /*,
+                           struct mhitm_data **/) NONNULLPTRS;
+staticfn void mhitm_ad_flvr_top(struct monst *, struct attack *, struct monst * /*,
+                           struct mhitm_data **/) NONNULLPTRS;
+staticfn void mhitm_ad_flvr_bottom(struct monst *, struct attack *, struct monst * /*,
+                           struct mhitm_data **/) NONNULLPTRS;
+staticfn void mhitm_ad_flvr_charm(struct monst *, struct attack *, struct monst *,
+                           struct mhitm_data *) NONNULLPTRS;
+staticfn void mhitm_ad_flvr_strange(struct monst *, struct attack *, struct monst *,
+                           struct mhitm_data *) NONNULLPTRS;
+
 
 #define PROJECTILE(obj) ((obj) && is_ammo(obj))
 
@@ -5266,221 +5279,24 @@ mhitm_ad_flvr(
     struct monst *magr, struct attack *mattk,
     struct monst *mdef, struct mhitm_data *mhm)
 {
-    boolean negated = (mhitm_mgc_atk_negated(magr, mdef, FALSE)
-                       || magr->mspec_used);
-
-    if (magr == &gy.youmonst) {
-        /* uhitm */
-        if (negated) {
-            mhm->damage = 0;
-            return;
-        }
-        switch (rn2(6)){
-            case 0: /* up, copied from muse: MUSE_POT_GAIN_LEVEL */
-                if (Can_rise_up(mdef->mx, mdef->my, &u.uz)){
-                    register int tolev=depth(&u.uz)-1;
-                    d_level tolevel;
-                    get_level(&tolevel, tolev);
-                    if(on_level(&tolevel, &u.uz)) goto uhitm_flvr_strange;
-                    if (canseemon(mdef))
-                        pline("%s rises up, through the %s!",
-                            Monnam(mdef), ceiling(mdef->mx, mdef->my));
-                    migrate_to_level(mdef, ledger_no(&tolevel),
-                        MIGR_RANDOM, (coord *)0);
-                    break;
-                }
-                else {
-                    goto uhitm_flvr_strange;
-                }
-                break;
-            case 1: /* down */
-                if (Can_fall_thru(&u.uz) /* && !In_sokoban(&u.uz)*/ ){
-                    register int tolev=depth(&u.uz)+1;
-                    d_level tolevel;
-                    get_level(&tolevel, tolev);
-                    if (mon_has_amulet(mdef) || In_endgame(&u.uz) 
-                        || on_level(&tolevel, &u.uz))
-                        goto uhitm_flvr_strange;
-                    if (canseemon(mdef))
-                      pline("%s sinks down, through the %s!", 
-                          Monnam(mdef), surface(mdef->mx, mdef->my));
-                    migrate_to_level(mdef,ledger_no(&tolevel),
-                        MIGR_RANDOM, (coord *)0);
-                    break;
-                }
-                else goto uhitm_flvr_strange;
-            case 2: /* top, teleport to dlev1, top level of branch? */
-            case 3: /* bottom, teleport to Moloch's sanctum, bot lev of branch? */ 
-            case 4: /* strange */
-uhitm_flvr_strange:
-                if (canseemon(mdef))
-                    pline("%s reacts strangely.", Monnam(mdef));
-                mdef->mconf = 1;
-                mdef->mstrategy &= ~STRAT_WAITFORU;
-                break;
-          case 5: /* charm, fall through */ 
-                mhitm_ad_flvr(magr, mattk, mdef, mhm);
-        }
-    } else if (mdef == &gy.youmonst) {
-        /* mhitu */
-        if (magr->mcan || !rn2(50) || magr->mspec_used) { 
-            mhm->damage = 0; 
-            return;
-        }
-        hitmsg(magr, mattk);
-        switch (rn2(6)) {
-            case 0: /* up, copied from muse: MUSE_POT_GAIN_LEVEL */
-                if((ledger_no(&u.uz) == 1 && u.uhave.amulet) ||
-                    Can_rise_up(u.ux, u.uy, &u.uz)) {
-                    magr->mspec_used = magr->mspec_used + (mhm->damage + rn2(6));
-                    if(ledger_no(&u.uz) == 1) {
-                        You("rise up, through the %s!", ceiling(u.ux,u.uy));
-                        schedule_goto(&earth_level, UTOTYPE_NONE, (char *) 0, (char *) 0);
-                        return;
-                    } else {
-                        register int newlev = depth(&u.uz)-1;
-                        d_level newlevel;
-                        get_level(&newlevel, newlev);
-                        if(on_level(&newlevel, &u.uz)) {
-                            goto mhitu_flvr_strange; 
-                            break;
-                        } else
-                            You("rise up, through the %s!", ceiling(u.ux,u.uy));
-                        schedule_goto(&newlevel, UTOTYPE_NONE, (char *) 0, (char *) 0);
-                        return;
-                    }
-                } else
-                    goto mhitu_flvr_strange;
-                break;
-            case 1: /* down */
-                if (Can_fall_thru(&u.uz) && !In_sokoban(&u.uz) ) {
-                    d_level dtmp;
-                    magr->mspec_used = magr->mspec_used + (mhm->damage + rn2(6));
-                    pline("You sink down, through the %s!",surface(u.ux,u.uy));
-                    if(*u.ushops)
-                        shopdig(1);
-                    if (Is_stronghold(&u.uz)) {
-                        find_hell(&dtmp);
-                    } else {
-                        dtmp.dnum = u.uz.dnum;
-                        dtmp.dlevel = dunlev(&u.uz)+1;
-                    }
-                    schedule_goto(&dtmp, UTOTYPE_NONE, (char *) 0, (char *) 0);
-                    return;
-                } else
-                    goto mhitu_flvr_strange;
-                break;
-            case 2: /* top, teleport to dlev1, top level of branch? */
-            case 3: /* bottom, teleport to sanctum, bot lev of branch? */
-                if(!In_sokoban(&u.uz) && !(In_quest(&u.uz)) && !In_endgame(&u.uz)) {
-                    int i,j;
-                    struct monst * mamu;
-                    d_level newlev;
-                    if (u.uhave.amulet)
-                        mamu = 0;
-                    else {
-                        for(i=u.ux-1;i<u.ux+1;++i)
-                            for(j=u.uy;j<u.uy+1;++j)
-                                if((mamu = m_at(i,j)) && (levl_follower(mamu)) &&
-                                    (!magr->iswiz && mon_has_amulet(magr))){
-                                  i=u.ux+2;
-                                  break;
-                                } else {
-                                  mamu = 0;
-                                }
-                    }
-                    j = 0; /* Truth of Truth/Beauty */
-                    if (u.uhave.amulet || mamu){
-                        You("are back at the bottom!");
-                        newlev = sanctum_level;
-                    } else if ((u.uevent.invoked && !mamu) || rn2(2)){
-                        if (Is_knox(&u.uz)) goto mhitu_flvr_strange;
-                        You("are back at the top!");
-                        get_level(&newlev, 1);
-                        j = 1;
-                    } else {
-                        get_level(&newlev, deepest_lev_reached(FALSE));
-                        You("have reached the %s",
-                            on_level(&newlev,&sanctum_level)?"bottom!":"...bottom?");
-                    }
-                    if(on_level(&newlev,&u.uz))
-                        goto mhitu_flvr_strange;
-                    schedule_goto(&newlev, UTOTYPE_NONE, (char *) 0, (char *) 0);
-                    if (j){
-                        if (Hallucination) 
-                          make_hallucinated(0,FALSE,0);
-                        exercise(A_WIS, TRUE);
-                        You("see the Truth!");
-                    } else {
-                        if (adjattrib(A_CHA, 1, FALSE))
-                            pline("You gain an air of Beauty.");
-                    }
-                    return;
-                }
-                break;
-            case 4: /* strange */
-mhitu_flvr_strange:
-                magr->mspec_used = magr->mspec_used + (mhm->damage + rn2(6));
-                if(Confusion||Hallucination)
-                    pline("Things are getting even stranger.");
-                else
-                    pline("Things are getting strange.");
-                make_confused(HConfusion + mhm->damage + rn2(3), FALSE);
-                if (!(u.umonnum == PM_BLACK_LIGHT ||
-                      u.umonnum == PM_VIOLET_FUNGUS ||
-                      dmgtype(gy.youmonst.data, AD_STUN))) {
-                    make_hallucinated(HHallucination + (long)mhm->damage+rn2(3),FALSE,0L);
-                }
-                break;
-            case 5: /* charm */ 
-                goto mhitu_flvr_strange;
-        }
-        mhm->damage=0;
-    } else {
-        /* mhitm */
-        if (magr->mcan) {
-            mhm->damage = 0;
-            return;
-        }
-        /* TODO: flesh this out a lot more! */
-        switch (rn2(6)){
-            case 0:  /* up, copied from muse: MUSE_POT_GAIN_LEVEL */
-                if (Can_rise_up(mdef->mx, mdef->my, &u.uz)){
-                    mon_thru_ceiling(mdef);
-                }
-                else {
-                    goto mhitm_flvr_strange;
-                }
-                break;
-            case 1: /* down */
-                if (Can_fall_thru(&u.uz) /* && !In_sokoban(&u.uz)*/ ){
-                    int tolev=depth(&u.uz)+1;
-                    d_level tolevel;
-                    get_level(&tolevel, tolev);
-                    if (mon_has_amulet(mdef) || In_endgame(&u.uz) 
-                        || on_level(&tolevel, &u.uz))
-                      goto mhitm_flvr_strange;
-                    if (canseemon(mdef))
-                        pline("%s sinks down, through the %s!", 
-                            Monnam(mdef), surface(mdef->mx, mdef->my));
-                    migrate_to_level(mdef,ledger_no(&tolevel),
-                        MIGR_RANDOM, (coord *)0);
-                    break;
-                }
-                else
-                    goto mhitm_flvr_strange;
-            case 2: /* top, teleport to dlev1, top level of branch? */
-            case 3: /* bottom, teleport to Moloch's sanctum, bot lev of branch? */ 
-            case 4: /* strange */
-mhitm_flvr_strange:
-                if (canseemon(mdef))
-                   pline("%s reacts strangely.", Monnam(mdef));
-                mdef->mconf = 1;
-                mdef->mstrategy &= ~STRAT_WAITFORU;
-                break;
-            case 5: /* charm, fall through */ 
-                goto mhitm_flvr_strange;
-        }
+    switch(rn2(6)) {
+        case 0:
+            mhitm_ad_flvr_up(magr, mattk, mdef/*, mhm*/);
+            break;
+        case 1:
+            mhitm_ad_flvr_down(magr, mattk, mdef/*, mhm*/);
+            break;
+        case 2:
+            mhitm_ad_flvr_top(magr, mattk, mdef/*, mhm*/);
+            break;
+        case 3:
+            mhitm_ad_flvr_bottom(magr, mattk, mdef/*, mhm*/);
+            break;
+        case 4:
+            mhitm_ad_flvr_charm(magr, mattk, mdef, mhm);
+            break;
+        case 5:
+            mhitm_ad_flvr_strange(magr, mattk, mdef, mhm);
     }
 }
 
@@ -7279,5 +7095,152 @@ light_hits_gremlin(struct monst *mon, int dmg)
         map_invisible(mon->mx, mon->my);
     }
 }
+
+void
+mhitm_ad_flvr_up(
+    struct monst *magr, struct attack *mattk,
+    struct monst *mdef/*, struct mhitm_data *mhm*/)
+{
+    if (mdef == &gy.youmonst) {
+        /* mhitu */
+        hitmsg(magr,mattk);
+        if(!Levitation) {
+            set_itimeout(&HLevitation, d(6, 6));
+            float_up();
+        } else if (Can_rise_up(u.ux, u.uy, &u.uz)) {
+            you_thru_surface(depth(&u.uz) - 1);
+        } else {
+            pline("You turn up");
+        }
+    } else {
+        /* uhitm and mhitm */
+        if (Can_rise_up(mdef->mx, mdef->my, &u.uz)) {
+            mon_thru_surface(mdef, depth(&u.uz) - 1);
+        } else if (canseemon(mdef)) {
+            pline("%s turns up.", Monnam(mdef));
+        }
+    }
+}
+
+void
+mhitm_ad_flvr_down(
+    struct monst *magr, struct attack *mattk,
+    struct monst *mdef/*, struct mhitm_data *mhm*/)
+{
+    if (mdef == &gy.youmonst) {
+        /* mhitu */
+        hitmsg(magr,mattk);
+        if(Levitation) {
+            unequip_levitating_items(TRUE);
+            float_down(0L, 0L);
+        } else if (Can_fall_thru(&u.uz) && !In_endgame(&u.uz)) {
+            you_thru_surface(depth(&u.uz) + 1);
+        } else {
+            pline("You turn down.");
+        }
+    } else {
+        /* uhitm and mhitm */
+        if (Can_fall_thru(&u.uz) && !In_endgame(&u.uz)) {
+            mon_thru_surface(mdef, depth(&u.uz) + 1);
+        } else if (canseemon(mdef)) {
+            pline("%s turns down.", Monnam(mdef));
+        }
+    }
+}
+
+void
+mhitm_ad_flvr_top(
+    struct monst *magr, struct attack *mattk,
+    struct monst *mdef/*, struct mhitm_data *mhm*/)
+{
+    if (mdef == &gy.youmonst) {
+        /* mhitu */
+        hitmsg(magr,mattk);
+        if(u.uen < u.uenmax) {
+            u.uen = u.uenmax;
+            You("are at your top-most energy.");
+        }
+    } else {
+        /* uhitm and mhitm */
+        if(mdef->mcan) {
+            mdef->mcan = 0;
+            if(canseemon(mdef)) {
+                pline_mon(mdef, "%s is at %s top-most energy.",
+                    Monnam(mdef), mhis(mdef));
+            }
+        }
+    }
+}
+
+void
+mhitm_ad_flvr_bottom(
+    struct monst *magr, struct attack *mattk,
+    struct monst *mdef/*, struct mhitm_data *mhm*/)
+{
+    if (mdef == &gy.youmonst) {
+        /* mhitu */
+        hitmsg(magr,mattk);
+        if(u.uen > 0) {
+            u.uen = 0;
+            You("are at your bottom-most energy.");
+        }
+    } else {
+        /* uhitm and mhitm */
+        if(!mdef->mcan) {
+            mdef->mcan = 1;
+            if(canseemon(mdef)) {
+                pline_mon(mdef, "%s is at %s bottom-most energy.",
+                    Monnam(mdef), mhis(mdef));
+            }
+        }
+    }
+}
+
+void
+mhitm_ad_flvr_charm(
+    struct monst *magr, struct attack *mattk,
+    struct monst *mdef, struct mhitm_data *mhm)
+{
+    if (mdef == &gy.youmonst) {
+        /* mhitu */
+        hitmsg(magr,mattk);
+        u.uhp += mhm->damage;
+        if (u.uhp > u.uhpmax)
+            u.uhp = u.uhpmax;
+        mhm->damage = 0;
+        You_feel("charmed.");
+    } else {
+        /* uhitm and mhitm */
+        mhm->damage = 0;
+    }
+}
+
+void
+mhitm_ad_flvr_strange(
+    struct monst *magr, struct attack *mattk,
+    struct monst *mdef, struct mhitm_data *mhm)
+{
+    if (mdef == &gy.youmonst) {
+        /* mhitu */
+        hitmsg(magr,mattk);
+        boolean not_affected = defended(mdef, (int) mattk->adtyp)
+                                || (u.umonnum == PM_BLACK_LIGHT
+                                || u.umonnum == PM_VIOLET_FUNGUS
+                                || dmgtype(gy.youmonst.data, AD_STUN));
+        if(!not_affected) {
+            if (Hallucination||Confusion) {
+                pline("Things are getting even stranger.");
+            } else {
+                pline("Things are getting strange.");
+            }
+            make_hallucinated(HHallucination + mhm->damage + rn2(3), FALSE, 0L);
+            make_confused(HConfusion + mhm->damage + rn2(3), FALSE);
+        }
+    } else {
+        /* uhitm and mhitm */
+        mhitm_ad_conf(magr, mattk, mdef, mhm);
+    }
+}
+
 
 /*uhitm.c*/

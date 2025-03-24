@@ -2083,14 +2083,7 @@ potionhit(struct monst *mon, struct obj *obj, int how)
                     You("rise up, through the %s!", ceiling(u.ux, u.uy));
                     schedule_goto(&earth_level, UTOTYPE_NONE, (char *) 0, (char *) 0);
                 } else {
-                    register int newlev = depth(&u.uz) - 1;
-                    d_level newlevel;
-                    get_level(&newlevel, newlev);
-                    if (on_level(&newlevel, &u.uz)) {
-                        break;
-                    } else
-                        You("rise up, through the %s!", ceiling(u.ux, u.uy));
-                    schedule_goto(&newlevel, UTOTYPE_NONE, (char *) 0, (char *) 0);
+                    you_thru_surface(depth(&u.uz) - 1);
                 }
             } else
                 You("have an uneasy feeling.");
@@ -2272,7 +2265,7 @@ potionhit(struct monst *mon, struct obj *obj, int how)
             case POT_GAIN_LEVEL:
                 if (obj->cursed) {
                     if (Can_rise_up(mon->mx, mon->my, &u.uz)) {
-                        mon_thru_ceiling(mon);
+                        mon_thru_surface(mon, depth(&u.uz) - 1);
                         break;
                     } else if (canseemon(mon)) {
                         pline("%s looks uneasy.", Monnam(mon));
@@ -2329,20 +2322,36 @@ potionhit(struct monst *mon, struct obj *obj, int how)
 }
 
 void
-mon_thru_ceiling(struct monst *mon) {
-    int tolev = depth(&u.uz) - 1;
+mon_thru_surface(struct monst *mon, int tolev) {
+    boolean go_up = (tolev < depth(&u.uz));
     d_level tolevel;
     get_level(&tolevel, tolev);
     if (on_level(&tolevel, &u.uz))
         return;
     if (canseemon(mon)) {
-        pline("%s rises up, through the %s!", Monnam(mon),
-            ceiling(mon->mx, mon->my));
+        pline("%s %s, through the %s!", Monnam(mon),
+            go_up ? "rises up" : "sinks down",
+            go_up ? ceiling(mon->mx, mon->my) : surface(mon->mx, mon->my));
     }
     migrate_to_level(mon, ledger_no(&tolevel), MIGR_RANDOM,
                     (coord *) 0);
 }
 
+void
+you_thru_surface(int tolev) {
+    boolean go_up = (tolev < depth(&u.uz));
+    d_level newlevel;
+    get_level(&newlevel, tolev);
+    if (on_level(&newlevel, &u.uz)) {
+        return;
+    } else {
+        You("%s, through the %s!",
+            go_up ? "rise up" : "sink down",
+            go_up ? ceiling(u.ux, u.uy) : surface(u.ux, u.uy));
+    }
+    schedule_goto(&newlevel, UTOTYPE_NONE, (char *) 0, (char *) 0);
+
+}
 
 /* vapors are inhaled or get in your eyes */
 void

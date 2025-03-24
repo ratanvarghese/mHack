@@ -1155,6 +1155,7 @@ extern anything *obj_to_any(struct obj *) NONNULLARG1;
 extern boolean revive_nasty(coordxy, coordxy, const char *);
 extern int still_chewing(coordxy, coordxy);
 extern void movobj(struct obj *, coordxy, coordxy);
+extern void unequip_levitating_items(boolean);
 extern boolean may_dig(coordxy, coordxy);
 extern boolean may_passwall(coordxy, coordxy);
 extern boolean bad_rock(struct permonst *, coordxy, coordxy) NONNULLARG1;
@@ -2518,7 +2519,8 @@ extern void healup(int, int, boolean, boolean);
 extern void strange_feeling(struct obj *, const char *) NO_NNARGS;
 extern void impact_arti_light(struct obj *, boolean, boolean) NONNULLARG1;
 extern void potionhit(struct monst *, struct obj *, int) NONNULLARG12;
-extern void mon_thru_ceiling(struct monst *) NONNULLARG1;
+extern void mon_thru_surface(struct monst *, int) NONNULLARG1;
+extern void you_thru_surface(int);
 extern void potionbreathe(struct obj *) NONNULLARG1;
 extern int dodip(void);
 extern int dip_into(void); /* altdip */
