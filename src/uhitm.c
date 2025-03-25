@@ -5318,25 +5318,24 @@ mhitm_ad_shoe(
             else
                 You_feel("some malicious cobbling!");
             switch(rnd(3)){
-                case 0:
+                case 1:
                     if (uarmf->otyp != LOW_BOOTS  && uarmf->otyp != HIGH_BOOTS &&
-                        uarmf->otyp != DWARVISH_BOOTS && uarmf->otyp != FUMBLE_BOOTS){
+                        uarmf->otyp != FUMBLE_BOOTS){
                         struct obj* otmp = uarmf;
                         Boots_off();
-                        otmp->otyp = (!rn2(4)) ? FUMBLE_BOOTS :
-                          (otmp->otyp == KICKING_BOOTS) ? DWARVISH_BOOTS : LOW_BOOTS;
+                        otmp->otyp = (!rn2(4)) ? FUMBLE_BOOTS : LOW_BOOTS;
                         setworn(otmp, W_ARMF);
                         Boots_on();
                     }
                     break;
-                case 1:
+                case 2:
                     if (uarmf->blessed){
                         unbless(uarmf);
                     } else if(!(uarmf->cursed)){
                         curse(uarmf);
                     }
                     break;
-                case 2:
+                case 3:
                     --uarmf->spe;
                     adj_abon(uarmf, -1); /* in case a boot is added that needs it */
                     break;
