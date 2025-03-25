@@ -2380,7 +2380,7 @@
         SIZ(0, 0, MS_SILENT, MZ_TINY),
         MR_POISON | MR_ELEC | MR_DISINT | MR_SLEEP | MR_ACID, 0,
         M1_TPORT | M1_UNSOLID | M1_MINDLESS | M1_NOHEAD | M1_NOLIMBS |
-        M1_NOEYES | M1_NOTAKE| M1_BREATHLESS | M1_AMORPHOUS | M1_FLY,
+        M1_NOEYES | M1_NOTAKE| M1_BREATHLESS | M1_AMORPHOUS | M1_FLY | M1_WALLWALK,
         M2_HOSTILE | M2_NEUTER, 0,
         9, HI_ZAP, QUARK),
     /* 3.7: from slash'em, to expand Q class; hit polymorphs target */
