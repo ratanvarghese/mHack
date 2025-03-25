@@ -12,7 +12,7 @@ des.room({ type = "ordinary",
               des.object()
               des.object()
               des.monster({ class = "water elemental", peaceful=0 })
-              des.monster("shocking sphere")
+              des.monster("quark")
            end
 })
 
@@ -33,7 +33,7 @@ des.room({ type = "ordinary",
               des.trap()
               des.monster({ class = "water elemental", peaceful=0 })
               des.monster("energy vortex")
-              des.monster("e")
+              des.monster("quark")
            end
 })
 
@@ -44,7 +44,7 @@ des.room({ type = "ordinary",
               des.object()
               des.trap()
               des.monster({ class = "air elemental", peaceful=0 })
-              des.monster("shocking sphere")
+              des.monster("quark")
            end
 })
 
@@ -53,6 +53,7 @@ des.room({ type = "ordinary",
               des.object()
               des.trap()
               des.monster("v")
+              des.monster("disintegrator")
            end
 })
 
