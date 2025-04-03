@@ -4,6 +4,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "sp_lev.h"
 
 /* this assumes that a human quest leader or nemesis is an archetype
    of the corresponding role; that isn't so for some roles (tourist
@@ -26,6 +27,7 @@ staticfn void m_initweap(struct monst *);
 staticfn void m_initinv(struct monst *);
 staticfn boolean makemon_rnd_goodpos(struct monst *, mmflags_nht, coord *);
 staticfn void init_mextra(struct mextra *);
+staticfn void set_labyrinth_sym(struct monst *);
 
 #define m_initsgrp(mtmp, x, y, mmf) m_initgrp(mtmp, x, y, 3, mmf)
 #define m_initlgrp(mtmp, x, y, mmf) m_initgrp(mtmp, x, y, 10, mmf)
@@ -2481,6 +2483,51 @@ static const NEARDATA char syms[] = {
     S_MIMIC_DEF,  S_MIMIC_DEF,
 };
 
+staticfn void
+set_labyrinth_sym(struct monst *mtmp)
+{
+    int mx = mtmp->mx;
+    int my = mtmp->my;
+    int typ = levl[mx][my].typ;
+    unsigned ap_type = M_AP_NOTHING;
+    unsigned appear = 0;
+
+    if (IS_WALL(typ) || typ == SDOOR || typ == SCORR) {
+        ap_type = M_AP_FURNITURE;
+        appear = typ;
+    } else if (typ == ROOM) {
+        ap_type = M_AP_FURNITURE;
+        boolean adj_west = (isok(mx-1, my) && IS_WALL(levl[mx-1][my].typ));
+        boolean adj_east = (isok(mx+1, my) && IS_WALL(levl[mx+1][my].typ));
+        boolean adj_north = (isok(mx, my-1) && IS_WALL(levl[mx][my-1].typ));
+        boolean adj_south = (isok(mx, my+1) && IS_WALL(levl[mx][my+1].typ));
+        if (adj_west && adj_east && adj_north && adj_south) {
+            appear = S_crwall;
+        } else if (adj_west && adj_east && adj_north) {
+            appear = S_tuwall;
+        } else if (adj_west && adj_east && adj_south) {
+            appear = S_tdwall;
+        } else if (adj_west && adj_north && adj_south) {
+            appear = S_tlwall;
+        } else if (adj_east && adj_north && adj_south) {
+            appear = S_trwall;
+        } else if (adj_west || adj_east) {
+            appear = S_hwall;
+        } else if (adj_north || adj_south) {
+            appear = S_vwall;
+        } else {
+            appear = (!isok(mx-1,my) || !isok(mx+1,my)) ? S_vwall : S_hwall;
+        }
+    }
+
+    if(appear != 0) {
+        block_point(mx,my);   /* vision */
+    }
+    mtmp->m_ap_type = ap_type;
+    mtmp->mappearance = appear;
+    return;
+}
+
 void
 set_mimic_sym(struct monst *mtmp)
 {
@@ -2507,160 +2554,8 @@ set_mimic_sym(struct monst *mtmp)
         rt = 0; /* roomno < 0 case for GCC_WARN */
 
     if (mtmp->data == &mons[PM_LABYRINTH_TRAPPER]){
-        if ( (IS_WALL(typ) && ( rn2(8) || !may_dig(mx, my) ))
-                || typ == SDOOR || typ == SCORR){ /* don't hide in STONE */
-            mtmp->mundetected = 1;
-            return;
-        } else if (IS_WALL(typ)){
-            ap_type = M_AP_FURNITURE;
-            appear = typ;
-            levl[mx][my].typ = ROOM;
-        } else if (typ == CORR){
-            ap_type = M_AP_FURNITURE;
-            appear = S_stone;
-        } else if (typ == ROOM){
-#ifndef W_NORTH
-# define W_NORTH       1
-# define W_SOUTH       2
-# define W_EAST        4
-# define W_WEST        8
-#endif
-        uchar adj = 0;
-        schar adj_type;
-
-        if (isok(mx-1, my) && IS_WALL(levl[mx-1][my].typ)) adj |= W_WEST;
-        if (isok(mx+1, my) && IS_WALL(levl[mx+1][my].typ)) adj |= W_EAST;
-        if (isok(mx, my-1) && IS_WALL(levl[mx][my-1].typ)) adj |= W_NORTH;
-        if (isok(mx, my+1) && IS_WALL(levl[mx][my+1].typ)) adj |= W_SOUTH;
-        switch (adj){
-            case (W_NORTH):
-            case (W_SOUTH):
-            case (W_NORTH|W_SOUTH):
-                appear = S_vwall;
-                break;
-            case (W_EAST):
-            case (W_WEST):
-            case (W_EAST|W_WEST):
-                appear = S_hwall;
-                break;
-            case (W_EAST|W_SOUTH):
-                appear = S_tlcorn;
-                break;
-            case (W_WEST|W_SOUTH):
-                appear = S_trcorn;
-                break;
-            case (W_EAST|W_NORTH):
-                appear = S_blcorn;
-                break;
-            case (W_WEST|W_NORTH):
-                appear = S_brcorn;
-                break;
-            case(W_WEST|W_EAST|W_NORTH|W_SOUTH):
-                appear = S_crwall;
-                break;
-            case(W_WEST|W_EAST|W_NORTH):
-                appear = S_tuwall;
-                break;
-            case(W_WEST|W_EAST|W_SOUTH):
-                appear = S_tdwall;
-                break;
-            case(W_WEST|W_NORTH|W_SOUTH):
-                appear = S_tlwall;
-                break;
-            case(W_EAST|W_NORTH|W_SOUTH):
-                appear = S_trwall;
-                break;
-            default:
-                if(!isok(mx-1,my) || !isok(mx+1,my))
-                    appear = S_vwall;
-                else
-                    appear = S_hwall;
-                break;
-        }
-        ap_type = M_AP_FURNITURE;
-        /* this should run through a reset_seenv */
-        if (adj | W_NORTH){
-            switch(adj_type = levl[mx][my-1].typ){
-                case (HWALL):
-                    adj_type = TDWALL;
-                    break;
-                case (BRCORNER):
-                    adj_type = TLWALL;
-                    break;
-                case (BLCORNER):
-                    adj_type = TRWALL;
-                    break;
-                case (TUWALL):
-                    adj_type = CROSSWALL;
-                    break;
-            }
-            levl[mx][my-1].typ = adj_type;
-            levl[mx][my-1].seenv &= ~SV5;
-        }
-        if (adj | W_SOUTH){
-            switch(adj_type = levl[mx][my+1].typ){
-                case (HWALL):
-                    adj_type = TUWALL;
-                    break;
-                case (TRCORNER):
-                    adj_type = TLWALL;
-                    break;
-                case (TLCORNER):
-                    adj_type = TRWALL;
-                    break;
-                case (TDWALL):
-                    adj_type = CROSSWALL;
-                    break;
-            }
-            levl[mx][my+1].typ = adj_type;
-            levl[mx][my+1].seenv &= ~SV1;
-        }
-        if (adj | W_EAST){
-            switch(adj_type = levl[mx+1][my].typ){
-                case (VWALL):
-                    adj_type = TLWALL;
-                    break;
-                case (TLCORNER):
-                    adj_type = TDWALL;
-                    break;
-                case (BLCORNER):
-                    adj_type = TUWALL;
-                    break;
-                case (TRWALL):
-                    adj_type = CROSSWALL;
-                    break;
-            }
-            levl[mx+1][my].typ = adj_type;
-            levl[mx+1][my].seenv &= ~SV3;
-        }
-        if (adj | W_WEST){
-            switch(adj_type = levl[mx-1][my].typ){
-                case (VWALL):
-                    adj_type = TRWALL;
-                    break;
-                case (BRCORNER):
-                    adj_type = TUWALL;
-                    break;
-                case (TRCORNER):
-                    adj_type = TDWALL;
-                    break;
-                case (TLWALL):
-                    adj_type = CROSSWALL;
-                    break;
-            }
-            levl[mx-1][my].typ = adj_type;
-            levl[mx-1][my].seenv &= ~SV7;
-        }
-        if(!rn2(8) && IS_WALL(appear)){
-            levl[mx][my].typ = appear;
-            mtmp->mundetected = 1;
-            return;
-        }
-    }
-    block_point(mx,my);   /* vision */
-    mtmp->m_ap_type = ap_type;
-    mtmp->mappearance = appear;
-    return;
+        set_labyrinth_sym(mtmp);
+        return;
     }
 
 
