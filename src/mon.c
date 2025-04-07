@@ -1636,8 +1636,7 @@ meatobj(struct monst* mtmp) /* for gelatinous cubes */
             continue;
 
         /* touch sensitive items */
-        if ((otmp->otyp == CORPSE || is_meaty(otmp))
-            && is_rider(&mons[otmp->corpsenm])) {
+        if (otmp->otyp == CORPSE && is_rider(&mons[otmp->corpsenm])) {
             int ox = otmp->ox, oy = otmp->oy;
             boolean revived_it = revive_corpse(otmp);
 

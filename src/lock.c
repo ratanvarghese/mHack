@@ -196,7 +196,7 @@ breakchestlock(struct obj *box, boolean destroyit)
                    otherwise it would fail since otmp is not in inventory */
                 useup(otmp);
             }
-            if (box->otyp == ICE_BOX && (otmp->otyp == CORPSE || is_meaty(otmp))) {
+            if (box->otyp == ICE_BOX && otmp->otyp == CORPSE) {
                 otmp->age = svm.moves - otmp->age; /* actual age */
                 start_corpse_timeout(otmp);
             }

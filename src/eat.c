@@ -2174,31 +2174,6 @@ fprefx(struct obj *otmp)
     case MEAT_STICK:
     case ENORMOUS_MEATBALL:
     case MEAT_RING:
-        if(otmp->otyp == ENORMOUS_MEATBALL) {
-            int rotted = (peek_at_iced_corpse_age(otmp))/10L + 
-              (otmp->cursed)?2L:(otmp->blessed)?-2L:0; 
-            if ((rotted > 5L || (rotted >3L && rn2(5)))) {
-                pline("%s - that meat was tainted!",
-                    (Upolyd && gy.youmonst.data == &mons[PM_OTYUGH])?
-                    "Yum":"Ulch");
-                if (Sick_resistance) {
-                    pline("It doesn't seem at all sickening, though...");
-                } else {
-                    char buf[BUFSZ];
-                    long sick_time = (long) rn1(10, 10);
-                    /* make sure new ill doesn't result in improvement */
-                    if (Sick && (sick_time > Sick))
-                      sick_time = (Sick > 1L) ? Sick - 1L : 1L;
-                    Sprintf(buf, "rotten %s", xname(otmp));
-                    make_sick(sick_time, buf, TRUE, SICK_VOMITABLE);
-                }
-                if (carried(otmp))
-                    useup(otmp);
-                else
-                    useupf(otmp, 1L);
-                return TRUE;
-            }
-        }
         goto give_feedback;
     case CLOVE_OF_GARLIC:
         if (is_undead(gy.youmonst.data)) {
@@ -2675,7 +2650,6 @@ edibility_prompts(struct obj *otmp)
          it_or_they[QBUFSZ];
     /* 3.7: decaying globs don't become tainted anymore; in 3.6, they did */
     boolean cadaver = (otmp->otyp == CORPSE), stoneorslime = FALSE;
-    boolean meat = is_meaty(otmp);
     int material = otmp->material, mnum = otmp->corpsenm;
     long rotted = 0L;
 
@@ -2715,14 +2689,6 @@ edibility_prompts(struct obj *otmp)
         /* Tainted meat */
         Snprintf(buf, sizeof buf, "%s like %s could be tainted!",
                  foodsmell, it_or_they);
-    } else if (meat){ 
-        rotted = (peek_at_iced_corpse_age(otmp))/10L + 
-          (otmp->cursed)?2L:(otmp->blessed)?-2L:0;
-        if (rotted > 5L && !Sick_resistance){
-            Snprintf(buf,  sizeof buf, "%s like %s could be tainted!",
-                foodsmell, it_or_they);
-            return (yn_function(buf,ynchars,'n', TRUE) == 'n') ? 1 : 2;
-        }
     } else if (stoneorslime) {
         Snprintf(buf, sizeof buf,
                  "%s like %s could be something very dangerous!",
@@ -2734,7 +2700,7 @@ edibility_prompts(struct obj *otmp)
            it can't match after the rotten (cadaver && rotted > 3) test */
         Snprintf(buf, sizeof buf, "%s like %s could be tainted.",
                  foodsmell, it_or_they);
-    } else if (otmp->orotten || (cadaver && rotted > 3L) || (meat && rotted > 3L)) {
+    } else if (otmp->orotten || (cadaver && rotted > 3L)) {
         /* Rotten */
         Snprintf(buf, sizeof buf, "%s like %s could be rotten!",
                  foodsmell, it_or_they);
