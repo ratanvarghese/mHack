@@ -691,6 +691,18 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
         }
         free_mgivenname(mtmp);
         break;
+    case PM_SILVER_GOLEM:
+        num = d(2, 4);
+        while (num--) {
+            obj = mkobj_at(RANDOM_CLASS, x, y, FALSE);
+            if (!valid_obj_material(obj, SILVER)) {
+                delobj(obj);
+                obj = mksobj_at(DAGGER, x, y, TRUE, FALSE);
+            }
+            obj->material = SILVER;
+        }
+        free_mgivenname(mtmp);
+        break;
     case PM_CLAY_GOLEM:
         obj = mksobj_at(ROCK, x, y, FALSE, FALSE);
         obj->quan = (long) (rn2(20) + 50);

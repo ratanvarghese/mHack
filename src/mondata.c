@@ -86,8 +86,9 @@ determine_polymon(int material)
     case MITHRIL:
     case ADAMANTINE:
         return PM_IRON_GOLEM;
-    case COPPER:
     case SILVER:
+        return PM_SILVER_GOLEM;
+    case COPPER:
     case PLATINUM:
     case MINERAL:
         return PM_STONE_GOLEM;
@@ -1540,6 +1541,7 @@ on_fire(struct permonst *mptr, struct attack *mattk)
     case PM_STONE_GOLEM:
     case PM_CLAY_GOLEM:
     case PM_GOLD_GOLEM:
+    case PM_SILVER_GOLEM:
     case PM_RUBY_GOLEM:
     case PM_DIAMOND_GOLEM:
     case PM_SAPPHIRE_GOLEM:
@@ -1651,6 +1653,8 @@ monmaterial(int mndx)
         return PAPER;
     case PM_GOLD_GOLEM:
         return GOLD;
+    case PM_SILVER_GOLEM:
+        return SILVER;
     case PM_LEATHER_GOLEM:
         return LEATHER;
     case PM_WOOD_GOLEM:

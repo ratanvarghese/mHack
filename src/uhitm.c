@@ -4061,6 +4061,13 @@ mhitm_ad_phys(
                     mhm->damage = 1;
             }
         }
+
+        if(monmaterial(monsndx(magr->data))
+            && mon_hates_material(mdef, monmaterial(monsndx(magr->data)))) {
+            mhm->damage += rnd(sear_damage(monmaterial(monsndx(magr->data))));
+            searmsg(magr, mdef,  &cg.zeroobj, TRUE);
+            exercise(A_CON, FALSE);
+        }
     } else if (mdef == &gy.youmonst) {
         /* mhitu */
         if (mattk->aatyp == AT_HUGS && !sticks(pd)) {
@@ -4154,6 +4161,14 @@ mhitm_ad_phys(
                 mhm->hitflags |= M_ATTK_HIT;
             }
 
+            if((mattk->aatyp != AT_WEAP || !otmp) && monmaterial(monsndx(magr->data))
+                && Hate_material(monmaterial(monsndx(magr->data)))) {
+                /* dmgval does NOT deal with this */
+                mhm->damage += rnd(sear_damage(monmaterial(monsndx(magr->data))));
+                searmsg(magr, &gy.youmonst,  &cg.zeroobj, TRUE);
+                exercise(A_CON, FALSE);
+            }
+
             if(magr->mgoldtouch) {
                 if(!otmp || (mhm->hitflags & M_ATTK_HIT) > 0) {
                     if (do_stone_u(magr, GOLD)) {
@@ -4226,6 +4241,11 @@ mhitm_ad_phys(
                the subsequent engulf attack should accomplish that */
             if (mhm->damage >= mdef->mhp && mdef->mhp > 1)
                 mhm->damage = mdef->mhp - 1;
+        } else if(monmaterial(monsndx(magr->data))
+            && mon_hates_material(mdef, monmaterial(monsndx(magr->data)))) {
+            mhm->damage += rnd(sear_damage(monmaterial(monsndx(magr->data))));
+            searmsg(magr, mdef,  &cg.zeroobj, TRUE);
+            exercise(A_CON, FALSE);
         }
     }
 }

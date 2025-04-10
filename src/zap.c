@@ -1621,6 +1621,9 @@ create_polymon(struct obj *obj, int okind)
     case PM_GOLD_GOLEM:
         material = "gold ";
         break;
+    case PM_SILVER_GOLEM:
+        material = "silver ";
+        break;
     case PM_GLASS_GOLEM:
         material = "glassy ";
         break;
