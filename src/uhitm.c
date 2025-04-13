@@ -5410,6 +5410,19 @@ mhitm_ad_tckl(
 }
 
 void
+mhitm_ad_bhed(
+    struct monst *magr, struct attack *mattk,
+    struct monst *mdef, struct mhitm_data *mhm)
+{
+    if((mdef->data == &mons[PM_JABBERWOCK] || mdef->data == &mons[PM_VORPAL_JABBERWOCK]
+        || rnd(20) == 20) && !magr->mcan) {
+        decapitate(magr, mdef, NULL, &(mhm->damage));
+    } else {
+        mhitm_ad_phys(magr, mattk, mdef, mhm);
+    }
+}
+
+void
 mhitm_adtyping(
     struct monst *magr, struct attack *mattk,
     struct monst *mdef, struct mhitm_data *mhm)
@@ -5465,6 +5478,7 @@ mhitm_adtyping(
     case AD_FLVR: mhitm_ad_flvr(magr, mattk, mdef, mhm); break;
     case AD_SHOE: mhitm_ad_shoe(magr, mattk, mdef, mhm); break;
     case AD_TCKL: mhitm_ad_tckl(magr, mattk, mdef, mhm); break;
+    case AD_BHED: mhitm_ad_bhed(magr, mattk, mdef, mhm); break;
     default:
         mhm->damage = 0;
     }

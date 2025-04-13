@@ -902,8 +902,8 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_FIRE_GIANT: case PM_FROST_GIANT: case PM_ETTIN:
     case PM_STORM_GIANT: case PM_TITAN:
 
-    case PM_MINOTAUR: case PM_JABBERWOCK: case PM_BANDERSNATCH:
-    case PM_JUBJUB_BIRD: case PM_KEYSTONE_KOP:
+    case PM_MINOTAUR: case PM_JABBERWOCK: case PM_VORPAL_JABBERWOCK:
+    case PM_BANDERSNATCH: case PM_JUBJUB_BIRD: case PM_KEYSTONE_KOP:
     case PM_KOP_SERGEANT: case PM_KOP_LIEUTENANT: case PM_KOP_KAPTAIN:
     case PM_LICH: case PM_DEMILICH:
     case PM_MASTER_LICH: case PM_ARCH_LICH:

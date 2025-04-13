@@ -2301,6 +2301,7 @@ trapeffect_web(
         case PM_BALUCHITHERIUM:
         case PM_PURPLE_WORM:
         case PM_JABBERWOCK:
+        case PM_VORPAL_JABBERWOCK:
         case PM_IRON_GOLEM:
         case PM_BALROG:
         case PM_KRAKEN:

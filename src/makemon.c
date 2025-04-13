@@ -1418,7 +1418,8 @@ makemon(
             mtmp->msleeping = 1;
         break;
     case S_JABBERWOCK:
-        if (ptr == &mons[PM_JABBERWOCK] && !u.uhave.amulet) 
+        if ((ptr == &mons[PM_JABBERWOCK] || ptr == &mons[PM_VORPAL_JABBERWOCK])
+                && !u.uhave.amulet) 
             mtmp->msleeping = 1;
         break;
     case S_NYMPH:

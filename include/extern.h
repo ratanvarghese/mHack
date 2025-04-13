@@ -167,6 +167,8 @@ extern int disp_artifact_discoveries(winid);
 extern void dump_artifact_info(winid);
 extern boolean artifact_hit(struct monst *, struct monst *, struct obj *,
                             int *, int) NONNULLARG2;
+extern boolean decapitate(struct monst *, struct monst *, struct obj *,
+                            int *) NONNULLARG2;
 extern int doinvoke(void);
 extern boolean finesse_ahriman(struct obj *);
 extern int arti_speak(struct obj *);
@@ -3437,6 +3439,8 @@ extern void mhitm_ad_flvr(struct monst *, struct attack *, struct monst *,
 extern void mhitm_ad_shoe(struct monst *, struct attack *, struct monst *,
                            struct mhitm_data *) NONNULLPTRS;
 extern void mhitm_ad_tckl(struct monst *, struct attack *, struct monst *,
+                           struct mhitm_data *) NONNULLPTRS;
+extern void mhitm_ad_bhed(struct monst *, struct attack *, struct monst *,
                            struct mhitm_data *) NONNULLPTRS;
 extern void mhitm_adtyping(struct monst *, struct attack *, struct monst *,
                            struct mhitm_data *) NONNULLPTRS;
