@@ -2580,7 +2580,7 @@
             | M2_SHAPESHIFTER,
         M3_INFRAVISIBLE,
         14, CLR_BLUE, VAMPIRE_LEADER),
-    MON(NAM("fire vampie"), S_VAMPIRE,
+    MON(NAM("fire vampire"), S_VAMPIRE,
         LVL(12, 24, 0, 50, -5), (G_GENO | 1),
         A(ATTK(AT_MAGC, AD_FIRE, 2, 26), ATTK(AT_MAGC, AD_FIRE, 2, 26),
           ATTK(AT_HUGS, AD_FIRE, 2, 4), ATTK(AT_HUGS, AD_FIRE, 2, 4),
