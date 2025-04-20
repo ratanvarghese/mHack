@@ -32,16 +32,36 @@ des.monster("V",niches[2])
 des.monster("V",niches[3])
 -- The brides; they weren't named in Bram Stoker's original _Dracula_
 -- and when appearing in umpteen subsequent books and movies there is
--- no consensus for their names.  According to the Wikipedia entry for
--- "Brides of Dracula", the "Czechoslovakian TV film Hrabe Drakula (1971)"
--- gave them titles rather than (or perhaps in addition to) specific names
--- and we use those titles here.  Marking them as 'waiting' forces them to
--- start in vampire form instead of vampshifted into bat/fog/wolf form.
-local Vgenod = nh.is_genocided("vampire");
-local Vnames = { nil, nil, nil };
-if (not Vgenod) then
-   Vnames = { "Madame", "Marquise", "Countess" };
+-- no consensus for their names.  Vanilla NetHack uses the titles from
+-- the "Czechoslovakian TV film Hrabe Drakula (1971)" but that is confusing
+-- for mHack because we have "vampire countess" as a monster.
+local function get_vnames()
+  if nh.is_genocided("vampire") then
+    return { nil, nil, nil }
+  end
+  local choices = {
+    -- { "Madame", "Marquise", "Countess" }, -- Hrabe Drakula (1971)
+    { "Verona", "Aleera", "Marishka" }, -- Van Helsing (2004)
+    { "Cleo", "Lily", "Renee" }, -- Brides (dropped by ABC due to COVID)
+    { "Solina", "Valerie", "Lucy" }, -- Dracula 2000 (2000)
+    { "Marita", "Lesli", "Jennifer" }, -- Bloody Fool For Love by William Ritter (Buffyverse)
+    { "Ludmilla", "Anastrasya", "Volenta" },  -- D&D Curse of Strahd
+    { "Melisse", "Wanda", "Anna" }, -- The Dracula Tape by Fred Saberhagen (?)
+    { "Kelene", "Fenice", "Zhameni" }, -- Sisters of the Night trilogy by Chelsea Quinn Yarbro
+    { "Zsuzsanna", "Dunya", "Elisabeth" }, -- The Diaries of the Family Dracul by Jeanne Kalogridis
+    { "Trandafira", "Vlastimila", "Pavola" }, -- Dracula's Diary by Michael Geare and Michael Corby
+    { "Vasilja", "Senka", "Hailwic" }, -- The Satanic Brides of Dracula by Lucas Thorn
+    { "Yasamin", "Elena", "Elizabeth" }, -- Daughters of Shadow and Blood trilogy by J. Matthew Saunders
+    { "Cneajna", "Elina", "Ariana" }, -- Vampire Bride Dark Rebirth series by Rhiannon Frater
+    { "Valeria", "Ilona", "Fleur" }, -- Being Mrs. Dracula series by Faith Marlow
+    -- That's probably enough...
+  }
+  shuffle(choices)
+  return choices[1]
 end
+Vnames = get_vnames()
+-- Marking them as 'waiting' forces them to start in vampire form instead
+-- of vampshifted into bat/fog/wolf form.
 des.monster({ id="vampire countess", coord=niches[4], name=Vnames[1], waiting=1 })
 des.monster({ id="vampire countess", coord=niches[5], name=Vnames[2], waiting=1 })
 des.monster({ id="vampire countess", coord=niches[6], name=Vnames[3], waiting=1 })
