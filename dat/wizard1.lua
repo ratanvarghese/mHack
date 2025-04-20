@@ -434,7 +434,7 @@ local wiz1_gemini = { halign = "center", valign = "center", map = [[
    -- The wizard and his guards
    des.monster({ id = "Wizard of Yendor", x=13, y=01, asleep=1 })
    des.monster("hell hound", 13, 02)
-   des.monster("jabberwock", 14, 01)
+   des.monster("vorpal jabberwock", 14, 01)
    des.monster("vampire count", 14, 02)
    -- The local treasure
    des.object("Book of the Dead", 13, 01)
@@ -765,7 +765,7 @@ local wiz1_libra = { halign = "center", valign = "center", map = [[
    -- The wizard and his guards
    des.monster({ id = "Wizard of Yendor", x=13, y=03, asleep=1 })
    des.monster("hell hound", 13, 04)
-   des.monster("jabberwock", 14, 03)
+   des.monster("vorpal jabberwock", 14, 03)
    des.monster("vampire count", 14, 04)
    -- The local treasure
    des.object("Book of the Dead", 13, 03)
@@ -1098,7 +1098,7 @@ local wiz1_aquarius = { halign = "center", valign = "center", map = [[
    -- The wizard and his guards
    des.monster({ id = "Wizard of Yendor", x=13, y=07, asleep=1 })
    des.monster("hell hound", 13, 06)
-   des.monster("jabberwock", 14, 06)
+   des.monster("vorpal jabberwock", 14, 06)
    des.monster("vampire count", 14, 07)
    -- The local treasure
    des.object("Book of the Dead", 13, 07)
