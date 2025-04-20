@@ -49,9 +49,9 @@ des.monster("winged gargoyle", 13,07)
 -- gave them titles rather than (or perhaps in addition to) specific names
 -- and we use those titles here.  Marking them as 'waiting' forces them to
 -- start in vampire form instead of vampshifted into bat/fog/wolf form.
-des.monster({ id="Vampire Lady", x=04, y=04, name="Madame", waiting=1 })
-des.monster({ id="Vampire Lady", x=04, y=05, name="Marquise", waiting=1 })
-des.monster({ id="Vampire Lady", x=04, y=06, name="Countess", waiting=1 })
+des.monster({ id="vampire countess", x=04, y=04, name="Madame", waiting=1 })
+des.monster({ id="vampire countess", x=04, y=05, name="Marquise", waiting=1 })
+des.monster({ id="vampire countess", x=04, y=06, name="Countess", waiting=1 })
 -- treasures
 des.object("chest", 01,03)
 des.object("chest", 01,07)
