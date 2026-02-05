@@ -7,7 +7,6 @@
 
 staticfn int use_camera(struct obj *);
 staticfn int use_towel(struct obj *);
-staticfn int use_conical_flask(struct obj *);
 staticfn boolean its_dead(coordxy, coordxy, int *);
 staticfn int use_stethoscope(struct obj *);
 staticfn void use_whistle(struct obj *);

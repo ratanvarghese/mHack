@@ -10,8 +10,6 @@ staticfn int eatfood(void);
 staticfn struct obj *costly_tin(int);
 staticfn int opentin(void);
 staticfn int unfaint(void);
-staticfn int windclock(void);
-staticfn int rehumanize_wrapper(void);
 
 
 staticfn const char *food_xname(struct obj *, boolean);
@@ -4077,7 +4075,7 @@ start_clockwinding(struct obj * key) {
 
 
 
-staticfn int
+int
 windclock(void) {
     if (svc.context.victual.reqtime == svc.context.victual.usedtime) {
         go.occupation = 0;

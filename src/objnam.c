@@ -600,7 +600,7 @@ xname(struct obj *obj)
     return xname_flags(obj, CXN_NORMAL);
 }
 
-staticfn char *
+char *
 xname_forcemat(struct obj *obj)
 {
     return xname_flags(obj, CXN_NORMAL | CXN_FORCEMAT);

@@ -2610,7 +2610,7 @@ breaktest(struct obj *obj)
     }
 }
 
-staticfn void
+void
 breakmsg(struct obj *obj, boolean in_view)
 {
     const char *to_pieces;

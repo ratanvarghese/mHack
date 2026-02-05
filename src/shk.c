@@ -77,7 +77,6 @@ staticfn void clear_no_charge(struct monst *, struct obj *);
 staticfn void clear_no_charge_pets(struct monst *);
 staticfn long check_credit(long, struct monst *);
 staticfn void pay(long, struct monst *);
-staticfn long get_cost(struct obj *, struct monst *);
 staticfn long set_cost(struct obj *, struct monst *);
 staticfn const char *shk_embellish(struct obj *, long);
 staticfn long cost_per_charge(struct monst *, struct obj *, boolean);
@@ -2842,7 +2841,7 @@ const int matprices[] = {
 };
 
 /* calculate the value that the shk will charge for [one of] an object */
-staticfn long
+long
 get_cost(
     struct obj *obj,
     struct monst *shkp) /* if angry, impose a surcharge */
