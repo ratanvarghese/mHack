@@ -2484,6 +2484,15 @@
             | M1_CARNIVORE | M1_OVIPAROUS | M1_NOTAKE,
         M2_HOSTILE, 0,
         10, CLR_BLUE, COBRA),
+    MON(NAM("ouroboros"), S_SNAKE,
+        LVL(6, 12, 0, 0, 0), (G_GENO | G_NOCORPSE | 1),
+        A(ATTK(AT_TUCH, AD_PHYS, 0, 0), ATTK(AT_HUGS, AD_WRAP, 1, 4),
+          ATTK(AT_HUGS, AD_PHYS, 2, 4), NO_ATTK, NO_ATTK, NO_ATTK),
+        SIZ(250, 100, MS_HISS, MZ_LARGE), 0, 0,
+        M1_FLY | M1_SWIM | M1_NOLIMBS | M1_ANIMAL | M1_SLITHY
+            | M1_OVIPAROUS | M1_NOTAKE,
+        M2_STRONG, M3_INFRAVISION,
+        8, CLR_YELLOW, OUROBOROS),
     /*
      * Trolls
      */

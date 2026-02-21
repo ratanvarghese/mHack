@@ -1262,6 +1262,12 @@ tamedog(
         mtmp->weapon_check = NEED_HTH_WEAPON;
         (void) mon_wield_item(mtmp);
     }
+
+    if (monsndx(mtmp->data) == PM_OUROBOROS && canspotmon(mtmp)) {
+        if(discover_random_recipe(STRANGE_OBJECT)) {
+            pline("Eureka!");
+        }
+    }
     return TRUE;
 }
 

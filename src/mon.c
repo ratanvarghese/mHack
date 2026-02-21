@@ -814,6 +814,11 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
         free_mgivenname(mtmp);
         newsym(x, y);
         return obj;
+    case PM_OUROBOROS:
+        if(!rn2(6)) {
+            mksobj_at(POT_OIL, x, y, TRUE, FALSE); /* Benzene */    
+        }
+        break;
     case NON_PM: case LEAVESTATUE: case NUMMONS: /* never use as index */
         break;
 

@@ -76,6 +76,8 @@ des.monster("E")
 des.monster("b")
 des.monster("P")
 des.monster("P")
+des.monster({ id = "ouroboros", peaceful = 1 })
+
 
 -- Items
 des.object("scroll of alchemy")

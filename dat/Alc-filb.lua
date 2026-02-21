@@ -2,7 +2,7 @@ des.room({ type = "ordinary",
            contents = function()
               des.stair("up")
               des.object()
-              des.monster({ class = "water elemental", peaceful=0 })
+              des.monster({ id = "water elemental", peaceful=0 })
               des.monster("energy vortex")
            end
 })
@@ -11,7 +11,7 @@ des.room({ type = "ordinary",
            contents = function()
               des.object()
               des.object()
-              des.monster({ class = "water elemental", peaceful=0 })
+              des.monster({ id = "water elemental", peaceful=0 })
               des.monster("quark")
            end
 })
@@ -31,7 +31,7 @@ des.room({ type = "ordinary",
               des.stair("down")
               des.object()
               des.trap()
-              des.monster({ class = "water elemental", peaceful=0 })
+              des.monster({ id = "water elemental", peaceful=0 })
               des.monster("energy vortex")
               des.monster("quark")
            end
@@ -43,7 +43,7 @@ des.room({ type = "ordinary",
               des.object()
               des.object()
               des.trap()
-              des.monster({ class = "air elemental", peaceful=0 })
+              des.monster({ id = "air elemental", peaceful=0 })
               des.monster("quark")
            end
 })
@@ -54,6 +54,7 @@ des.room({ type = "ordinary",
               des.trap()
               des.monster("v")
               des.monster("disintegrator")
+              des.monster({ id = "ouroboros", peaceful = 1 })
            end
 })
 

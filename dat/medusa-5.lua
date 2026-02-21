@@ -103,8 +103,9 @@ des.monster("giant eel")
 des.monster("giant eel")
 des.monster("jellyfish")
 des.monster("jellyfish")
-for i=1,14 do
+for i=1,7 do
    des.monster("S")
+   des.monster("ouroboros")
 end
 for i=1,4 do
    des.monster("black naga hatchling")

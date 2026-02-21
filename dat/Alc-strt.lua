@@ -83,6 +83,9 @@ des.monster("rust monster",60,02)
 des.monster("transmuter",62,02)
 des.monster("disenchanter",64,02)
 
+-- Ouroboros
+des.monster({ id = "ouroboros", peaceful = 1 })
+
 
 -- Undiggable
 des.non_diggable(selection.area(00,00,75,19))

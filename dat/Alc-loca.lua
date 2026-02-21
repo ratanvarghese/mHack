@@ -81,6 +81,7 @@ if nh.rn2(3) == 0 then
 	des.region({ region={54,16, 59,18}, type="food shop", filled=1})
 end
 
+-- Monsters
 des.monster("quark")
 des.monster("quark")
 des.monster("quark")
@@ -98,6 +99,7 @@ des.monster("v")
 des.monster("E")
 des.monster("E")
 des.monster("E")
+des.monster({ id = "ouroboros", peaceful = 1 })
 des.monster()
 des.monster()
 des.monster()
