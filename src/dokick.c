@@ -203,6 +203,23 @@ kick_monster(struct monst *mon, coordxy x, coordxy y)
             if (uattk->aatyp != AT_KICK)
                 continue;
 
+            if (touch_disintegrates(mon->data) && !mon->mcan && mon->mhp>6){
+                if(uarmf) {
+                    if(!oresist_disintegration(uarmf)){
+                        tmp = uarmf->owt;
+                        weight_dmg(tmp);
+                        destroy_arm(uarmf);
+                        break;
+                    }
+                } else {
+                    char kbuf[BUFSZ];
+                    Sprintf(kbuf, "barefootedly kicking %s",
+                        a_monnam(mon));
+                    instadisintegrate(kbuf);
+                    break;
+                }
+            }
+
             kickdieroll = rnd(20);
             struct obj* hated_obj;
             specialdmg = special_dmgval(&gy.youmonst, mon, W_ARMF, &hated_obj);
@@ -355,6 +372,14 @@ boolean
 ghitm(struct monst *mtmp, struct obj *gold)
 {
     boolean msg_given = FALSE;
+
+    if( touch_disintegrates(mtmp->data) && !mtmp->mcan && mtmp->mhp >6 &&
+          !oresist_disintegration(gold)) {
+        if(cansee(mtmp->mx, mtmp->my))
+            pline_The("%s %s!", xname(gold), vtense(xname(gold),"disintegrate"));
+        dealloc_obj(gold);
+        return 1;
+    }
 
     if (!is_corrupt(mtmp) && !mtmp->isshk && !mtmp->ispriest
         && !mtmp->isgd && !is_mercenary(mtmp->data)) {

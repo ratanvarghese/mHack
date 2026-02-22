@@ -55,17 +55,18 @@ des.object({ id = "amethyst", coord = {14, 14}, buc="blessed", name="The Stone o
 des.monster({ id = "Unbioctium", x=14, y=14, peaceful=0 })
 
 -- Monsters
-des.monster("shocking sphere")
-des.monster("shocking sphere")
-des.monster("shocking sphere")
+des.monster("quark")
+des.monster("quark")
+des.monster("quark")
 des.monster("energy vortex")
 des.monster("energy vortex")
 des.monster("energy vortex")
 des.monster("energy vortex")
 des.monster("energy vortex")
-des.monster("e")
-des.monster("e")
-des.monster("e")
+des.monster("disintegrator")
+des.monster("disintegrator")
+des.monster("disenchanter")
+des.monster("disenchanter")
 des.monster("v")
 des.monster("v")
 des.monster("v")
@@ -75,6 +76,8 @@ des.monster("E")
 des.monster("b")
 des.monster("P")
 des.monster("P")
+des.monster({ id = "ouroboros", peaceful = 1 })
+
 
 -- Items
 des.object("scroll of alchemy")

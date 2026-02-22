@@ -5,7 +5,7 @@
 #include "hack.h"
 
 /* Monsters that might be ridden */
-static NEARDATA const char steeds[] = { S_QUADRUPED, S_UNICORN, S_ANGEL,
+static NEARDATA const char steeds[] = { S_DOG, S_QUADRUPED, S_UNICORN, S_ANGEL,
                                         S_CENTAUR,   S_DRAGON,  S_JABBERWOCK,
                                         '\0' };
 
@@ -28,6 +28,7 @@ can_saddle(struct monst *mtmp)
     struct permonst *ptr = mtmp->data;
 
     return (strchr(steeds, ptr->mlet) && (ptr->msize >= MZ_MEDIUM)
+            && (!(ptr->mlet == S_DOG) || (ptr == &mons[PM_WARG]))
             && (!humanoid(ptr) || ptr->mlet == S_CENTAUR) && !amorphous(ptr)
             && !noncorporeal(ptr) && !is_whirly(ptr) && !unsolid(ptr));
 }
@@ -86,6 +87,15 @@ use_saddle(struct obj *otmp)
             instapetrify(kbuf);
         }
     }
+    if (touch_disintegrates(ptr)){
+        char kbuf[BUFSZ];
+        if(!oresist_disintegration(otmp)){
+          pline("%s disintegrates!", Yname2(otmp));
+          useup(otmp);
+        }
+        Sprintf(kbuf,"attempting to saddle %s", a_monnam(mtmp));
+        instadisintegrate(kbuf);
+    }
     if (ptr == &mons[PM_AMOROUS_DEMON]) {
         pline("Shame on you!");
         exercise(A_WIS, FALSE);
@@ -108,6 +118,11 @@ use_saddle(struct obj *otmp)
         chance -= 10 * mtmp->m_lev;
     if (Role_if(PM_KNIGHT))
         chance += 20;
+    /*  because "orcs like to eat horses and the like" - src/mhitu.c
+        only applied against horse/unicorn class. Balances Warg riding
+        */
+    if (is_orc(gy.youmonst.data) && (mtmp->data)->mlet == S_UNICORN) 
+        chance -= 20;
     switch (P_SKILL(P_RIDING)) {
     case P_ISRESTRICTED:
     case P_UNSKILLED:
@@ -182,6 +197,7 @@ can_ride(struct monst *mtmp)
 {
     return (mtmp->mtame && humanoid(gy.youmonst.data)
             && !verysmall(gy.youmonst.data) && !bigmonst(gy.youmonst.data)
+            && (is_orc(gy.youmonst.data) || (mtmp->data != &mons[PM_WARG]))
             && (!Underwater || is_swimmer(mtmp->data)));
 }
 
@@ -333,6 +349,11 @@ mount_steed(
               mtmp->mleashed ? " and its leash comes off" : "");
         if (mtmp->mleashed)
             m_unleash(mtmp, FALSE);
+        return (FALSE);
+    }
+     /* Does this type of steed approve of your species? */
+    if ((ptr == &mons[PM_WARG]) && (!is_orc(gy.youmonst.data))){
+        pline("%s growls at you disapprovingly.", Monnam(mtmp));
         return (FALSE);
     }
     if (!force && Underwater && !is_swimmer(ptr)) {

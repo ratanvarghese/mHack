@@ -86,12 +86,14 @@ determine_polymon(int material)
     case MITHRIL:
     case ADAMANTINE:
         return PM_IRON_GOLEM;
-    case COPPER:
     case SILVER:
+        return PM_SILVER_GOLEM;
+    case COPPER:
     case PLATINUM:
-    case GEMSTONE:
     case MINERAL:
         return PM_STONE_GOLEM;
+    case GEMSTONE:
+        return PM_CRYSTAL_GOLEM;
     case 0:
     case FLESH:
         /* there is no flesh type, but all food is type 0, so we use it */
@@ -381,6 +383,9 @@ can_blnd(
        "a crow will not pluck out the eye of another crow"
        so prevent ravens from blinding each other */
     if (magr && magr->data == &mons[PM_RAVEN] && mdef->data == &mons[PM_RAVEN])
+        return FALSE;
+
+    if (magr && magr->data == &mons[PM_UMBRAL_HULK])
         return FALSE;
 
     switch (aatyp) {
@@ -1357,6 +1362,7 @@ static const short grownups[][2] = {
     { PM_DEMILICH, PM_MASTER_LICH },
     { PM_MASTER_LICH, PM_ARCH_LICH },
     { PM_VAMPIRE, PM_VAMPIRE_LEADER },
+    { PM_VAMPIRE_LEADER, PM_VAMPIRE_NOBLE },
     { PM_BAT, PM_GIANT_BAT },
     { PM_BABY_GRAY_DRAGON, PM_GRAY_DRAGON },
     { PM_BABY_GOLD_DRAGON, PM_GOLD_DRAGON },
@@ -1371,6 +1377,7 @@ static const short grownups[][2] = {
     { PM_BABY_BLUE_DRAGON, PM_BLUE_DRAGON },
     { PM_BABY_GREEN_DRAGON, PM_GREEN_DRAGON },
     { PM_BABY_YELLOW_DRAGON, PM_YELLOW_DRAGON },
+    { PM_JABBERWOCK, PM_VORPAL_JABBERWOCK },
     { PM_RED_NAGA_HATCHLING, PM_RED_NAGA },
     { PM_BLACK_NAGA_HATCHLING, PM_BLACK_NAGA },
     { PM_GOLDEN_NAGA_HATCHLING, PM_GOLDEN_NAGA },
@@ -1396,6 +1403,10 @@ static const short grownups[][2] = {
     { PM_KEYSTONE_KOP, PM_KOP_SERGEANT },
     { PM_KOP_SERGEANT, PM_KOP_LIEUTENANT },
     { PM_KOP_LIEUTENANT, PM_KOP_KAPTAIN },
+    { PM_DEEP_ONE, PM_DEEPER_ONE },
+    { PM_DEEPER_ONE, PM_DEEPEST_ONE },
+    { PM_MIGO_DRONE, PM_MIGO_WARRIOR },
+    { PM_MIGO_WARRIOR, PM_MIGO_QUEEN },
     { NON_PM, NON_PM }
 };
 
@@ -1531,6 +1542,11 @@ on_fire(struct permonst *mptr, struct attack *mattk)
     case PM_STONE_GOLEM:
     case PM_CLAY_GOLEM:
     case PM_GOLD_GOLEM:
+    case PM_SILVER_GOLEM:
+    case PM_RUBY_GOLEM:
+    case PM_DIAMOND_GOLEM:
+    case PM_SAPPHIRE_GOLEM:
+    case PM_CRYSTAL_GOLEM:
     case PM_AIR_ELEMENTAL:
     case PM_EARTH_ELEMENTAL:
     case PM_DUST_VORTEX:
@@ -1538,7 +1554,11 @@ on_fire(struct permonst *mptr, struct attack *mattk)
         what = "heating up";
         break;
     default:
-        what = (mattk->aatyp == AT_HUGS) ? "being roasted" : "on fire";
+        if(mattk->adtyp == AD_SCLD) {
+            what = "being scalded";
+        } else {
+            what = (mattk->aatyp == AT_HUGS) ? "being roasted" : "on fire";
+        }
         break;
     }
     return what;
@@ -1634,6 +1654,8 @@ monmaterial(int mndx)
         return PAPER;
     case PM_GOLD_GOLEM:
         return GOLD;
+    case PM_SILVER_GOLEM:
+        return SILVER;
     case PM_LEATHER_GOLEM:
         return LEATHER;
     case PM_WOOD_GOLEM:
@@ -1644,7 +1666,13 @@ monmaterial(int mndx)
     case PM_GLASS_GOLEM:
         return GLASS;
     case PM_IRON_GOLEM:
+    case PM_STEEL_GOLEM:
         return IRON;
+    case PM_RUBY_GOLEM:
+    case PM_DIAMOND_GOLEM:
+    case PM_SAPPHIRE_GOLEM:
+    case PM_CRYSTAL_GOLEM:
+        return GEMSTONE;
     default:
         return 0;
     }

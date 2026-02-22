@@ -809,49 +809,11 @@ movobj(struct obj *obj, coordxy ox, coordxy oy)
     newsym(ox, oy);
 }
 
-staticfn void
-dosinkfall(void)
+void
+unequip_levitating_items(boolean ufall)
 {
-    static const char fell_on_sink[] = "fell onto a sink";
     struct obj *obj;
-    int dmg;
-    boolean lev_boots = (uarmf && uarmf->otyp == LEVITATION_BOOTS),
-            innate_lev = ((HLevitation & (FROMOUTSIDE | FROMFORM)) != 0L),
-            /* to handle being chained to buried heavy ball, trying to
-               levitate but being blocked, then moving onto adjacent sink;
-               no need to worry about being blocked by terrain because we
-               couldn't be over a sink at the same time */
-            blockd_lev = (BLevitation == I_SPECIAL),
-            ufall = (!innate_lev && !blockd_lev
-                     && !(HFlying || EFlying)); /* BFlying */
-
-    if (!ufall) {
-        You((innate_lev || blockd_lev) ? "wobble unsteadily for a moment."
-                                       : "gain control of your flight.");
-    } else {
-        long save_ELev = ELevitation, save_HLev = HLevitation;
-
-        /* fake removal of levitation in advance so that final
-           disclosure will be right in case this turns out to
-           be fatal; fortunately the fact that rings and boots
-           are really still worn has no effect on bones data */
-        ELevitation = HLevitation = 0L;
-        You("crash to the floor!");
-        dmg = rn1(8, 25 - (int) ACURR(A_CON));
-        losehp(Maybe_Half_Phys(dmg), fell_on_sink, NO_KILLER_PREFIX);
-        exercise(A_DEX, FALSE);
-        selftouch("Falling, you");
-        for (obj = svl.level.objects[u.ux][u.uy]; obj; obj = obj->nexthere)
-            if (obj->oclass == WEAPON_CLASS || is_weptool(obj)) {
-                You("fell on %s.", doname(obj));
-                losehp(Maybe_Half_Phys(rnd(3)), fell_on_sink,
-                       NO_KILLER_PREFIX);
-                exercise(A_CON, FALSE);
-            }
-        ELevitation = save_ELev;
-        HLevitation = save_HLev;
-    }
-
+    boolean lev_boots = (uarmf && uarmf->otyp == LEVITATION_BOOTS);
     /*
      * Interrupt multi-turn putting on/taking off of armor (in which
      * case we reached the sink due to being teleported while busy;
@@ -890,6 +852,51 @@ dosinkfall(void)
         off_msg(obj);
     }
     HLevitation--;
+}
+
+staticfn void
+dosinkfall(void)
+{
+    static const char fell_on_sink[] = "fell onto a sink";
+    struct obj *obj;
+    int dmg;
+    boolean innate_lev = ((HLevitation & (FROMOUTSIDE | FROMFORM)) != 0L),
+            /* to handle being chained to buried heavy ball, trying to
+               levitate but being blocked, then moving onto adjacent sink;
+               no need to worry about being blocked by terrain because we
+               couldn't be over a sink at the same time */
+            blockd_lev = (BLevitation == I_SPECIAL),
+            ufall = (!innate_lev && !blockd_lev
+                     && !(HFlying || EFlying)); /* BFlying */
+
+    if (!ufall) {
+        You((innate_lev || blockd_lev) ? "wobble unsteadily for a moment."
+                                       : "gain control of your flight.");
+    } else {
+        long save_ELev = ELevitation, save_HLev = HLevitation;
+
+        /* fake removal of levitation in advance so that final
+           disclosure will be right in case this turns out to
+           be fatal; fortunately the fact that rings and boots
+           are really still worn has no effect on bones data */
+        ELevitation = HLevitation = 0L;
+        You("crash to the floor!");
+        dmg = rn1(8, 25 - (int) ACURR(A_CON));
+        losehp(Maybe_Half_Phys(dmg), fell_on_sink, NO_KILLER_PREFIX);
+        exercise(A_DEX, FALSE);
+        selftouch("Falling, you");
+        for (obj = svl.level.objects[u.ux][u.uy]; obj; obj = obj->nexthere)
+            if (obj->oclass == WEAPON_CLASS || is_weptool(obj)) {
+                You("fell on %s.", doname(obj));
+                losehp(Maybe_Half_Phys(rnd(3)), fell_on_sink,
+                       NO_KILLER_PREFIX);
+                exercise(A_CON, FALSE);
+            }
+        ELevitation = save_ELev;
+        HLevitation = save_HLev;
+    }
+
+    unequip_levitating_items(ufall);
     /* probably moot; we're either still levitating or went
        through float_down(), but make sure BFlying is up to date */
     float_vs_flight();

@@ -193,6 +193,7 @@ extern NEARDATA struct objdescr obj_descr[NUM_OBJECTS + 1];
 #define is_organic(otmp) (otmp->material <= WOOD)
 #define is_metallic(otmp) \
     (otmp->material >= IRON && otmp->material <= MITHRIL)
+#define is_golden(otmp) (otmp->material == GOLD)
 
 /* primary damage: fire/rust/--- */
 /* is_flammable(otmp), is_rottable(otmp) in mkobj.c */

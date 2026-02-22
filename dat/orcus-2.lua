@@ -104,8 +104,8 @@ des.monster("shade",32,14)
 des.monster("shade",32,16)
 des.monster("vampire",35,16)
 des.monster("vampire",35,14)
-des.monster("vampire lord",36,14)
-des.monster("vampire lord",36,15)
+des.monster("vampire noble",36,14)
+des.monster("vampire noble",36,15)
 
 -- Randomly placed companions
 des.monster("skeleton")
@@ -130,8 +130,8 @@ des.monster("human zombie")
 des.monster("vampire")
 des.monster("vampire")
 des.monster("vampire")
-des.monster("vampire lord")
-des.monster("vampire lord")
+des.monster("vampire leader")
+des.monster("vampire leader")
 
 -- A few more for the party
 des.monster()

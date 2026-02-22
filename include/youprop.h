@@ -100,7 +100,8 @@
            are mutually exclusive; explicitly applying !BBlinded to both
            internal and external blindness should be more robust in case
            of future changes */
-#define Blind ((HBlinded || EBlinded) && !BBlinded)
+#define Blind (((HBlinded || EBlinded) && !BBlinded) || \
+            !haseyes(gy.youmonst.data) || Blemmye_blindness(&gy.youmonst))
 
 /*
  * Maladies
@@ -407,5 +408,7 @@
    your head to ward off noxious fumes" [we require it to be damp or wet] */
 #define Half_gas_damage \
     (ublindf && ublindf->otyp == TOWEL && ublindf->spe > 0)
+
+#define Hearing_muffled ((ublindf && ublindf->otyp == TOWEL))
 
 #endif /* YOUPROP_H */

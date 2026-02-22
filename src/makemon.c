@@ -4,6 +4,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "sp_lev.h"
 
 /* this assumes that a human quest leader or nemesis is an archetype
    of the corresponding role; that isn't so for some roles (tourist
@@ -26,6 +27,7 @@ staticfn void m_initweap(struct monst *);
 staticfn void m_initinv(struct monst *);
 staticfn boolean makemon_rnd_goodpos(struct monst *, mmflags_nht, coord *);
 staticfn void init_mextra(struct mextra *);
+staticfn void set_labyrinth_sym(struct monst *);
 
 #define m_initsgrp(mtmp, x, y, mmf) m_initgrp(mtmp, x, y, 3, mmf)
 #define m_initlgrp(mtmp, x, y, mmf) m_initgrp(mtmp, x, y, 10, mmf)
@@ -422,6 +424,37 @@ m_initweap(struct monst *mtmp)
             }
         }
         break;
+    case S_QUANTMECH:
+        if (mm == PM_CLOCKWORK_AUTOMATON) {
+            (void) mongets(mtmp, rn2(2)? BROADSWORD : SCIMITAR);
+            (void) mongets(mtmp, PLATE_MAIL);
+        }
+        break;
+    case S_LEPRECHAUN:
+        if (mm == PM_POOKA){
+            if (!rn2(8))
+                (void) mongets(mtmp, HAWAIIAN_SHIRT); 
+            if (!rn2(4))
+                (void)mongets(mtmp, ELVEN_HELM);
+            switch (rn2(3)) {
+            case 0:
+                if (!rn2(4))
+                    (void)mongets(mtmp, ELVEN_SHIELD);
+                if (rn2(2))
+                    (void)mongets(mtmp, ELVEN_SHORT_SWORD);
+                break;
+            case 1:
+                (void)mongets(mtmp, ELVEN_DAGGER);
+                break;
+            case 2:
+                if (rn2(2)) {
+                    (void)mongets(mtmp, ELVEN_SPEAR);
+                    (void)mongets(mtmp, ELVEN_SHIELD);
+                }
+                break;
+            }
+        }
+        break;
     case S_KOP:
         /* create Keystone Kops with cream pies to
            throw. As suggested by KAA.     [MRS] */
@@ -514,6 +547,10 @@ m_initweap(struct monst *mtmp)
             (void) mongets(mtmp, LIGHT_ARMOR);
         if (!rn2(4))
             (void) mongets(mtmp, (rn2(3) ? KNIFE : SHORT_SWORD));
+        break;
+    case S_GHOST:
+        if (mm == PM_POLTERGEIST)
+            m_initthrow(mtmp, KNIFE, 12);
         break;
     case S_LIZARD:
         if (mm == PM_SALAMANDER)
@@ -820,9 +857,24 @@ m_initinv(struct monst *mtmp)
             }
             (void) mpickobj(mtmp, otmp);
         }
+        if(ptr == &mons[PM_CLOCKWORK_AUTOMATON]) {
+            if (!rn2(13))
+                (void) mongets(mtmp, WORTHLESS_WHITE_GLASS);
+            (void) mongets(mtmp, SKELETON_KEY);
+        }
         break;
     case S_LEPRECHAUN:
-        mkmonmoney(mtmp, (long) d(level_difficulty(), 30));
+        if (ptr == &mons[PM_POOKA]) {
+            if(!rn2(5))
+                (void) mongets(mtmp, CARROT);
+        }
+        if (ptr == &mons[PM_LEPRECHAUN]) {
+            mkmonmoney(mtmp, (long) d(level_difficulty(), 30));
+        }
+        break;
+    case S_ZRUTY:
+        if (ptr == &mons[PM_BANNIK] && !rn2(5))
+            mongets(mtmp, TOWEL);
         break;
     case S_DEMON:
         /* moved here from m_initweap() because these don't
@@ -1337,7 +1389,18 @@ makemon(
         break;
     case S_LIGHT:
     case S_ELEMENTAL:
-        if (mndx == PM_STALKER || mndx == PM_BLACK_LIGHT) {
+    case S_GHOST:
+        if (mndx == PM_WILL_O_WISP) {
+            int pm_friendly = pick_friendly();
+            if(pm_friendly == NON_PM) {
+                mtmp->m_ap_type = M_AP_NOTHING;
+            } else {
+                mtmp->m_ap_type = M_AP_MONSTER;
+                mtmp->mappearance = pm_friendly;
+            }
+            break;
+        }
+        if (pm_invisible(ptr)) {
             mtmp->perminvis = TRUE;
             mtmp->minvis = TRUE;
         }
@@ -1348,9 +1411,17 @@ makemon(
         }
         break;
     case S_LEPRECHAUN:
-        mtmp->msleeping = 1;
+        if (ptr == &mons[PM_POOKA] && !rn2(3)){
+            mtmp->perminvis = TRUE;
+            mtmp->minvis = TRUE;
+        } else if (ptr == &mons[PM_LEPRECHAUN])
+            mtmp->msleeping = 1;
         break;
     case S_JABBERWOCK:
+        if ((ptr == &mons[PM_JABBERWOCK] || ptr == &mons[PM_VORPAL_JABBERWOCK])
+                && !u.uhave.amulet) 
+            mtmp->msleeping = 1;
+        break;
     case S_NYMPH:
         if (rn2(5) && !u.uhave.amulet)
             mtmp->msleeping = 1;
@@ -1366,6 +1437,12 @@ makemon(
     case S_BAT:
         if (Inhell && is_bat(ptr))
             mon_adjust_speed(mtmp, 2, (struct obj *) 0);
+        break;
+    case S_QUANTMECH:
+        if (ptr == &mons[PM_CLOCKWORK_AUTOMATON]) {
+            mtmp->permspeed = MFAST;
+            mtmp->mspec_used = CLOCKWORK_MAX;
+        }
         break;
     }
     if ((ct = emits_light(mtmp->data)) > 0)
@@ -2261,8 +2338,20 @@ golemhp(int type)
         return 100;
     case PM_GLASS_GOLEM:
         return 80;
+    case PM_SILVER_GOLEM:
+        return 100;
     case PM_IRON_GOLEM:
         return 120;
+    case PM_RUBY_GOLEM:
+        return 130;
+    case PM_DIAMOND_GOLEM:
+        return 130;
+    case PM_SAPPHIRE_GOLEM:
+        return 130;
+    case PM_STEEL_GOLEM:
+        return 140;
+    case PM_CRYSTAL_GOLEM:
+        return 150;
     default:
         return 0;
     }
@@ -2397,6 +2486,51 @@ static const NEARDATA char syms[] = {
     S_MIMIC_DEF,  S_MIMIC_DEF,
 };
 
+staticfn void
+set_labyrinth_sym(struct monst *mtmp)
+{
+    int mx = mtmp->mx;
+    int my = mtmp->my;
+    int typ = levl[mx][my].typ;
+    unsigned ap_type = M_AP_NOTHING;
+    unsigned appear = 0;
+
+    if (IS_WALL(typ) || typ == SDOOR || typ == SCORR) {
+        ap_type = M_AP_FURNITURE;
+        appear = typ;
+    } else if (typ == ROOM) {
+        ap_type = M_AP_FURNITURE;
+        boolean adj_west = (isok(mx-1, my) && IS_WALL(levl[mx-1][my].typ));
+        boolean adj_east = (isok(mx+1, my) && IS_WALL(levl[mx+1][my].typ));
+        boolean adj_north = (isok(mx, my-1) && IS_WALL(levl[mx][my-1].typ));
+        boolean adj_south = (isok(mx, my+1) && IS_WALL(levl[mx][my+1].typ));
+        if (adj_west && adj_east && adj_north && adj_south) {
+            appear = S_crwall;
+        } else if (adj_west && adj_east && adj_north) {
+            appear = S_tuwall;
+        } else if (adj_west && adj_east && adj_south) {
+            appear = S_tdwall;
+        } else if (adj_west && adj_north && adj_south) {
+            appear = S_tlwall;
+        } else if (adj_east && adj_north && adj_south) {
+            appear = S_trwall;
+        } else if (adj_west || adj_east) {
+            appear = S_hwall;
+        } else if (adj_north || adj_south) {
+            appear = S_vwall;
+        } else {
+            appear = (!isok(mx-1,my) || !isok(mx+1,my)) ? S_vwall : S_hwall;
+        }
+    }
+
+    if(appear != 0) {
+        block_point(mx,my);   /* vision */
+    }
+    mtmp->m_ap_type = ap_type;
+    mtmp->mappearance = appear;
+    return;
+}
+
 void
 set_mimic_sym(struct monst *mtmp)
 {
@@ -2421,6 +2555,12 @@ set_mimic_sym(struct monst *mtmp)
 #endif
     else
         rt = 0; /* roomno < 0 case for GCC_WARN */
+
+    if (mtmp->data == &mons[PM_LABYRINTH_TRAPPER]){
+        set_labyrinth_sym(mtmp);
+        return;
+    }
+
 
     if (OBJ_AT(mx, my)) {
         ap_type = M_AP_OBJECT;
@@ -2556,6 +2696,37 @@ set_mimic_sym(struct monst *mtmp)
     if (does_block(mx, my, &levl[mx][my]))
         block_point(mx, my);
 }
+
+static int friendlies[] = {
+    PM_ACID_BLOB,    PM_HOBBIT,        PM_BUGBEAR,     PM_GNOME,
+    PM_GNOME_LEADER, PM_GNOME_RULER,   PM_DWARF,       PM_DWARF_LEADER,
+    PM_DWARF_RULER,  PM_HOMUNCULUS,    PM_TENGU,       PM_GOBLIN,
+    PM_HOBGOBLIN,    PM_HILL_ORC,      PM_ORC_SHAMAN,  PM_ORC_CAPTAIN,
+    PM_ANGEL,        PM_ARCHON,        PM_GOLDEN_NAGA, PM_GREEN_ELF,
+    PM_ELF_NOBLE,    PM_ELVEN_MONARCH, PM_MONKEY,      PM_SASQUATCH };
+
+static int very_friendlies[] = {
+    PM_LITTLE_DOG,    PM_DOG,          PM_LARGE_DOG,
+    PM_KITTEN,        PM_HOUSECAT,     PM_LARGE_CAT,
+    PM_PONY,          PM_HORSE,        PM_WARHORSE,     PM_ALIGNED_CLERIC,
+    PM_NURSE,         PM_GUIDE,        PM_AMOROUS_DEMON,
+    PM_BLACK_UNICORN, PM_GRAY_UNICORN, PM_WHITE_UNICORN };
+
+int
+pick_friendly(void)
+{
+    int pm, i=8;
+    do { 
+        if (rn2(3))
+            pm = very_friendlies[rn2(SIZE(very_friendlies))];
+        else
+            pm = friendlies[rn2(SIZE(friendlies))];
+        if (!peace_minded(&mons[pm]))
+            pm = NON_PM;
+    } while (pm == NON_PM || !(--i));
+    return pm;
+}
+
 
 /* release monster from bag of tricks; return number of monsters created */
 int

@@ -1622,53 +1622,9 @@ artifact_hit(
                 return TRUE;
             }
         } else if (is_art(otmp, ART_VORPAL_BLADE)
-                   && (dieroll == 1 || mdef->data == &mons[PM_JABBERWOCK])) {
-            static const char *const behead_msg[2] = { "%s beheads %s!",
-                                                       "%s decapitates %s!" };
-
-            if (youattack && engulfing_u(mdef))
-                return FALSE;
-            wepdesc = artilist[ART_VORPAL_BLADE].name;
-            if (!youdefend) {
-                if (!has_head(mdef->data) || gn.notonhead || u.uswallow) {
-                    if (youattack)
-                        pline("Somehow, you miss %s wildly.", mon_nam(mdef));
-                    else if (vis)
-                        pline("Somehow, %s misses wildly.", mon_nam(magr));
-                    *dmgptr = 0;
-                    return (boolean) (youattack || vis);
-                }
-                if (noncorporeal(mdef->data) || amorphous(mdef->data)) {
-                    pline("%s slices through %s %s.", wepdesc,
-                          s_suffix(mon_nam(mdef)), mbodypart(mdef, NECK));
-                    return TRUE;
-                }
-                *dmgptr = 2 * mdef->mhp + FATAL_DAMAGE_MODIFIER;
-                pline(ROLL_FROM(behead_msg), wepdesc,
-                      mon_nam(mdef));
-                if (Hallucination && !flags.female)
-                    pline("Good job Henry, but that wasn't Anne.");
-                otmp->dknown = TRUE;
-                return TRUE;
-            } else {
-                if (!has_head(gy.youmonst.data)) {
-                    pline("Somehow, %s misses you wildly.",
-                          magr ? mon_nam(magr) : wepdesc);
-                    *dmgptr = 0;
-                    return TRUE;
-                }
-                if (noncorporeal(gy.youmonst.data)
-                    || amorphous(gy.youmonst.data)) {
-                    pline("%s slices through your %s.", wepdesc,
-                          body_part(NECK));
-                    return TRUE;
-                }
-                *dmgptr = 2 * (Upolyd ? u.mh : u.uhp) + FATAL_DAMAGE_MODIFIER;
-                pline(ROLL_FROM(behead_msg), wepdesc, "you");
-                otmp->dknown = TRUE;
-                /* Should amulets fall off? */
-                return TRUE;
-            }
+                   && (dieroll == 1 || mdef->data == &mons[PM_JABBERWOCK]
+                       || mdef->data == &mons[PM_VORPAL_JABBERWOCK])) {
+            return decapitate(magr, mdef, otmp, dmgptr);
         }
     }
     if (spec_ability(otmp, SPFX_DRLI)) {
@@ -1796,6 +1752,76 @@ transmute_ok(struct obj *obj)
         }
     }
     return GETOBJ_EXCLUDE;
+}
+
+boolean
+decapitate(
+    struct monst *magr, /* attacker; might be Null if 'mdef' is youmonst */
+    struct monst *mdef, /* defender */
+    struct obj *otmp,   /* artifact weapon */
+    int *dmgptr)        /* output */
+{
+    boolean youattack = (magr == &gy.youmonst);
+    boolean youdefend = (mdef == &gy.youmonst);
+    boolean vis = (!youattack && magr && cansee(magr->mx, magr->my))
+                  || (!youdefend && cansee(mdef->mx, mdef->my))
+                  || (youattack && engulfing_u(mdef) && !Blind);
+    const char *wepdesc;
+    static const char *const behead_verb[2] = { "behead",
+                                               "decapitate" };
+    if(!magr && !otmp) {
+        impossible("decapitate: who or what is the perpetrator?");
+    }
+    if (youattack && engulfing_u(mdef))
+        return FALSE;
+    wepdesc = (otmp) ? artilist[ART_VORPAL_BLADE].name : NULL;
+    if (!youdefend) {
+        if (!has_head(mdef->data) || gn.notonhead || u.uswallow) {
+            if (youattack)
+                pline("Somehow, you miss %s wildly.", mon_nam(mdef));
+            else if (vis)
+                pline("Somehow, %s misses wildly.", mon_nam(magr));
+            *dmgptr = 0;
+            return (boolean) (youattack || vis);
+        }
+        if (noncorporeal(mdef->data) || amorphous(mdef->data)) {
+            pline("%s slices through %s %s.", wepdesc ? wepdesc : Monnam(magr),
+                  s_suffix(mon_nam(mdef)), mbodypart(mdef, NECK));
+            return TRUE;
+        }
+        *dmgptr = 2 * mdef->mhp + FATAL_DAMAGE_MODIFIER;
+        pline("%s %s%s %s!", (wepdesc ? wepdesc : Monnam(magr)),
+                ROLL_FROM(behead_verb), (wepdesc || !youattack) ? "s" : "",
+                mon_nam(mdef));
+        if (Hallucination && !flags.female)
+            pline("Good job Henry, but that wasn't Anne.");
+        if(otmp) {
+            otmp->dknown = TRUE;
+        }
+        return TRUE;
+    } else {
+        if (!has_head(gy.youmonst.data)) {
+            pline("Somehow, %s misses you wildly.",
+                  magr ? mon_nam(magr) : wepdesc);
+            *dmgptr = 0;
+            return TRUE;
+        }
+        if (noncorporeal(gy.youmonst.data)
+            || amorphous(gy.youmonst.data)) {
+            pline("%s slices through your %s.", (wepdesc ? wepdesc : Monnam(magr)),
+                  body_part(NECK));
+            return TRUE;
+        }
+        *dmgptr = 2 * (Upolyd ? u.mh : u.uhp) + FATAL_DAMAGE_MODIFIER;
+        pline("%s %s%s %s!", (wepdesc ? wepdesc : Monnam(magr)),
+            ROLL_FROM(behead_verb), (wepdesc || !youattack) ? "s" : "",
+            "you");
+        if(otmp) {
+            otmp->dknown = TRUE;
+        }
+        /* Should amulets fall off? */
+        return TRUE;
+    }
 }
 
 /* the #invoke command */

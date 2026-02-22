@@ -902,6 +902,10 @@ mksobj_init(struct obj **obj, boolean artif)
                 otmp->corpsenm = PM_HUMAN;
             }
             /* timer set below */
+            if (otmp->corpsenm == PM_OTYUGH){
+              otmp->orotten = TRUE; 
+              otmp->age -= 100;
+            }
             break;
         case EGG:
             otmp->corpsenm = NON_PM; /* generic egg */

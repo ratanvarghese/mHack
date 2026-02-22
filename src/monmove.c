@@ -212,6 +212,8 @@ dochugw(
     /* skip canspotmon() if occupation is Null */
     boolean already_saw_mon = (chug && go.occupation) ? canspotmon(mtmp) : 0;
     int rd = chug ? dochug(mtmp) : 0;
+    if(rd == -1)
+        return rd;
 
     /*
      * A similar check is in monster_nearby() in hack.c.
@@ -331,10 +333,8 @@ disturb(struct monst *mtmp)
         && (!Stealth || (mtmp->data == &mons[PM_ETTIN] && rn2(10)))
         && (!(mtmp->data->mlet == S_NYMPH
               || mtmp->data == &mons[PM_JABBERWOCK]
-#if 0 /* DEFERRED */
               || mtmp->data == &mons[PM_VORPAL_JABBERWOCK]
-#endif
-              || mtmp->data->mlet == S_LEPRECHAUN) || !rn2(50))
+              || mtmp->data == &mons[PM_LEPRECHAUN]) || !rn2(50))
         && (Aggravate_monster
             || (mtmp->data->mlet == S_DOG || mtmp->data->mlet == S_HUMAN)
             || (!rn2(7) && M_AP_TYPE(mtmp) != M_AP_FURNITURE
@@ -605,7 +605,12 @@ mind_blast(struct monst *mtmp)
                     m_sen ? "telepathy"
                     : Blind_telepat ? "latent telepathy"
                     : "mind"); /* note: hero is never mindless */
-            dmg = rnd(15);
+            if(is_mind_flayer(mtmp->data)) {
+                dmg = rnd(15);
+            } else { /*PM_CTHULHU*/
+                dmg = 10 + rnd(10);
+            }
+            
             if (Half_spell_damage)
                 dmg = (dmg + 1) / 2;
             losehp(dmg, "psychic blast", KILLED_BY_AN);
@@ -702,6 +707,20 @@ dochug(struct monst *mtmp)
 
     /* update quest status flags */
     quest_stat_check(mtmp);
+
+    if ( mdat == &mons[PM_LABYRINTH_TRAPPER] &&
+        (mtmp->m_ap_type || mtmp->mundetected)
+        && distmin(mtmp->mx, mtmp->my, u.ux, u.uy)<=1){
+        if (mtmp->mundetected){
+            mtmp->mundetected=0;
+            newsym(mtmp->mx, mtmp->my);
+        } 
+        if (mtmp->m_ap_type)
+            seemimic(mtmp);
+        if (cansee(mtmp->mx, mtmp->my))
+            pline("The wall beside you comes alive!");
+    }
+
 
     if (!mtmp->mcanmove || (mtmp->mstrategy & STRAT_WAITMASK)) {
         if (Hallucination)
@@ -826,7 +845,7 @@ dochug(struct monst *mtmp)
     if (is_watch(mdat)) {
         watch_on_duty(mtmp);
     /* mind flayers can make psychic attacks! */
-    } else if (is_mind_flayer(mdat) && !rn2(20)) {
+    } else if ((is_mind_flayer(mdat) || mdat == &mons[PM_CTHULHU]) && !rn2(20)) {
         mind_blast(mtmp);
         set_apparxy(mtmp);
         distfleeck(mtmp, &inrange, &nearby, &scared);
@@ -879,7 +898,7 @@ dochug(struct monst *mtmp)
        to move. Movement itself is handled by the m_move() function. */
     if (!nearby || mtmp->mflee || scared || mtmp->mconf || mtmp->mstun
         || (mtmp->minvis && !rn2(3))
-        || (mdat->mlet == S_LEPRECHAUN && !findgold(gi.invent, FALSE)
+        || (mdat == &mons[PM_LEPRECHAUN] && !findgold(gi.invent, FALSE)
             && (findgold(mtmp->minvent, FALSE) || rn2(2)))
         || (is_wanderer(mdat) && !rn2(4)) || (Conflict && !mtmp->iswiz)
         || (!mtmp->mcansee && !rn2(4)) || mtmp->mpeaceful) {
@@ -902,6 +921,22 @@ dochug(struct monst *mtmp)
                         break;
                     }
                 }
+            }
+        }
+
+        if(mtmp->data == &mons[PM_UMBRAL_HULK] && 
+            !mtmp->mcan && !mtmp->mspec_used && levl[mtmp->mx][mtmp->my].lit){
+            litroom_mon(0, 0, mtmp->mx, mtmp->my);
+            mtmp->mspec_used = 5 + rn2(11);
+        }
+        if (mtmp->data == &mons[PM_WILL_O_WISP] && 
+            !mtmp->mcan && !mtmp->mspec_used && !rn2(10)){
+            struct rm * there = &levl[mtmp->mx][mtmp->my];
+            if (cansee(mtmp->mx, mtmp->my)){
+                if(there->typ == ROOM){
+                    maketrap(mtmp->mx, mtmp->my, rn2(3)?SPIKED_PIT:RUST_TRAP);
+                }
+                mtmp->mspec_used += rn1(15,15);
             }
         }
 
@@ -966,9 +1001,15 @@ dochug(struct monst *mtmp)
         if (((inrange && !scared) || panicattk) && !noattacks(mdat)
             /* [is this hp check really needed?] */
             && (Upolyd ? u.mh : u.uhp) > 0) {
-            if (mattacku(mtmp))
-                return 1; /* monster died (e.g. exploded) */
-        }
+                int mattackedu = mattacku(mtmp);
+                switch(mattackedu){
+                    case 0:
+                        break;
+                    default:
+                        return mattackedu;
+                }
+            }
+
         if (mtmp->wormno) {
             if (wormhitu(mtmp))
                 return 1; /* worm died (poly'd hero passive counter-attack) */
@@ -1523,7 +1564,8 @@ postmov(
                 if (flags.verbose && canseemon(mtmp))
                     pline_mon(mtmp, "%s %s under the door.", YMonnam(mtmp),
                               (ptr == &mons[PM_FOG_CLOUD]
-                               || ptr->mlet == S_LIGHT) ? "flows" : "oozes");
+                               || ptr->mlet == S_LIGHT
+                               || ptr == &mons[PM_QUARK]) ? "flows" : "oozes");
             } else if ((here->doormask & D_LOCKED) != 0 && can_unlock) {
                 /* like the vampshift hack, there are sequencing
                    issues when the monster is moved to the door's spot
@@ -1630,6 +1672,16 @@ postmov(
         }
     } /* mmoved==MMOVE_MOVED */
 
+    /* eat golden items its carrying, if gold bug..*/
+    if(ptr==&mons[PM_GOLD_BUG] && mtmp->mcanmove){
+        struct obj * geatme;
+        if ((geatme = findgold(mtmp->minvent, FALSE)) &&
+            geatme->otyp != AMULET_OF_STRANGULATION &&
+            geatme->otyp != RIN_SLOW_DIGESTION){
+            mtmp->meating = geatme->owt/2 + 1;
+        }
+    }
+
     if (mmoved == MMOVE_MOVED || mmoved == MMOVE_DONE) {
         if (OBJ_AT(mtmp->mx, mtmp->my) && mtmp->mcanmove) {
 
@@ -1648,6 +1700,10 @@ postmov(
             if (corpse_eater(ptr)) {
                 if ((etmp = meatcorpse(mtmp)) >= 2)
                     return etmp; /* it died or got forced off the level */
+            }
+
+            if (ptr == &mons[PM_BROWNIE]) {
+                (void) cobble_there(mtmp);
             }
 
             if (mpickstuff(mtmp))
@@ -1720,6 +1776,37 @@ m_move(struct monst *mtmp, int after)
             finish_meating(mtmp);
         return MMOVE_DONE; /* still eating */
     }
+
+    if (ptr == &mons[PM_CLOCKWORK_AUTOMATON]){
+        boolean has_key = (m_carrying(mtmp,SKELETON_KEY) != (struct obj *) 0);
+        int sees_you = m_canseeu(mtmp);
+        if (!mtmp->mspec_used && !mtmp->mfrozen){
+            mtmp->mfrozen = 0;
+            mtmp->mcanmove = 0;
+            if(canseemon(mtmp))
+                pline("%s jerks to a halt.", Monnam(mtmp));
+            return 3;
+        } else if (mtmp->mspec_used <= CLOCKWORK_PANIC) {
+            if (has_key)
+                return (wind_clockwork(mtmp,mtmp))?2:3;
+            monflee(mtmp, 20, FALSE, TRUE);
+        } else if(mtmp->mspec_used <= CLOCKWORK_LOW) {
+            if ((!monnear(mtmp,u.ux,u.uy) || !sees_you) && has_key)
+                return (wind_clockwork(mtmp,mtmp))?2:3;
+            else if(mtmp->permspeed != MSLOW)
+                mon_adjust_speed(mtmp, -2, 0);
+        } else if (mtmp->mspec_used <= CLOCKWORK_MED) {
+            if((distu(mtmp->mx, mtmp->my) >=5 || !sees_you) && has_key)
+                return (wind_clockwork(mtmp,mtmp))?2:3;
+            else if(mtmp->permspeed == MFAST)
+                mon_adjust_speed(mtmp,-1,0);
+        } else if(mtmp->mspec_used <= (CLOCKWORK_HIGH-(CLOCKWORK_WIND*2))
+            && !sees_you && has_key && mtmp->mstrategy == STRAT_HEAL){
+            return (wind_clockwork(mtmp,mtmp))?2:3;
+        }
+        mtmp->mstrategy = STRAT_NONE; /* removes STRAT_HEAL if finished winding */
+    }
+
     if (hides_under(ptr) && OBJ_AT(mtmp->mx, mtmp->my)
         && can_hide_under_obj(svl.level.objects[mtmp->mx][mtmp->my])
         && rn2(10))
@@ -2362,6 +2449,38 @@ vamp_shift(
         display_nhwindow(WIN_MESSAGE, FALSE);
     }
     return reslt;
+}
+
+/* FALSE: windee ok, TRUE: windee bit it */
+boolean
+wind_clockwork(struct monst *winder, struct monst *windee)
+{
+    if (winder != windee)
+        return FALSE; /* so far, not doable */
+    if (!winder->mcanmove || !m_carrying(winder, SKELETON_KEY))
+        return FALSE;
+    windee->mfrozen += 3;
+    windee->mcanmove = 0;
+    windee->mspec_used += CLOCKWORK_WIND;
+    if (windee->mstrategy != STRAT_HEAL){
+        windee->mstrategy = STRAT_HEAL;
+        if (canseemon(windee))
+            pline("%s starts winding up %sself.", Monnam(windee), mhim(windee));
+    }
+    if (windee->mspec_used > CLOCKWORK_HIGH) {
+        if (rn2(CLOCKWORK_MAX - CLOCKWORK_HIGH) <
+            windee->mspec_used - CLOCKWORK_HIGH){
+            if(canseemon(windee))
+                pline("%s is wound up too tight!", Monnam(windee));
+            mondied(windee);
+            return TRUE;
+        }
+    }
+    if (windee->mspec_used > CLOCKWORK_MED && windee->permspeed !=MFAST)
+        mon_adjust_speed(windee, 2, 0);
+    else if(windee->mspec_used >= CLOCKWORK_LOW && windee->permspeed == MSLOW)
+        mon_adjust_speed(windee, 1, 0);
+    return FALSE;
 }
 
 /*monmove.c*/

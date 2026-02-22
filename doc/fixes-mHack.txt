@@ -36,6 +36,7 @@ The spell of create familiar only creates co-aligned monsters of specific classe
 The spell of extra healing has a stronger effect with higher skill.
 	This is inspired by other variants.
 The spell of invisibility is level 3.
+Undeferred vorpal jabberwock and vampire mage.
 
 Fixes to Post-X.X.X Problems that Were Exposed Via git Repository
 ------------------------------------------------------------------
@@ -164,6 +165,7 @@ Added the spell of rejuvenation, a level 7 healing spell.
 	prevents both the healing and the draining. Players of experience level 5 or
 	lower are also prevented from going through either effect.
 	This spell is the new crowning gift for Monks.
+Added ouroboros monster.
 
 Platform- and/or Interface-Specific New Features
 ------------------------------------------------
@@ -216,6 +218,25 @@ Imported potion-coated projectiles from SpliceHack.
 	The special effect of potions of oil was left out. Most other potion-coatings
 	including drugged projectiles (potion of sleeping) and envenomed projectiles
 	(potion of paralysis) still work.
+Imported many monsters from the Lethe Patch.
+	The monsters are: migo drone, migo warrior, migo queen, deep one, deeper one,
+	deepest one, cow, bull, parrot, byakhee, nightgaunt, ogre shaman, shuggoth,
+	giant shuggoth, fire vampire, star vampire, ghoul magii, ghoul king/queen, gug,
+	ruby golem, diamond golem, sapphire golem, steel golem, crystal golem, Cthulhu.
+	These monsters have appeared in SLASH'EM and other variants over the years, in
+	some cases nerfs from those variants were applied.
+Imported many monsters from the Biodiversity Patch.
+	The monsters are: sphinx (without riddles), waterspout gargoyle, brownie,
+	pooka, labyrinth trapper, gold bug, will o' wisp, bannik, leshy, bandersnatch,
+	jubjub bird, clockwork automaton, quark (with changed abilities), disintegrator,
+	umbral hulk, hunger hulk, nosferatu, blemmye, otyugh, poltergeist.
+Imported scalding attack for steam vortices from the Biodiversity Patch.
+Imported vampire nobility from EvilHack.
+	They are counts and countesses instead of kings and queens.
+Imported silver golem from SpliceHack.
+Imported shopkeeper names from the Lethe Patch.
+Imported changes to orc players' riding logic from the Biodiversity Patch.
+Imported changes to stone-to-flesh on amber stones from the Biodiversity Patch.
 
 Code Cleanup and Reorganization
 -------------------------------

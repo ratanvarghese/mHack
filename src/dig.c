@@ -585,7 +585,7 @@ furniture_handled(coordxy x, coordxy y, boolean madeby_u)
     struct rm *lev = &levl[x][y];
 
     if (IS_FOUNTAIN(lev->typ)) {
-        dogushforth(FALSE);
+        dogushforth(FALSE, u.ux, u.uy);
         SET_FOUNTAIN_WARNED(x, y); /* force dryup */
         dryup(x, y, madeby_u);
     } else if (IS_SINK(lev->typ)) {
@@ -1431,6 +1431,7 @@ mdig_tunnel(struct monst *mtmp)
     struct rm *here;
     boolean sawit, seeit, trapped;
     int pile = rnd(12);
+    int tunnel_waste_obj;
 
     here = &levl[mtmp->mx][mtmp->my];
     if (here->typ == SDOOR)
@@ -1500,9 +1501,15 @@ mdig_tunnel(struct monst *mtmp)
             (void) rnd_treefruit_at(mtmp->mx, mtmp->my);
     } else {
         here->typ = CORR, here->flags = 0;
-        if (pile && pile < 5)
-            (void) mksobj_at((pile == 1) ? BOULDER : ROCK, mtmp->mx, mtmp->my,
+        if (pile && pile < 5) {
+            if(mtmp->data==&mons[PM_HUNGER_HULK]) {
+                tunnel_waste_obj = (pile == 1) ? ENORMOUS_MEATBALL : MEATBALL;
+            } else {
+                tunnel_waste_obj = (pile == 1) ? BOULDER : ROCK;
+            }
+            (void) mksobj_at(tunnel_waste_obj, mtmp->mx, mtmp->my,
                              TRUE, FALSE);
+        }
     }
     newsym(mtmp->mx, mtmp->my);
     if (!sobj_at(BOULDER, mtmp->mx, mtmp->my))
@@ -2168,6 +2175,8 @@ rot_corpse(anything *arg, long timeout)
     if (on_floor) {
         x = obj->ox;
         y = obj->oy;
+        if (obj->owt>1000 && !rn2((2000 - obj->owt)/30))
+            makemon(&mons[PM_OTYUGH], 0, 0, NO_MM_FLAGS);
     } else if (in_invent) {
         if (flags.verbose) {
             char *cname = corpse_xname(obj, (const char *) 0, CXN_NO_PFX);

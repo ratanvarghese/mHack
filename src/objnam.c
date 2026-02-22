@@ -600,7 +600,7 @@ xname(struct obj *obj)
     return xname_flags(obj, CXN_NORMAL);
 }
 
-staticfn char *
+char *
 xname_forcemat(struct obj *obj)
 {
     return xname_flags(obj, CXN_NORMAL | CXN_FORCEMAT);
@@ -3036,6 +3036,12 @@ makeplural(const char *oldstr)
         Strcasecpy(spot - 2, "ia");
         goto bottom;
     }
+    /* automata, possibly: criteria, phenomena */
+    if (len >= 9 && !strcmp(spot-8, "automaton")) {
+      *(spot--) = (char) 0;
+      *spot = 'a';
+      goto bottom;
+    }
     /* algae, larvae, hyphae (another fungus part) */
     if ((len >= 4 && !strcmpi(spot - 3, "alga"))
         || (len >= 5
@@ -3244,6 +3250,11 @@ makesingular(const char *oldstr)
         if (p - 4 >= bp && !strcmpi(p - 2, "ia")
             && strchr("lr", lowc(*(p - 3))) && lowc(*(p - 4)) == 'e') {
             Strcasecpy(p - 1, "um"); /* a -> um */
+        }
+
+        if (!BSTRCMPI(bp, p-9, "automata")){
+            Strcpy(p-8, "automaton");
+            goto bottom;
         }
 
         /* here we cannot find the plural suffix */

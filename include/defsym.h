@@ -306,7 +306,7 @@
     MONSYM( 9, 'i', IMP, S_IMP, "imp or minor demon")
     MONSYM(10, 'j', JELLY, S_JELLY, "jelly")
     MONSYM(11, 'k', KOBOLD, S_KOBOLD, "kobold")
-    MONSYM(12, 'l', LEPRECHAUN, S_LEPRECHAUN, "leprechaun")
+    MONSYM(12, 'l', LEPRECHAUN, S_LEPRECHAUN, "leprechaun or other fae")
     MONSYM(13, 'm', MIMIC, S_MIMIC, "mimic")
     MONSYM(14, 'n', NYMPH, S_NYMPH, "nymph")
     MONSYM(15, 'o', ORC, S_ORC, "orc")
@@ -323,7 +323,7 @@
     MONSYM(24, 'x', XAN, S_XAN, "xan or other mythical/fantastic insect")
     /* yellow light, black light */
     MONSYM(25, 'y', LIGHT, S_LIGHT, "light")
-    MONSYM(26, 'z', ZRUTY, S_ZRUTY, "zruty")
+    MONSYM(26, 'z', ZRUTY, S_ZRUTY, "zruty or other humanlike spirit")
     MONSYM(27, 'A', ANGEL, S_ANGEL, "angelic being")
     MONSYM(28, 'B', BAT, S_BAT, "bat or bird")
     MONSYM(29, 'C', CENTAUR, S_CENTAUR, "centaur")

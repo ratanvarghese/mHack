@@ -88,7 +88,7 @@ const struct Role roles[NUM_ROLES+1] = {
       PM_MARIA,
       PM_CHEMIST,
       PM_UNBIOCTIUM,
-      PM_SHOCKING_SPHERE,
+      PM_QUARK,
       PM_ENERGY_VORTEX,
       S_VORTEX,
       S_ELEMENTAL,

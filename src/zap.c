@@ -296,7 +296,7 @@ bhitm(struct monst *mtmp, struct obj *otmp)
             /* if a long worm has mcorpsenm set, it was polymorphed by
                the current zap and shouldn't be affected if hit again */
             ;
-        } else if (resists_magm(mtmp)) {
+        } else if (resists_magm(mtmp) || (mtmp->data == &mons[PM_BANDERSNATCH])) {
             /* magic resistance protects from polymorph traps, so make
                it guard against involuntary polymorph attacks too... */
             shieldeff_mon(mtmp);
@@ -815,6 +815,12 @@ montraits(
         mtmp2->msleeping = 0;
         mtmp2->mfrozen = 0;
         mtmp2->mcanmove = 1;
+        if(mtmp->data == &mons[PM_CLOCKWORK_AUTOMATON]){
+            if(!(mtmp2->mspec_used = mtmp->mspec_used)){
+                mtmp2->mfrozen = 1;
+                mtmp2->mcanmove = 0;
+            }
+        }
         /* most cancelled monsters return to normal,
            but some need to stay cancelled */
         if (!dmgtype(mtmp2->data, AD_SEDU)
@@ -1615,6 +1621,9 @@ create_polymon(struct obj *obj, int okind)
     case PM_GOLD_GOLEM:
         material = "gold ";
         break;
+    case PM_SILVER_GOLEM:
+        material = "silver ";
+        break;
     case PM_GLASS_GOLEM:
         material = "glassy ";
         break;
@@ -2088,6 +2097,44 @@ stone_to_flesh_obj(struct obj *obj) /* nonnull */
         smell = TRUE;
         break;
     case GEM_CLASS: /* stones & gems */
+        if (obj->otyp == AMBER) {
+            struct monst *amber_mon;
+            int quan = obj->quan;
+            int bugs_made = 0;
+            int pm_index;
+            (void) get_obj_location(obj, &oox, &ooy, 0);
+            while(quan--){
+                if (!rn2(6)){
+                    pm_index = rn2(4) + PM_CAVE_SPIDER;
+                    if(pm_index == PM_GIANT_SPIDER)
+                        pm_index = PM_XAN;
+                    amber_mon = makemon(&mons[pm_index],
+                        oox, ooy, MM_ADJACENTOK|NO_MINVENT|MM_NOCOUNTBIRTH);
+                    if (amber_mon) {
+                        amber_mon->mundetected = FALSE;
+                        ++bugs_made;
+                        obj->quan--;
+                    }
+                }
+            }
+            if (cansee(oox, ooy)){
+                quan = obj->quan;
+                obj->quan = 1;
+                if (bugs_made == 1)
+                    pline("A defossilized %s emerges from a shattered %s!",
+                        l_monnam(m_at(oox,ooy)), xname(obj));
+                else if (bugs_made){
+                    obj->quan = 2;
+                    pline("Defossilized bugs emerge from some shattered %s!",
+                        xname(obj));
+                }
+                obj->quan = quan;
+            }
+            if(!(obj->quan)){
+                delobj(obj);
+                break;
+            }
+        }
         obj = poly_obj(obj, MEATBALL);
         smell = TRUE;
         break;
@@ -4523,7 +4570,7 @@ zhitu(
         Strcpy(svk.killer.name, fltxt ? fltxt : "");
         /* when killed by disintegration breath, don't leave corpse */
         u.ugrave_arise = (type == -ZT_BREATH(ZT_DEATH)) ? -3 : NON_PM;
-        done(DIED);
+        done((type== -ZT_BREATH(ZT_DEATH)) ? DISINTEGRATED : DIED);
         return; /* lifesaved */
     case ZT_LIGHTNING:
         orig_dam = d(nd, 6);
@@ -4707,11 +4754,6 @@ disintegrate_mon(
             hit(fltxt, mon, "!");
     }
 
-/* note: worn amulet of life saving must be preserved in order to operate */
-#define oresist_disintegration(obj)                                       \
-    (objects[obj->otyp].oc_oprop == DISINT_RES || obj_resists(obj, 5, 50) \
-     || is_quest_artifact(obj) || obj == m_amulet)
-
     for (otmp = mon->minvent; otmp; otmp = otmp2) {
         otmp2 = otmp->nobj;
         if (!oresist_disintegration(otmp)) {
@@ -4719,8 +4761,6 @@ disintegrate_mon(
             obfree(otmp, (struct obj *) 0);
         }
     }
-
-#undef oresist_disintegration
 
     if (type < 0)
         monkilled(mon, (char *) 0, -AD_RBRE);

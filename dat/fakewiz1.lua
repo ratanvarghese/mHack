@@ -32,7 +32,7 @@ local fakewiz_classic = { halign = "center", valign = "center", map = [[
    des.mazewalk(08,05,"east")
    des.region({ region={04,03,06,06},lit=0,type="ordinary",irregular=1,arrival_room=true })
    des.monster("L",04,04)
-   des.monster("vampire leader",03,04)
+   des.monster("vampire noble",03,04)
    des.monster("kraken",06,06)
    -- And to make things a little harder.
    des.trap("board",04,03)
@@ -62,7 +62,7 @@ local fakewiz_metal = { halign = "center", valign = "center", map = [[
    des.mazewalk(08,05,"east")
    des.region({ region={04,03,06,06},lit=0,type="ordinary",irregular=1,arrival_room=true })
    des.monster("L",04,04)
-   des.monster("vampire leader",03,04)
+   des.monster("vampire noble",03,04)
    des.monster("red dragon",06,06)
    -- And to make things a little harder.
    des.trap("fire",04,03)
@@ -91,7 +91,7 @@ local fakewiz_mini = { halign = "center", valign = "center", map = [[
    des.mazewalk(08,05,"east")
    des.region({ region={04,04,04,04},lit=0,type="ordinary",irregular=1,arrival_room=true })
    des.monster("L",04,04)
-   des.monster("vampire leader",02,04)
+   des.monster("vampire noble",02,04)
    des.monster("kraken",06,06)
    -- to steal levitation equipment
    des.monster("water nymph",01,01)

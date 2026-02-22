@@ -33,6 +33,11 @@ des.region({ region={16,08,22,12}, lit=1, type="temple", filled=2 })
 des.altar({ x=19, y=10, align="noalign", type="sanctum" })
 des.region({ region={53,04, 57,05}, lit=0, type="morgue", filled=1, irregular=1 })
 
+-- Random Places for Cthulhu to be with(out) the Amulet
+local random_places = {{13,04},{13,16},{25,04},{25,16}}
+shuffle(random_places)
+
+
 -- Non diggable and phaseable walls
 des.non_diggable(selection.area(00,00,75,19))
 des.non_passwall(selection.area(00,00,75,19))
@@ -132,6 +137,9 @@ des.monster({ id = "iron golem",x=15,y=06,peaceful=0 })
 des.monster({ id = "iron golem",x=15,y=14,peaceful=0 })
 des.monster({ id = "iron golem",x=23,y=06,peaceful=0 })
 des.monster({ id = "iron golem",x=23,y=14,peaceful=0 })
+-- Cthulhu is somewhere (he is generated without the amulet)
+--MONSTER:'&',"Cthulhu",place[0],asleep,hostile
+des.monster({ id = "Cthulhu", coord = random_places[1], asleep = 1, peaceful = 0 })
 
 
 -- Teleporting to this level is allowed after the invocation creates its

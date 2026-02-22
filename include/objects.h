@@ -1489,6 +1489,8 @@ WAND("lightning",      "curved", 40, 175, 1, RAY, IRON, HI_METAL,
 WAND(NoDes,             "forked",  0, 150, 1, 0, WOOD, HI_WOOD, WAN1),
 WAND(NoDes,             "spiked",  0, 150, 1, 0, IRON, HI_METAL, WAN2),
 WAND(NoDes,            "jeweled",  0, 150, 1, 0, IRON, HI_MINERAL, WAN3),
+WAND(NoDes,             "golden",  0, 150, 1, 0, GOLD, HI_GOLD, WAN4),
+
 #undef WAND
 
 /* coins ... - so far, gold is all there is */
@@ -1621,9 +1623,12 @@ OBJECT(OBJ("iron chain", NoDes),
 /* Venom is normally a transitory missile (spit by various creatures)
  * but can be wished for in wizard mode so could occur in bones data.
  */
+OBJECT(OBJ("splash of water venom", "splash of water"),
+       BITS(0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, P_NONE, LIQUID), 0,
+       VENOM_CLASS, 499, 0, 1, 0, 0, 0, 0, 0, 0, HI_ORGANIC, WATER_VENOM),
 OBJECT(OBJ("splash of blinding venom", "splash of venom"),
        BITS(0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, P_NONE, LIQUID), 0,
-       VENOM_CLASS, 500, 0, 1, 0, 0, 0, 0, 0, 0, HI_ORGANIC, BLINDING_VENOM),
+       VENOM_CLASS, 1, 0, 1, 0, 0, 0, 0, 0, 0, HI_ORGANIC, BLINDING_VENOM),
 OBJECT(OBJ("splash of acid venom", "splash of venom"),
        BITS(0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, P_NONE, LIQUID), 0,
        VENOM_CLASS, 500, 0, 1, 0, 6, 6, 0, 0, 0, HI_ORGANIC, ACID_VENOM),

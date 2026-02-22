@@ -406,7 +406,10 @@ fix_worst_trouble(int trouble)
         FALLTHROUGH;
         /* FALLTHRU*/
     case TROUBLE_HUNGRY:
-        Your("%s feels content.", body_part(STOMACH));
+        if (Upolyd && gy.youmonst.data == &mons[PM_CLOCKWORK_AUTOMATON] )
+            You_feel("your mainspring wind up.");
+        else
+            Your("%s feels content.", body_part(STOMACH));
         init_uhunger();
         disp.botl = TRUE;
         break;

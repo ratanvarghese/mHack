@@ -45,7 +45,7 @@ static NEARDATA const char *deaths[] = {
     /* the array of death */
     "died", "choked", "poisoned", "starvation", "drowning", "burning",
     "dissolving under the heat and pressure", "crushed", "turned to stone",
-    "turned into slime", "genocided", "panic", "trickery", "quit",
+    "turned into slime", "genocided", "disintegrated", "panic", "trickery", "quit",
     "escaped", "ascended"
 };
 
@@ -56,6 +56,7 @@ static NEARDATA const char *ends[] = {
     "dissolved in the lava",
     "were crushed", "turned to stone",
     "turned into slime", "were genocided",
+    "were disintegrated",
     "panicked", "were tricked", "quit",
     "escaped", "ascended"
 };
@@ -328,7 +329,9 @@ done_in_by(struct monst *mtmp, int how)
         u.ugrave_arise = gu.urace.mummynum;
     else if (zombie_maker(mtmp) && gu.urace.zombienum != NON_PM)
         u.ugrave_arise = gu.urace.zombienum;
-    else if (mptr->mlet == S_VAMPIRE && Race_if(PM_HUMAN))
+    else if (mptr->mlet == S_VAMPIRE && Race_if(PM_HUMAN)
+             && mtmp->data != &mons[PM_FIRE_VAMPIRE]
+             && mtmp->data != &mons[PM_STAR_VAMPIRE])
         u.ugrave_arise = PM_VAMPIRE;
     else if (mptr == &mons[PM_GHOUL])
         u.ugrave_arise = PM_GHOUL;
@@ -1079,6 +1082,8 @@ done(int how)
         Your("medallion %s!", !Blind ? "begins to glow" : "feels warm");
         if (how == CHOKING)
             You("vomit ...");
+        if (how == DISINTEGRATED)
+            You("reconstitute!");
         You_feel("much better!");
         pline_The("medallion crumbles to dust!");
         if (uamul)

@@ -627,7 +627,8 @@ mon_catchup_elapsed_time(
         else
             mtmp->mblinded -= imv;
     }
-    if (mtmp->mfrozen) {
+    if (mtmp->mfrozen &&
+        (mtmp->data != &mons[PM_CLOCKWORK_AUTOMATON] || !mtmp->mspec_used)) {
         if (imv >= (int) mtmp->mfrozen)
             mtmp->mfrozen = 1;
         else
@@ -1039,6 +1040,7 @@ dogfood(struct monst *mon, struct obj *obj)
         case CORPSE:
             if ((peek_at_iced_corpse_age(obj) + 50L <= svm.moves
                  && !(fx == PM_LIZARD || fx == PM_LICHEN)
+                 && mon->data != &mons[PM_OTYUGH]
                  && mptr->mlet != S_FUNGUS)
                 || (acidic(fptr) && !resists_acid(mon))
                 || (poisonous(fptr) && !resists_poison(mon)))
@@ -1055,6 +1057,9 @@ dogfood(struct monst *mon, struct obj *obj)
                      && (!is_undead(mptr) && fptr->mlet != S_KOBOLD
                          && fptr->mlet != S_ORC && fptr->mlet != S_OGRE))
                 return (starving && carni && !is_elf(mptr)) ? ACCFOOD : TABU;
+            else if (obj->corpsenm == PM_FLOATING_EYE &&
+                mptr == &mons[PM_RAVEN])
+                return DOGFOOD;
             else
                 return carni ? CADAVER : MANFOOD;
         case GLOB_OF_GREEN_SLIME: /* other globs use the default case */
@@ -1065,7 +1070,8 @@ dogfood(struct monst *mon, struct obj *obj)
                    : (herbi || starving) ? ACCFOOD
                      : MANFOOD;
         case TIN:
-            return metallivorous(mptr) ? ACCFOOD : MANFOOD;
+            return metallivorous(mptr) && !(mon->data == &mons[PM_GOLD_BUG])
+                ? ACCFOOD : MANFOOD;
         case APPLE:
             return herbi ? DOGFOOD : starving ? ACCFOOD : MANFOOD;
         case CARROT:
@@ -1090,6 +1096,10 @@ dogfood(struct monst *mon, struct obj *obj)
             return TABU;
         if (mptr == &mons[PM_GELATINOUS_CUBE] && is_organic(obj))
             return ACCFOOD;
+        if ((mon->data == &mons[PM_GOLD_BUG]
+            || mon->data == &mons[PM_SHUGGOTH]
+            || mon->data == &mons[PM_GIANT_SHUGGOTH]) && is_golden(obj))
+            return DOGFOOD;
         if (metallivorous(mptr) && is_metallic(obj)
             && (is_rustprone(obj) || mptr != &mons[PM_RUST_MONSTER])) {
             /* Non-rustproofed ferrous-based metals are preferred. */
@@ -1251,6 +1261,12 @@ tamedog(
     if (attacktype(mtmp->data, AT_WEAP)) {
         mtmp->weapon_check = NEED_HTH_WEAPON;
         (void) mon_wield_item(mtmp);
+    }
+
+    if (monsndx(mtmp->data) == PM_OUROBOROS && canspotmon(mtmp)) {
+        if(discover_random_recipe(STRANGE_OBJECT)) {
+            pline("Eureka!");
+        }
     }
     return TRUE;
 }

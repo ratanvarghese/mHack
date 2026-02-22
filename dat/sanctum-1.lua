@@ -37,6 +37,11 @@ des.region({ region={15,07, 21,10}, lit=1, type="temple", filled=2, contents = f
 end })
 des.altar({ x=18, y=08, align="noalign", type="sanctum" })
 des.region({ region={41,06, 48,11}, lit=0, type="morgue", filled=1, irregular=1 })
+
+-- Random Places for Cthulhu to be with(out) the Amulet
+local random_places = {{04,08},{04,11},{67,05}}
+shuffle(random_places)
+
 -- Non diggable walls
 des.non_diggable(selection.area(00,00,75,19))
 -- Invisible barrier separating the left & right halves of the level
@@ -121,6 +126,9 @@ des.monster({ id = "aligned cleric", x=11,y=12,align="noalign",peaceful=0 })
 des.monster({ id = "aligned cleric", x=15,y=13,align="noalign",peaceful=0 })
 des.monster({ id = "aligned cleric", x=17,y=13,align="noalign",peaceful=0 })
 des.monster({ id = "aligned cleric", x=21,y=13,align="noalign",peaceful=0 })
+-- Cthulhu is somewhere (he is generated without the amulet)
+--MONSTER:'&',"Cthulhu",place[0],asleep,hostile
+des.monster({ id = "Cthulhu", coord = random_places[1], asleep = 1, peaceful = 0 })
 -- A few nasties
 des.monster("L")
 des.monster("L")

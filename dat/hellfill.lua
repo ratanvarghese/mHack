@@ -67,6 +67,10 @@ function populatemaze()
       des.monster({ id = "minotaur", peaceful = 0 });
    end
 
+   for i = 1, math.random(3) do
+      des.monster({ id = "labyrinth trapper", peaceful = 0 });
+   end
+
    for i = 1, math.random(5) + 7 do
       des.monster({ peaceful = 0 });
    end

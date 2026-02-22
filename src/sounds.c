@@ -205,6 +205,20 @@ dosounds(void)
     int hallu, vx, vy;
     struct monst *mtmp;
 
+    if(!rn2(200) && !u.uswallow && !Underwater && !Hearing_muffled ){
+        for (mtmp = fmon; mtmp; mtmp = mtmp->nmon){
+            if (mtmp->data == &mons[PM_JUBJUB_BIRD] && 
+                !mtmp->mcan && !mtmp->mspec_used && 
+                !couldsee(mtmp->mx, mtmp->my)){
+                You_hear("a sound like a pencil that squeaks on a slate!");
+                make_confused(HConfusion + rn1(8,8), FALSE);
+                mtmp->mspec_used += 8;
+                break;
+            }
+        }
+    }
+
+
     if (Deaf || !flags.acoustics || u.uswallow || Underwater)
         return;
 
@@ -389,6 +403,9 @@ growl_sound(struct monst *mtmp)
         break;
     case MS_SILENT:
         ret = "commotion";
+        break;
+    case MS_PARROT:
+        ret = "squaark";
         break;
     default:
         ret = "scream";
@@ -745,7 +762,10 @@ domonnoise(struct monst *mtmp)
            night */
         boolean isnight = night();
         boolean kindred = (Upolyd && (u.umonnum == PM_VAMPIRE
-                                      || u.umonnum == PM_VAMPIRE_LEADER));
+                                      || u.umonnum == PM_VAMPIRE_LEADER
+                                      || u.umonnum == PM_VAMPIRE_NOBLE
+                                      || u.umonnum == PM_VAMPIRE_MAGE
+                                      || u.umonnum == PM_NOSFERATU));
         boolean nightchild = (Upolyd && (u.umonnum == PM_WOLF
                                          || u.umonnum == PM_WINTER_WOLF
                                          || u.umonnum == PM_WINTER_WOLF_CUB));
@@ -889,6 +909,35 @@ domonnoise(struct monst *mtmp)
         } else {
             Soundeffect(se_squawk, 80);
             pline_msg = "squawks.";
+        }
+        break;
+    case MS_PARROT:
+        switch (rn2(8)) {
+            default:
+            case 0:
+                pline_msg = "squaaarks louldly!";
+                break;
+            case 1:
+                verbl_msg = "Poly want a lembas wafer!'";
+                break;
+            case 2:
+                verbl_msg = "Nobody expects the spanish inquisition!'";
+                break;
+            case 3:
+                verbl_msg = "Who's a good boy then?'";
+                break;
+            case 4:
+                verbl_msg = "Show us yer knickers!'";
+                break;
+            case 5:
+                verbl_msg = "You'll never make it!'";
+                break;
+            case 6:
+                pline_msg = "whistles suggestively!";
+                break;
+            case 7:
+                verbl_msg = "What sort of a sword do you call that!";
+                break;
         }
         break;
     case MS_HISS:

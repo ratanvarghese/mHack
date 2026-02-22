@@ -1367,7 +1367,11 @@ spelleffects_check(int spell, int *res, int *energy)
     }
 
     if (u.uhunger <= 10 && spellid(spell) != SPE_DETECT_FOOD) {
-        You("are too hungry to cast that spell.");
+        if (Upolyd && gy.youmonst.data == &mons[PM_CLOCKWORK_AUTOMATON]) {
+            You("are too wound down to cast that spell.");
+        } else {
+            You("are too hungry to cast that spell.");
+        }
         *res = ECMD_OK;
         return TRUE;
     } else if (ACURR(A_STR) < 4 && spellid(spell) != SPE_RESTORE_ABILITY) {

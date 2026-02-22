@@ -54,6 +54,15 @@
 #define notake(ptr) (((ptr)->mflags1 & M1_NOTAKE) != 0L)
 #define has_head(ptr) (((ptr)->mflags1 & M1_NOHEAD) == 0L)
 #define has_horns(ptr) (num_horns(ptr) > 0)
+#define is_insect(ptr)    ((ptr)->mlet == S_ANT || (ptr)->mlet == S_SPIDER ||\
+                            (ptr)->mlet == S_XAN)
+#define has_bones(ptr)   (has_head(ptr) && !(noncorporeal(ptr) || \
+                           is_insect(ptr) || (ptr)->mlet == S_PIERCER || \
+                           (ptr)->mlet == S_WORM || (ptr)->mlet == S_WORM_TAIL \
+                           || (ptr)->mlet == S_XORN || ((ptr)->mlet == S_GOLEM \
+                           && (ptr) != &mons[PM_FLESH_GOLEM])|| \
+                           (ptr) == &mons[PM_JELLYFISH] || \
+                           (ptr) == &mons[PM_KRAKEN]))
 #define is_whirly(ptr) \
     ((ptr)->mlet == S_VORTEX || (ptr) == &mons[PM_AIR_ELEMENTAL])
 #define flaming(ptr)                                                     \
@@ -179,6 +188,7 @@
     (((ptr)->mlet == S_LIGHT || (ptr) == &mons[PM_FLAMING_SPHERE] \
       || (ptr) == &mons[PM_SHOCKING_SPHERE]                       \
       || (ptr) == &mons[PM_BABY_GOLD_DRAGON]                      \
+      || (ptr) == &mons[PM_FIRE_VAMPIRE]                          \
       || (ptr) == &mons[PM_FIRE_VORTEX])                          \
          ? 1                                                      \
          : ((ptr) == &mons[PM_FIRE_ELEMENTAL]                     \
@@ -190,17 +200,21 @@
 #define likes_lava(ptr) \
     (ptr == &mons[PM_FIRE_ELEMENTAL] || ptr == &mons[PM_SALAMANDER])
 #define pm_invisible(ptr) \
-    ((ptr) == &mons[PM_STALKER] || (ptr) == &mons[PM_BLACK_LIGHT])
+    ((ptr) == &mons[PM_STALKER] || (ptr) == &mons[PM_BLACK_LIGHT] \
+     || (ptr) == &mons[PM_STAR_VAMPIRE] || (ptr) == &mons[PM_POLTERGEIST])
 
 /* could probably add more */
 #define likes_fire(ptr)                                                  \
     ((ptr) == &mons[PM_FIRE_VORTEX] || (ptr) == &mons[PM_FLAMING_SPHERE] \
+     || (ptr) == &mons[PM_FIRE_VAMPIRE]                                  \
      || likes_lava(ptr))
 
 #define touch_petrifies(ptr) \
     ((ptr) == &mons[PM_COCKATRICE] || (ptr) == &mons[PM_CHICKATRICE])
 /* Medusa doesn't pass touch_petrifies() but does petrify if eaten */
 #define flesh_petrifies(pm) (touch_petrifies(pm) || (pm) == &mons[PM_MEDUSA])
+
+#define touch_disintegrates(ptr) ((ptr) == &mons[PM_DISINTEGRATOR])
 
 /* missiles made of rocks don't harm these: xorns and earth elementals
    (but not ghosts and shades because that would impact all missile use
@@ -224,7 +238,8 @@
     ((ptr) == &mons[PM_PAPER_GOLEM] || (ptr) == &mons[PM_STRAW_GOLEM])
 #define completelyrots(ptr) \
     ((ptr) == &mons[PM_WOOD_GOLEM] || (ptr) == &mons[PM_LEATHER_GOLEM])
-#define completelyrusts(ptr) ((ptr) == &mons[PM_IRON_GOLEM])
+#define completelyrusts(ptr) ((ptr) == &mons[PM_IRON_GOLEM] || \
+                            ((ptr) == &mons[PM_CLOCKWORK_AUTOMATON] && rn2(2)))
 
 /* Used for conduct with corpses, tins, and digestion attacks */
 /* G_NOCORPSE monsters might still be swallowed as a purple worm */
@@ -239,6 +254,12 @@
 #define vegetarian(ptr) \
     (vegan(ptr)         \
      || ((ptr)->mlet == S_PUDDING && (ptr) != &mons[PM_BLACK_PUDDING]))
+
+#define yeasty_food(ptr)  ((ptr)->mlet == S_BLOB || \
+                  (ptr)->mlet == S_JELLY ||         \
+                  (ptr)->mlet == S_FUNGUS ||        \
+                  (ptr)->mlet == S_PUDDING ||       \
+                  (ptr) == &mons[PM_JUIBLEX])
 
 #define corpse_eater(ptr)                    \
     (ptr == &mons[PM_PURPLE_WORM]            \

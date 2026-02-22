@@ -17,7 +17,7 @@ staticfn long mm_displacement(struct monst *, struct monst *);
 staticfn void mon_leaving_level(struct monst *);
 staticfn void m_detach(struct monst *, struct permonst *, boolean);
 staticfn void set_mon_min_mhpmax(struct monst *, int);
-staticfn void lifesaved_monster(struct monst *);
+staticfn void lifesaved_monster(struct monst *, uchar);
 staticfn boolean vamprises(struct monst *);
 staticfn void logdeadmon(struct monst *, int);
 staticfn boolean ok_to_obliterate(struct monst *);
@@ -27,6 +27,7 @@ staticfn void wake_nearto_core(coordxy, coordxy, int, boolean);
 staticfn void m_restartcham(struct monst *);
 staticfn boolean restrap(struct monst *);
 staticfn int pick_animal(void);
+staticfn int refakem(struct monst *);
 staticfn int pickvampshape(struct monst *);
 staticfn boolean isspecmon(struct monst *);
 staticfn boolean validspecmon(struct monst *, int);
@@ -417,9 +418,9 @@ undead_to_corpse(int mndx)
         break;
     case PM_VAMPIRE:
     case PM_VAMPIRE_LEADER:
-#if 0 /* DEFERRED */
+    case PM_VAMPIRE_NOBLE:
+    case PM_NOSFERATU:
     case PM_VAMPIRE_MAGE:
-#endif
     case PM_HUMAN_ZOMBIE:
     case PM_HUMAN_MUMMY:
         mndx = PM_HUMAN;
@@ -625,6 +626,9 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
         goto default_1;
     case PM_VAMPIRE:
     case PM_VAMPIRE_LEADER:
+    case PM_VAMPIRE_NOBLE:
+    case PM_NOSFERATU:
+    case PM_VAMPIRE_MAGE:
         /* include mtmp in the mkcorpstat() call */
         num = undead_to_corpse(mndx);
         corpstatflags |= CORPSTAT_INIT;
@@ -652,7 +656,18 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
         obj = mkcorpstat(CORPSE, mtmp, &mons[num], x, y, corpstatflags);
         obj->age -= (TAINT_AGE + 1); /* this is an *OLD* corpse */
         break;
+    case PM_CLOCKWORK_AUTOMATON:
+        /*num = d(2,4);
+        while (num--)
+          obj = mksobj_at(SPROCKET, x, y, TRUE, FALSE);
+        num = d(1,3);
+        while (num--)
+          obj = mksobj_at(COGWHEEL, x, y, TRUE, FALSE);
+        mtmp->mnamelth = 0;*/
+        mksobj_at(TINNING_KIT, x, y, TRUE, FALSE);
+        break;
     case PM_IRON_GOLEM:
+    case PM_STEEL_GOLEM:
         num = d(2, 6);
         while (num--) {
             obj = mkobj_at(RANDOM_CLASS, x, y, FALSE);
@@ -674,6 +689,18 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
                 obj = mksobj_at((LAST_REAL_GEM + rnd(9)), x, y, TRUE, FALSE);
             }
             obj->material = GLASS;
+        }
+        free_mgivenname(mtmp);
+        break;
+    case PM_SILVER_GOLEM:
+        num = d(2, 4);
+        while (num--) {
+            obj = mkobj_at(RANDOM_CLASS, x, y, FALSE);
+            if (!valid_obj_material(obj, SILVER)) {
+                delobj(obj);
+                obj = mksobj_at(DAGGER, x, y, TRUE, FALSE);
+            }
+            obj->material = SILVER;
         }
         free_mgivenname(mtmp);
         break;
@@ -745,6 +772,30 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
         }
         free_mgivenname(mtmp);
         break;
+    case PM_RUBY_GOLEM:
+        obj = mksobj_at(RUBY, x, y, FALSE, FALSE);
+        obj->quan = (long) d(2,4);
+        obj->owt = weight(obj);
+        free_mgivenname(mtmp);
+        break;
+    case PM_DIAMOND_GOLEM:
+        obj = mksobj_at(DIAMOND, x, y, FALSE, FALSE);
+        obj->quan = (long) d(2,4);
+        obj->owt = weight(obj);
+        free_mgivenname(mtmp);
+        break;
+    case PM_SAPPHIRE_GOLEM:
+        obj = mksobj_at(SAPPHIRE, x, y, FALSE, FALSE);
+        obj->quan = (long) d(2,4);
+        obj->owt = weight(obj);
+        free_mgivenname(mtmp);
+        break;
+    case PM_CRYSTAL_GOLEM:
+        obj = mksobj_at(FIRST_REAL_GEM + rn2(LAST_REAL_GEM-FIRST_REAL_GEM), x, y, FALSE, FALSE);
+        obj->quan = (long) d(2,4);
+        obj->owt = weight(obj);
+        free_mgivenname(mtmp);
+        break;
     /* expired puddings will congeal into a large blob;
        like dragons, relies on the order remaining consistent */
     case PM_GRAY_OOZE:
@@ -763,12 +814,18 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
         free_mgivenname(mtmp);
         newsym(x, y);
         return obj;
+    case PM_OUROBOROS:
+        if(!rn2(6)) {
+            mksobj_at(POT_OIL, x, y, TRUE, FALSE); /* Benzene */    
+        }
+        break;
     case NON_PM: case LEAVESTATUE: case NUMMONS: /* never use as index */
         break;
 
 #if (NH_DEVEL_STATUS != NH_STATUS_RELEASED)
     case PM_GIANT_ANT: case PM_KILLER_BEE: case PM_SOLDIER_ANT:
     case PM_FIRE_ANT: case PM_GIANT_BEETLE: case PM_QUEEN_BEE:
+    case PM_MIGO_DRONE: case PM_MIGO_WARRIOR: case PM_MIGO_QUEEN:
 
     case PM_QUIVERING_BLOB: case PM_ACID_BLOB: case PM_GELATINOUS_CUBE:
     case PM_CHICKATRICE: case PM_COCKATRICE: case PM_PYROLISK:
@@ -783,18 +840,21 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_FLAMING_SPHERE: case PM_SHOCKING_SPHERE:
 
     case PM_KITTEN: case PM_HOUSECAT: case PM_JAGUAR: case PM_LYNX:
-    case PM_PANTHER: case PM_LARGE_CAT:  case PM_TIGER:
+    case PM_PANTHER: case PM_LARGE_CAT:  case PM_TIGER: case PM_SPHINX:
 
     case PM_DISPLACER_BEAST: case PM_GREMLIN:
+    case PM_WATERSPOUT_GARGOYLE:
     case PM_GARGOYLE: case PM_WINGED_GARGOYLE:
 
     case PM_HOBBIT: case PM_DWARF: case PM_BUGBEAR: case PM_DWARF_LEADER:
     case PM_DWARF_RULER:
     case PM_MIND_FLAYER: case PM_MASTER_MIND_FLAYER: case PM_MANES:
+    case PM_DEEP_ONE: case PM_DEEPER_ONE: case PM_DEEPEST_ONE:
     case PM_HOMUNCULUS: case PM_IMP: case PM_LEMURE: case PM_QUASIT:
     case PM_TENGU: case PM_BLUE_JELLY: case PM_SPOTTED_JELLY:
     case PM_OCHRE_JELLY: case PM_KOBOLD: case PM_LARGE_KOBOLD:
     case PM_KOBOLD_LEADER: case PM_KOBOLD_SHAMAN: case PM_LEPRECHAUN:
+    case PM_BROWNIE: case PM_POOKA:
     case PM_SMALL_MIMIC: case PM_LARGE_MIMIC: case PM_GIANT_MIMIC:
     case PM_WOOD_NYMPH: case PM_WATER_NYMPH: case PM_MOUNTAIN_NYMPH:
     case PM_GOBLIN: case PM_HOBGOBLIN: case PM_ORC: case PM_HILL_ORC:
@@ -802,6 +862,7 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_ORC_CAPTAIN:
     case PM_ROCK_PIERCER: case PM_IRON_PIERCER: case PM_GLASS_PIERCER:
     case PM_ROTHE: case PM_MUMAK: case PM_LEOCROTTA: case PM_WUMPUS:
+    case PM_COW: case PM_BULL:
     case PM_TITANOTHERE: case PM_BALUCHITHERIUM: case PM_MASTODON:
     case PM_SEWER_RAT: case PM_GIANT_RAT: case PM_RABID_RAT:
     case PM_WERERAT:
@@ -810,6 +871,7 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_CAVE_SPIDER: case PM_CENTIPEDE: case PM_GIANT_SPIDER:
     case PM_SCORPION:
     case PM_LURKER_ABOVE: case PM_TRAPPER:
+    case PM_LABYRINTH_TRAPPER:
     case PM_PONY: case PM_HORSE: case PM_WARHORSE:
     case PM_FOG_CLOUD: case PM_DUST_VORTEX: case PM_ICE_VORTEX:
     case PM_ENERGY_VORTEX: case PM_STEAM_VORTEX: case PM_FIRE_VORTEX:
@@ -817,11 +879,14 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_BABY_LONG_WORM: case PM_BABY_PURPLE_WORM:
     case PM_PURPLE_WORM:
 
-    case PM_GRID_BUG: case PM_XAN: case PM_YELLOW_LIGHT: case PM_BLACK_LIGHT:
-    case PM_ZRUTY: case PM_COUATL: case PM_ALEAX: case PM_ANGEL:
+    case PM_GRID_BUG: case PM_XAN: case PM_GOLD_BUG:
+    case PM_YELLOW_LIGHT: case PM_BLACK_LIGHT: case PM_WILL_O_WISP:
+    case PM_ZRUTY: case PM_BANNIK: case PM_LESHY:
+    case PM_COUATL: case PM_ALEAX: case PM_ANGEL:
     case PM_KI_RIN: case PM_ARCHON:
 
     case PM_BAT: case PM_GIANT_BAT: case PM_RAVEN: case PM_VAMPIRE_BAT:
+    case PM_PARROT: case PM_BYAKHEE: case PM_NIGHTGAUNT:
     case PM_PLAINS_CENTAUR: case PM_FOREST_CENTAUR: case PM_MOUNTAIN_CENTAUR:
 
     case PM_BABY_GRAY_DRAGON: case PM_BABY_GOLD_DRAGON:
@@ -843,7 +908,8 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_FIRE_GIANT: case PM_FROST_GIANT: case PM_ETTIN:
     case PM_STORM_GIANT: case PM_TITAN:
 
-    case PM_MINOTAUR: case PM_JABBERWOCK: case PM_KEYSTONE_KOP:
+    case PM_MINOTAUR: case PM_JABBERWOCK: case PM_VORPAL_JABBERWOCK:
+    case PM_BANDERSNATCH: case PM_JUBJUB_BIRD: case PM_KEYSTONE_KOP:
     case PM_KOP_SERGEANT: case PM_KOP_LIEUTENANT: case PM_KOP_KAPTAIN:
     case PM_LICH: case PM_DEMILICH:
     case PM_MASTER_LICH: case PM_ARCH_LICH:
@@ -854,23 +920,29 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_GUARDIAN_NAGA:
 
     case PM_OGRE: case PM_OGRE_LEADER: case PM_OGRE_TYRANT:
+    case PM_OGRE_SHAMAN: case PM_SHUGGOTH: case PM_GIANT_SHUGGOTH:
 
-    case PM_QUANTUM_MECHANIC: case PM_GENETIC_ENGINEER:
+    case PM_QUANTUM_MECHANIC: case PM_GENETIC_ENGINEER: case PM_QUARK:
     case PM_RUST_MONSTER: case PM_TRANSMUTER: case PM_DISENCHANTER:
+    case PM_DISINTEGRATOR:
 
     case PM_GARTER_SNAKE: case PM_SNAKE: case PM_WATER_MOCCASIN:
     case PM_PYTHON: case PM_PIT_VIPER: case PM_COBRA:
 
     case PM_TROLL: case PM_ICE_TROLL: case PM_ROCK_TROLL: case PM_WATER_TROLL:
     case PM_OLOG_HAI: case PM_UMBER_HULK:
+    case PM_UMBRAL_HULK: case PM_HUNGER_HULK:
 
+    case PM_FIRE_VAMPIRE: case PM_STAR_VAMPIRE:
     case PM_VLAD_THE_IMPALER:
 
     case PM_BARROW_WIGHT: case PM_WRAITH: case PM_NAZGUL:
-    case PM_XORN: case PM_MONKEY: case PM_APE: case PM_OWLBEAR:
+    case PM_XORN: case PM_BLEMMYE: case PM_OTYUGH:
+    case PM_MONKEY: case PM_APE: case PM_OWLBEAR:
     case PM_YETI: case PM_CARNIVOROUS_APE: case PM_SASQUATCH:
 
     case PM_GHOUL: case PM_SKELETON:
+    case PM_GHOUL_MAGII: case PM_GHOUL_MONARCH: case PM_GUG:
 
     case PM_STRAW_GOLEM: case PM_FLESH_GOLEM:
 
@@ -886,13 +958,14 @@ make_corpse(struct monst *mtmp, unsigned int corpseflags)
     case PM_WATCH_CAPTAIN:
 
     case PM_MEDUSA: case PM_WIZARD_OF_YENDOR: case PM_CROESUS:
-    case PM_GHOST: case PM_SHADE: case PM_WATER_DEMON:
+    case PM_GHOST: case PM_SHADE: case PM_POLTERGEIST: case PM_WATER_DEMON:
     case PM_AMOROUS_DEMON: case PM_HORNED_DEVIL:
     case PM_ERINYS: case PM_BARBED_DEVIL: case PM_MARILITH: case PM_VROCK:
     case PM_HEZROU: case PM_BONE_DEVIL: case PM_ICE_DEVIL: case PM_NALFESHNEE:
     case PM_PIT_FIEND: case PM_SANDESTIN: case PM_BALROG: case PM_JUIBLEX:
     case PM_YEENOGHU: case PM_ORCUS: case PM_GERYON: case PM_DISPATER:
     case PM_BAALZEBUB: case PM_ASMODEUS: case PM_DEMOGORGON:
+    case PM_CTHULHU:
     case PM_DEATH: case PM_PESTILENCE: case PM_FAMINE:
     case PM_MAIL_DAEMON: case PM_DJINNI:
 
@@ -1029,7 +1102,7 @@ minliquid_core(struct monst *mtmp)
         if (inpool)
             water_damage_chain(mtmp->minvent, FALSE);
         return 0;
-    } else if (mtmp->data == &mons[PM_IRON_GOLEM] && (inpool || inshallow) && !rn2(5)) {
+    } else if (completelyrusts(mtmp->data) && (inpool || inshallow) && !rn2(5)) {
         int dam = d(2, 6);
 
         if (cansee(mtmp->mx, mtmp->my))
@@ -1324,6 +1397,9 @@ movemon_singlemon(struct monst *mtmp)
             return FALSE;
     }
 
+    if (mtmp->data == & mons[PM_WILL_O_WISP])
+        refakem(mtmp);
+
     /* continue if the monster died fighting */
     if (Conflict && !mtmp->iswiz && m_canseeu(mtmp)) {
         /* Note:
@@ -1497,6 +1573,7 @@ meatmetal(struct monst *mtmp)
          otmp = otmp->nexthere) {
         /* Don't eat indigestible/choking/inappropriate objects */
         if ((mtmp->data == &mons[PM_RUST_MONSTER] && !is_rustprone(otmp))
+            || (mtmp->data == &mons[PM_GOLD_BUG] && !is_golden(otmp))
             || (otmp->otyp == AMULET_OF_STRANGULATION
                 || otmp->otyp == RIN_SLOW_DIGESTION)
             || (otmp->opoisoned && !resists_poison(mtmp)))
@@ -1845,6 +1922,114 @@ mon_givit(struct monst *mtmp, struct permonst *ptr)
     mon_give_prop(mtmp, prop);
 }
 
+int
+cobble_there(struct monst *mtmp)
+{
+    int cobbling = 0;
+    if (mtmp->data != &mons[PM_BROWNIE])
+        return 0;
+    if (!mtmp->mcan && mtmp->mspec_used &&
+        (!cansee(mtmp->mx, mtmp->my) || Sleepy)){
+        /* brownies don't like to be watched, mspec_used means ok to
+           fix shoes */
+        struct obj * oboots = svl.level.objects[mtmp->mx][mtmp->my];
+        while (oboots){
+            if (is_boots(oboots))
+              break;
+            oboots = oboots->nexthere;
+        }
+        if (!oboots)
+            return 0;
+        switch(rn2(5)){
+            case 0:
+                if (oboots->oeroded || oboots->oeroded2){
+                    oboots->oeroded = oboots->oeroded2 = 0;
+                    cobbling = 2; 
+                }
+                if (rn2(3))
+                    break;
+                FALLTHROUGH;
+                /*FALLTHRU*/
+            case 1:
+                if (cursed(oboots)){
+                    uncurse(oboots);
+                    cobbling = 2;
+                }
+                if (rn2(3))
+                    break;
+                FALLTHROUGH;
+                /*FALLTHRU*/
+            case 2:
+                if (oboots->otyp == DWARVISH_BOOTS){
+                    oboots->otyp = KICKING_BOOTS;
+                    cobbling = 2;
+                }
+                if (rn2(3))
+                    break;
+                FALLTHROUGH;
+                /*FALLTHRU*/
+            case 3:
+                oboots->oerodeproof = 1;
+                cobbling = 2;
+                if (rn2(4))
+                    break;
+                FALLTHROUGH;
+                /*FALLTHRU*/
+            case 4:
+                if (oboots->spe <= 0){
+                    (Luck && Luck>0) ?
+                        rnd(mtmp->mspec_used/2) + (oboots->spe < -1)?rn2(Luck/3):0 :
+                        1;
+                    cobbling = 2;
+                }
+                if (rn2(3))
+                    break;
+                FALLTHROUGH;
+                /*FALLTHRU*/
+            case 5: /* only reached by falling through */
+                if (oboots->otyp == FUMBLE_BOOTS) {
+                    oboots->otyp = rn2(2) ? LOW_BOOTS : HIGH_BOOTS;
+                    cobbling = 2;
+                }
+                if (rn2(2))
+                    break;
+                FALLTHROUGH;
+                /*FALLTHRU*/
+            default: 
+                if ( oboots->otyp == LOW_BOOTS || oboots->otyp == HIGH_BOOTS){
+                    oboots->otyp = SPEED_BOOTS + rn2(LEVITATION_BOOTS - SPEED_BOOTS - 2);
+                    if (oboots->otyp == KICKING_BOOTS)
+                        oboots->otyp = LEVITATION_BOOTS;
+                    cobbling = 2;
+                }
+                break;
+        }
+        mtmp->mspec_used = 0;
+        if (cobbling)
+            oboots->known = oboots->bknown = oboots->rknown = 0;
+        return cobbling;
+    } else {
+        struct obj * ofood = svl.level.objects[mtmp->mx][mtmp->my];
+        while (ofood){
+            if (ofood->otyp >= CREAM_PIE && ofood->otyp <= LEMBAS_WAFER)
+                break;
+            ofood = ofood->nexthere;
+        }
+        if (!ofood)
+            return 0;
+        mtmp->meating = objects[ofood->otyp].oc_delay;
+        if (ofood->invlet && !ofood->oeaten)
+            mtmp->mspec_used = mtmp->meating +
+                objects[ofood->otyp].oc_nutrition/100;
+        mtmp->mhp += objects[ofood->otyp].oc_nutrition/40;
+        if (mtmp->mhp < mtmp->mhpmax)
+            mtmp->mhpmax = mtmp->mhp;
+        delobj(ofood);
+        newsym(mtmp->mx, mtmp->my);
+        return 1;
+    }
+}
+
 void
 mpickgold(struct monst *mtmp)
 {
@@ -1895,6 +2080,7 @@ mpickstuff(struct monst *mtmp)
         if (mon_would_take_item(mtmp, otmp)) {
 
             if (otmp->otyp == CORPSE && mtmp->data->mlet != S_NYMPH
+                && mtmp->data != &mons[PM_POLTERGEIST]
                 /* let a handful of corpse types thru to can_carry() */
                 && !touch_petrifies(&mons[otmp->corpsenm])
                 && otmp->corpsenm != PM_LIZARD
@@ -2835,7 +3021,7 @@ mlifesaver(struct monst *mon)
 }
 
 staticfn void
-lifesaved_monster(struct monst *mtmp)
+lifesaved_monster(struct monst *mtmp, uchar adtyp)
 {
     boolean surviver;
     struct obj *lifesave = mlifesaver(mtmp);
@@ -2852,7 +3038,8 @@ lifesaved_monster(struct monst *mtmp)
             /* amulet is visible, but monster might not be */
             if (canseemon(mtmp)) {
                 if (attacktype(mtmp->data, AT_EXPL)
-                    || attacktype(mtmp->data, AT_BOOM))
+                    || attacktype(mtmp->data, AT_BOOM)
+                    || adtyp == AD_DISN)
                     pline("%s reconstitutes!", Monnam(mtmp));
                 else
                     pline("%s looks much better!", Monnam(mtmp));
@@ -3071,6 +3258,12 @@ logdeadmon(struct monst *mtmp, int mndx)
 void
 mondead(struct monst *mtmp)
 {
+    mondead_helper(mtmp, 0);
+}
+
+void
+mondead_helper(struct monst *mtmp, uchar adtyp)
+{
     struct permonst *mptr;
     boolean be_sad;
     int mndx;
@@ -3080,7 +3273,7 @@ mondead(struct monst *mtmp)
     iflags.sad_feeling = FALSE;
 
     mtmp->mhp = 0; /* in case caller hasn't done this */
-    lifesaved_monster(mtmp);
+    lifesaved_monster(mtmp, adtyp);
     if (!DEADMONSTER(mtmp))
         return;
 
@@ -3177,7 +3370,8 @@ corpse_chance(
     struct permonst *mdat = mon->data;
     int i, tmp;
 
-    if (mdat == &mons[PM_VLAD_THE_IMPALER] || mdat->mlet == S_LICH) {
+    if (mdat == &mons[PM_VLAD_THE_IMPALER] || mdat->mlet == S_LICH
+        || mdat == &mons[PM_DISINTEGRATOR]) {
         if (cansee(mon->mx, mon->my) && !was_swallowed)
             pline_mon(mon, "%s body crumbles into dust.",
                       s_suffix(Monnam(mon)));
@@ -3222,6 +3416,20 @@ corpse_chance(
             return FALSE;
         }
     }
+
+    /* Cthulhu Deliquesces... */
+    if (mdat == &mons[PM_CTHULHU]) {
+        if (cansee(mon->mx, mon->my)) {
+            pline("%s body deliquesces into a cloud of noxious gas!",
+                s_suffix(Monnam(mon)));
+        } else {
+            pline("You hear something hissing and bubbling!");
+        }
+        /* ...into a stinking cloud... */
+        (void) create_gas_cloud(mon->mx, mon->my, 3, 8);
+        return (FALSE);
+    }
+
 
     /* must duplicate this below check in xkilled() since it results in
      * creating no objects as well as no corpse
@@ -3298,7 +3506,7 @@ monstone_material(struct monst *mdef, int material)
      * making the statue....
      */
     mdef->mhp = 0; /* in case caller hasn't done this */
-    lifesaved_monster(mdef);
+    lifesaved_monster(mdef, AD_STON);
     if (!DEADMONSTER(mdef))
         return;
 
@@ -3399,9 +3607,10 @@ monkilled(
        leave a corpse (which means staves for wood golem, light armor for
        leather golem, iron chains for iron golem, not a regular corpse) */
     gd.disintegested = (how == AD_DGST || how == -AD_RBRE
+                       || how == AD_DISN
                        || (how == AD_FIRE && completelyburns(mptr)));
     if (gd.disintegested)
-        mondead(mdef); /* never leaves a corpse */
+        mondead_helper(mdef, how); /* never leaves a corpse */
     else
         mondied(mdef); /* calls mondead() and maybe leaves a corpse */
 
@@ -4673,7 +4882,8 @@ restrap(struct monst *mtmp)
         || (sensemon(mtmp) && m_next2u(mtmp)))
         return FALSE;
 
-    if (mtmp->data->mlet == S_MIMIC) {
+    if (mtmp->data->mlet == S_MIMIC
+        || mtmp->data == &mons[PM_LABYRINTH_TRAPPER]) {
         set_mimic_sym(mtmp);
         return TRUE;
     } else if (levl[mtmp->mx][mtmp->my].typ == ROOM) {
@@ -4817,6 +5027,21 @@ hide_monst(struct monst *mon)
     }
 }
 
+staticfn int
+refakem(struct monst *mtmp)
+{
+    if ((cansee(mtmp->mx, mtmp->my) || mtmp->mcan) ||
+        ((mtmp->m_ap_type == M_AP_MONSTER) && rn2(8)))
+        return FALSE;
+    if ((int)(mtmp->mappearance = pick_friendly()) != NON_PM ){
+        mtmp->m_ap_type = M_AP_MONSTER;
+        return TRUE;
+    } else {
+        mtmp->m_ap_type = M_AP_NOTHING;
+        return FALSE;
+    }
+}
+
 void
 mon_animal_list(boolean construct)
 {
@@ -4943,6 +5168,8 @@ pickvampshape(struct monst *mon)
         wolfchance = 3;
         FALLTHROUGH;
     /*FALLTHRU*/
+    case PM_VAMPIRE_MAGE:
+    case PM_VAMPIRE_NOBLE:
     case PM_VAMPIRE_LEADER: /* vampire lord or Vlad can become wolf */
         if (!rn2(wolfchance) && !uppercase_only) {
             mndx = PM_WOLF;
@@ -5177,6 +5404,8 @@ select_newcham_form(struct monst *mon)
             mndx = pick_animal();
         break;
     case PM_VLAD_THE_IMPALER:
+    case PM_VAMPIRE_MAGE:
+    case PM_VAMPIRE_NOBLE:
     case PM_VAMPIRE_LEADER:
     case PM_VAMPIRE:
         mndx = pickvampshape(mon);

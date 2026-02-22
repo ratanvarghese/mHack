@@ -37,6 +37,10 @@ des.region({ region={32,09,61,11}, lit=1, type="temple", filled=2 })
 des.altar({ x=60, y=10, align="noalign", type="sanctum" })
 des.region({ region={08,08, 11,12}, lit=0, type="morgue", filled=1, irregular=1 })
 
+-- Random Places for Cthulhu to be with(out) the Amulet
+local random_places = {{71,09},{71,11},{63,10},{46,07},{46,13}}
+shuffle(random_places)
+
 -- Non diggable and phaseable walls
 des.non_diggable(selection.area(00,00,75,19))
 des.non_passwall(selection.area(00,00,75,19))
@@ -117,15 +121,15 @@ des.object("amulet of flying", 63, 10)
 des.object("chest", 63, 10)
 des.object("helm of opposite alignment", 63, 11)
 des.object("chest", 63, 11)
--- five gargoyles on either side, in the niches of the temple
+-- four gargoyles on either side, in the niches of the temple
 des.monster({ id = "winged gargoyle", coord = {34,07}, asleep = 1, peaceful = 0 })
 des.monster({ id = "winged gargoyle", coord = {40,07}, asleep = 1, peaceful = 0 })
-des.monster({ id = "winged gargoyle", coord = {46,07}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "winged gargoyle", coord = {46,07}, asleep = 1, peaceful = 0 })
 des.monster({ id = "winged gargoyle", coord = {52,07}, asleep = 1, peaceful = 0 })
 des.monster({ id = "winged gargoyle", coord = {58,07}, asleep = 1, peaceful = 0 })
 des.monster({ id = "winged gargoyle", coord = {34,13}, asleep = 1, peaceful = 0 })
 des.monster({ id = "winged gargoyle", coord = {40,13}, asleep = 1, peaceful = 0 })
-des.monster({ id = "winged gargoyle", coord = {46,13}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "winged gargoyle", coord = {46,13}, asleep = 1, peaceful = 0 })
 des.monster({ id = "winged gargoyle", coord = {52,13}, asleep = 1, peaceful = 0 })
 des.monster({ id = "winged gargoyle", coord = {58,13}, asleep = 1, peaceful = 0 })
 -- clerics
@@ -169,12 +173,15 @@ des.monster("gargoyle", 15,10)
 des.monster("J", 25,01)
 des.monster("J", 25,19)
 des.monster("iron golem", 63,09)
-des.monster("iron golem", 63,10)
+--des.monster("iron golem", 63,10)
 des.monster("iron golem", 63,11)
 des.monster({ id = "aligned cleric", coord = {20,08}, align="noalign", asleep = 1, peaceful = 0 })
 des.monster({ id = "aligned cleric", coord = {20,12}, align="noalign", asleep = 1, peaceful = 0 })
 des.monster({ id = "aligned cleric", coord = {40,04}, align="noalign", asleep = 1, peaceful = 0 })
 des.monster({ id = "aligned cleric", coord = {40,16}, align="noalign", asleep = 1, peaceful = 0 })
+-- Cthulhu is somewhere (he is generated without the amulet)
+--MONSTER:'&',"Cthulhu",place[0],asleep,hostile
+des.monster({ id = "Cthulhu", coord = random_places[1], asleep = 1, peaceful = 0 })
 -- A few nasties
 des.monster("L")
 des.monster("L")

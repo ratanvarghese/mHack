@@ -83,6 +83,9 @@ des.monster("rust monster",60,02)
 des.monster("transmuter",62,02)
 des.monster("disenchanter",64,02)
 
+-- Ouroboros
+des.monster({ id = "ouroboros", peaceful = 1 })
+
 
 -- Undiggable
 des.non_diggable(selection.area(00,00,75,19))
@@ -130,7 +133,7 @@ des.object()
 
 local leftlocs = selection.area(00,01,13,19)
 for i = 1,2 do
-   des.monster("shocking sphere", leftlocs:rndcoord(1))
+   des.monster("quark", leftlocs:rndcoord(1))
    des.monster("energy vortex", leftlocs:rndcoord(1))
    des.monster("e", leftlocs:rndcoord(1))
    des.monster("v", leftlocs:rndcoord(1))
@@ -141,7 +144,7 @@ end
 
 local rightlocs = selection.area(66,01,74,19)
 for i = 1,2 do
-   des.monster("shocking sphere", rightlocs:rndcoord(1))
+   des.monster("quark", rightlocs:rndcoord(1))
    des.monster("energy vortex", rightlocs:rndcoord(1))
    des.monster("e", rightlocs:rndcoord(1))
    des.monster("v", rightlocs:rndcoord(1))

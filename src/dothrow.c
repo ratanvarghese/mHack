@@ -1324,6 +1324,15 @@ toss_up(struct obj *obj, boolean hitsroof)
                     Your1(vision_clears);
             }
             break;
+        case WATER_VENOM:
+            if (u.umonnum == PM_GREMLIN) {
+                (void)split_mon(&gy.youmonst, (struct monst *)0);
+            } else if (completelyrusts(gy.youmonst.data)){
+                You("rust!");
+                rehumanize();
+            }
+            (void) water_damage(uarm, 0, FALSE);
+            break;
         default:
             break;
         }
@@ -1898,6 +1907,11 @@ omon_adj(struct monst *mon, struct obj *obj, boolean mon_notices)
         if (mon_notices && mon->data->mmove && !rn2(10)) {
             mon->mcanmove = 1;
             mon->mfrozen = 0;
+            if(mon->data == &mons[PM_CLOCKWORK_AUTOMATON] &&
+                !mon->mspec_used) {
+                mon->mfrozen = 1;
+                mon->mcanmove = 0;
+            }
         }
     }
     /* some objects are more likely to hit than others */
@@ -1989,6 +2003,9 @@ thitmonst(
     int otyp = obj->otyp, hmode;
     boolean guaranteed_hit = engulfing_u(mon);
     int dieroll;
+
+    boolean obj_disint = (touch_disintegrates(mon->data) && !mon->mcan &&
+        (mon->mhp > 1) && !oresist_disintegration(obj));
 
     hmode = (obj == uwep) ? HMON_APPLIED
               : (obj == gk.kickedobj) ? HMON_KICKED
@@ -2189,7 +2206,7 @@ thitmonst(
             /* projectiles other than magic stones sometimes disappear
                when thrown; projectiles aren't among the types of weapon
                that hmon() might have destroyed so obj is intact */
-            if (should_mulch_missile(obj)) {
+            if (should_mulch_missile(obj) || obj_disint) {
                 if (*u.ushops || obj->unpaid)
                     check_shop_obj(obj, gb.bhitpos.x, gb.bhitpos.y, TRUE);
                 obfree(obj, (struct obj *) 0);
@@ -2212,6 +2229,12 @@ thitmonst(
                 if (was_swallowed && !u.uswallow && obj == uball)
                     return 1; /* already did placebc() */
             }
+            if (obj_disint) {
+                if (*u.ushops)
+                    check_shop_obj(obj, gb.bhitpos.x, gb.bhitpos.y, TRUE);
+                obfree(obj, (struct obj *)0);
+                return 1;
+            }
         } else {
             tmiss(obj, mon, TRUE);
         }
@@ -2221,12 +2244,18 @@ thitmonst(
         if (tmp >= dieroll) {
             exercise(A_DEX, TRUE);
             (void) hmon(mon, obj, hmode, dieroll);
+            if (obj_disint) {
+                if (*u.ushops)
+                    check_shop_obj(obj, gb.bhitpos.x, gb.bhitpos.y, TRUE);
+                obfree(obj, (struct obj *)0);
+                return 1;
+            }
         } else {
             tmiss(obj, mon, TRUE);
         }
 
     } else if ((otyp == EGG || otyp == CREAM_PIE || otyp == BLINDING_VENOM
-                || otyp == ACID_VENOM)
+                || otyp == ACID_VENOM || otyp == WATER_VENOM)
                && (guaranteed_hit || ACURR(A_DEX) > rnd(25))) {
         (void) hmon(mon, obj, hmode, dieroll);
         return 1; /* hmon used it up */
@@ -2574,13 +2603,14 @@ breaktest(struct obj *obj)
     case MELON:
     case ACID_VENOM:
     case BLINDING_VENOM:
+    case WATER_VENOM:
         return TRUE;
     default:
         return FALSE;
     }
 }
 
-staticfn void
+void
 breakmsg(struct obj *obj, boolean in_view)
 {
     const char *to_pieces;
@@ -2619,6 +2649,7 @@ breakmsg(struct obj *obj, boolean in_view)
         break;
     case ACID_VENOM:
     case BLINDING_VENOM:
+    case WATER_VENOM:
         pline("Splash!");
         break;
     }

@@ -535,6 +535,8 @@ struct _hitmon_data {
     boolean dryit;
     boolean doreturn;
     boolean retval;
+    boolean needrustmsg;
+    boolean disint_obj;
     char saved_oname[BUFSZ];
 };
 

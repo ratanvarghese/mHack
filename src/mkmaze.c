@@ -1103,6 +1103,10 @@ populate_maze(void)
         mazexy(&mm);
         (void) makemon(&mons[PM_MINOTAUR], mm.x, mm.y, NO_MM_FLAGS);
     }
+    for (i = rn2(3); i; i--) {
+        mazexy(&mm);
+        (void) makemon(&mons[PM_LABYRINTH_TRAPPER], mm.x, mm.y, NO_MM_FLAGS);
+    }
     for (i = rn1(5, 7); i; i--) {
         mazexy(&mm);
         (void) makemon((struct permonst *) 0, mm.x, mm.y, NO_MM_FLAGS);

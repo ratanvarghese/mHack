@@ -1137,7 +1137,7 @@ inside_gas_cloud(genericptr_t p1, genericptr_t p2)
     if (dam < 1)
         return FALSE; /* if no damage then there's nothing to do here... */
 
-    if (!mtmp) { /* hero is indicated by Null rather than by &youmonst */
+    if (!mtmp) { /* hero is indicated by Null rather than by &gy.youmonst */
         if (m_poisongas_ok(&gy.youmonst) == M_POISONGAS_OK)
             return FALSE;
         if (!Blind) {

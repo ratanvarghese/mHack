@@ -654,7 +654,7 @@ oselect(struct monst *mtmp, int type)
     struct obj *otmp;
 
     for (otmp = mtmp->minvent; otmp; otmp = otmp->nobj) {
-        if (otmp->otyp != type)
+        if (otmp->otyp != type || type == STRANGE_OBJECT)
             continue;
 
         /* never select non-cockatrice corpses */
@@ -761,7 +761,7 @@ select_rwep(struct monst *mtmp)
         gp.propellor = &hands_obj;
 
         prop = objects[rwep[i]].oc_skill;
-        if (prop < 0) {
+        if (prop < 0 && mtmp->data != &mons[PM_POLTERGEIST]) {
             switch (-prop) {
             case P_BOW:
                 gp.propellor = oselect(mtmp, YUMI);
@@ -803,6 +803,8 @@ select_rwep(struct monst *mtmp)
                 }
         }
     }
+    if (mtmp->data == &mons[PM_POLTERGEIST]) 
+        return oselect(mtmp, STRANGE_OBJECT); 
 
     /* failure */
     return (struct obj *) 0;

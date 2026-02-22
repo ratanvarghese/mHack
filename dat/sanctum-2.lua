@@ -4,15 +4,6 @@
 --
 --	Cthulhu's Sanctum
 --
---	Cthulhu was the high priest of the old ones, the mediator
---	between them and their arcane gods.  For nethack, it seems
---	reasonable to cast him as the great priest of Moloch, to whom
---	the amulet has been entrusted for safe keeping.
---
-
--- Unfortunately, Cthulhu and other Lethe patch monsters aren't implemented in mHack.
--- (Or at least not yet..?)
-
 
 des.level_init({ style = "solidfill", fg = " " });
 des.level_flags("mazelevel", "hardfloor", "noteleport", "nommap")
@@ -48,11 +39,9 @@ des.map([[
 des.region({ region={02,07,10,12}, lit=1, type="temple", filled=2 })
 des.altar({ x=04, y=09, align="noalign", type="sanctum" })
 
---[[
--- Random Places for Cthulhu to be with the Amulet
+-- Random Places for Cthulhu to be with(out) the Amulet
 local random_places = {{04,09},{04,10},{03,02},{03,17},{34,02},{44,17},{16,02},{16,17}}
 shuffle(random_places)
---]]
 
 -- Non diggable and phaseable walls
 des.non_diggable(selection.area(00,00,75,19))
@@ -157,64 +146,64 @@ des.monster(';', 72,14)
 des.monster({ id = "master lich", coord = {52,02}, asleep = 1, peaceful = 0 })
 des.object("wand of lightning",52,02)
 des.object("chest",51,02)
---des.monster({ id = "nightgaunt", coord = {56,01}, asleep = 1, peaceful = 0 })
-des.monster({ class = "B", coord = {56,01}, asleep = 1, peaceful = 0 })
+des.monster({ id = "nightgaunt", coord = {56,01}, asleep = 1, peaceful = 0 })
+--des.monster({ class = "B", coord = {56,01}, asleep = 1, peaceful = 0 })
 
 des.monster({ id = "master lich", coord = {52,17}, asleep = 1, peaceful = 0 })
 des.object("wand of lightning",52,17)
 des.object("chest",51,17)
---des.monster({ id = "nightgaunt", coord = {56,18}, asleep = 1, peaceful = 0 })
-des.monster({ class = "B", coord = {56,18}, asleep = 1, peaceful = 0 })
+des.monster({ id = "nightgaunt", coord = {56,18}, asleep = 1, peaceful = 0 })
+--des.monster({ class = "B", coord = {56,18}, asleep = 1, peaceful = 0 })
 
 -- Landing Guards
 --des.monster({ id = "deepest one", coord = {56,08}, asleep = 1, peaceful = 0 })
 des.monster({ id = "balrog", coord = {56,08}, asleep = 1, peaceful = 0 })
 des.object('!',56,08)
---des.monster({ id = "deepest one", coord = {61,08}, asleep = 1, peaceful = 0 })
-des.monster({ id = "balrog", coord = {61,08}, asleep = 1, peaceful = 0 })
+des.monster({ id = "deepest one", coord = {61,08}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "balrog", coord = {61,08}, asleep = 1, peaceful = 0 })
 des.object('/',61,08)
---des.monster({ id = "deepest one", coord = {56,11}, asleep = 1, peaceful = 0 })
-des.monster({ id = "balrog", coord = {56,11}, asleep = 1, peaceful = 0 })
+des.monster({ id = "deepest one", coord = {56,11}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "balrog", coord = {56,11}, asleep = 1, peaceful = 0 })
 des.object('!',56,11)
---des.monster({ id = "deepest one", coord = {61,13}, asleep = 1, peaceful = 0 })
-des.monster({ id = "balrog", coord = {61,13}, asleep = 1, peaceful = 0 })
+des.monster({ id = "deepest one", coord = {61,13}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "balrog", coord = {61,13}, asleep = 1, peaceful = 0 })
 des.object('/',61,13)
 
 -- Northern barracks
---des.monster({ id = "deeper one", coord = {67,01}, asleep = 1, peaceful = 0 })
-des.monster({ id = "iron golem", coord = {67,01}, asleep = 1, peaceful = 0 })
+des.monster({ id = "deeper one", coord = {67,01}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "iron golem", coord = {67,01}, asleep = 1, peaceful = 0 })
 des.object("chest",68,01)
---des.monster({ id = "deeper one", coord = {69,01}, asleep = 1, peaceful = 0 })
-des.monster({ id = "iron golem", coord = {69,01}, asleep = 1, peaceful = 0 })
+des.monster({ id = "deeper one", coord = {69,01}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "iron golem", coord = {69,01}, asleep = 1, peaceful = 0 })
 des.object("chest",70,01)
---des.monster({ id = "deeper one", coord = {71,01}, asleep = 1, peaceful = 0 })
---des.monster({ id = "deeper one", coord = {67,03}, asleep = 1, peaceful = 0 })
-des.monster({ id = "iron golem", coord = {71,01}, asleep = 1, peaceful = 0 })
-des.monster({ id = "iron golem", coord = {67,03}, asleep = 1, peaceful = 0 })
+des.monster({ id = "deeper one", coord = {71,01}, asleep = 1, peaceful = 0 })
+des.monster({ id = "deeper one", coord = {67,03}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "iron golem", coord = {71,01}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "iron golem", coord = {67,03}, asleep = 1, peaceful = 0 })
 des.object("chest",68,03)
---des.monster({ id = "deeper one", coord = {69,03}, asleep = 1, peaceful = 0 })
-des.monster({ id = "iron golem", coord = {69,03}, asleep = 1, peaceful = 0 })
+des.monster({ id = "deeper one", coord = {69,03}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "iron golem", coord = {69,03}, asleep = 1, peaceful = 0 })
 des.object("chest",70,03)
---des.monster({ id = "deeper one", coord = {71,03}, asleep = 1, peaceful = 0 })
-des.monster({ id = "iron golem", coord = {71,03}, asleep = 1, peaceful = 0 })
+des.monster({ id = "deeper one", coord = {71,03}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "iron golem", coord = {71,03}, asleep = 1, peaceful = 0 })
 
 -- Southern barracks
---des.monster({ id = "deeper one", coord = {67,16}, asleep = 1, peaceful = 0 })
-des.monster({ id = "iron golem", coord = {67,16}, asleep = 1, peaceful = 0 })
+des.monster({ id = "deeper one", coord = {67,16}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "iron golem", coord = {67,16}, asleep = 1, peaceful = 0 })
 des.object("chest",68,16)
---des.monster({ id = "deeper one", coord = {69,16}, asleep = 1, peaceful = 0 })
-des.monster({ id = "iron golem", coord = {69,16}, asleep = 1, peaceful = 0 })
+des.monster({ id = "deeper one", coord = {69,16}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "iron golem", coord = {69,16}, asleep = 1, peaceful = 0 })
 des.object("chest",70,16)
---des.monster({ id = "deeper one", coord = {71,16}, asleep = 1, peaceful = 0 })
---des.monster({ id = "deeper one", coord = {67,18}, asleep = 1, peaceful = 0 })
-des.monster({ id = "iron golem", coord = {71,16}, asleep = 1, peaceful = 0 })
-des.monster({ id = "iron golem", coord = {67,18}, asleep = 1, peaceful = 0 })
+des.monster({ id = "deeper one", coord = {71,16}, asleep = 1, peaceful = 0 })
+des.monster({ id = "deeper one", coord = {67,18}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "iron golem", coord = {71,16}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "iron golem", coord = {67,18}, asleep = 1, peaceful = 0 })
 des.object("chest",68,18)
---des.monster({ id = "deeper one", coord = {69,18}, asleep = 1, peaceful = 0 })
-des.monster({ id = "iron golem", coord = {69,18}, asleep = 1, peaceful = 0 })
+des.monster({ id = "deeper one", coord = {69,18}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "iron golem", coord = {69,18}, asleep = 1, peaceful = 0 })
 des.object("chest",70,18)
---des.monster({ id = "deeper one", coord = {71,18}, asleep = 1, peaceful = 0 })
-des.monster({ id = "iron golem", coord = {71,18}, asleep = 1, peaceful = 0 })
+des.monster({ id = "deeper one", coord = {71,18}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "iron golem", coord = {71,18}, asleep = 1, peaceful = 0 })
 
 -- Traps on the landing
 des.trap("board",65,08)
@@ -303,8 +292,8 @@ des.object("chest",14,02)
 -- Northern Temple (Inner)
 des.trap("board",09,02)
 des.monster({ id = "kraken", coord = {05,02}, asleep = 1, peaceful = 0 })
---des.monster({ id = "shuggoth", coord = {04,02}, asleep = 1, peaceful = 0 })
-des.monster({ id = "green slime", coord = {04,02}, asleep = 1, peaceful = 0 })
+des.monster({ id = "shuggoth", coord = {04,02}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "green slime", coord = {04,02}, asleep = 1, peaceful = 0 })
 des.object("chest",01,02)
 
 -- Southern Temple (Outer)
@@ -322,42 +311,44 @@ des.object("chest",14,17)
 -- Southern Temple (Inner)
 des.trap("board",09,17)
 des.monster({ id = "kraken", coord = {05,17}, asleep = 1, peaceful = 0 })
---des.monster({ id = "star vampire", coord = {04,17}, asleep = 1, peaceful = 0 })
-des.monster({ id = "vampire", coord = {04,17}, asleep = 1, peaceful = 0 })
+des.monster({ id = "star vampire", coord = {04,17}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "vampire", coord = {04,17}, asleep = 1, peaceful = 0 })
 des.object("chest",01,17)
 
 -- North Eastern Temple
 des.trap("board",39,01)
 des.monster({ id = "kraken", coord = {36,02}, asleep = 1, peaceful = 0 })
 des.monster({ id = "iron golem", coord = {35,02}, asleep = 1, peaceful = 0 })
-des.monster({ id = "green slime", coord = {38,02}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "green slime", coord = {38,02}, asleep = 1, peaceful = 0 })
+des.monster({ id = "shuggoth", coord = {38,02}, asleep = 1, peaceful = 0 })
 des.object("chest",33,01)
 
 -- South Eastern Temple
 des.trap("board",37,17)
 des.monster({ id = "kraken", coord = {43,17}, asleep = 1, peaceful = 0 })
---des.monster({ id = "shuggoth", coord = {42,16}, asleep = 1, peaceful = 0 })
-des.monster({ id = "green slime", coord = {42,16}, asleep = 1, peaceful = 0 })
+des.monster({ id = "shuggoth", coord = {42,16}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "green slime", coord = {42,16}, asleep = 1, peaceful = 0 })
 des.monster({ id = "green slime", coord = {42,18}, asleep = 1, peaceful = 0 })
 des.object("chest",45,17)
 
--- Cthulhu is in one of the temples (he is generated with the amulet)
+-- Cthulhu is in one of the temples (he is generated without the amulet)
 --MONSTER:'&',"Cthulhu",place[0],asleep,hostile
+des.monster({ id = "Cthulhu", coord = random_places[1], asleep = 1, peaceful = 0 })
 
 -- Northern Shuggoth Run
 des.trap("teleport",28,06)
---des.monster({ id = "shuggoth", coord = {27,06}, asleep = 1, peaceful = 0 })
---des.monster({ id = "shuggoth", coord = {25,06}, asleep = 1, peaceful = 0 })
---des.monster({ id = "shuggoth", coord = {23,06}, asleep = 1, peaceful = 0 })
-des.monster({ id = "green slime", coord = {27,06}, asleep = 1, peaceful = 0 })
-des.monster({ id = "green slime", coord = {25,06}, asleep = 1, peaceful = 0 })
-des.monster({ id = "green slime", coord = {23,06}, asleep = 1, peaceful = 0 })
+des.monster({ id = "shuggoth", coord = {27,06}, asleep = 1, peaceful = 0 })
+des.monster({ id = "shuggoth", coord = {25,06}, asleep = 1, peaceful = 0 })
+des.monster({ id = "shuggoth", coord = {23,06}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "green slime", coord = {27,06}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "green slime", coord = {25,06}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "green slime", coord = {23,06}, asleep = 1, peaceful = 0 })
 
 -- Southern Shuggoth Run
 des.trap("teleport",28,13)
---des.monster({ id = "shuggoth", coord = {27,13}, asleep = 1, peaceful = 0 })
---des.monster({ id = "shuggoth", coord = {25,13}, asleep = 1, peaceful = 0 })
---des.monster({ id = "shuggoth", coord = {23,13}, asleep = 1, peaceful = 0 })
-des.monster({ id = "green slime", coord = {27,13}, asleep = 1, peaceful = 0 })
-des.monster({ id = "green slime", coord = {25,13}, asleep = 1, peaceful = 0 })
-des.monster({ id = "green slime", coord = {23,13}, asleep = 1, peaceful = 0 })
+des.monster({ id = "shuggoth", coord = {27,13}, asleep = 1, peaceful = 0 })
+des.monster({ id = "shuggoth", coord = {25,13}, asleep = 1, peaceful = 0 })
+des.monster({ id = "shuggoth", coord = {23,13}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "green slime", coord = {27,13}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "green slime", coord = {25,13}, asleep = 1, peaceful = 0 })
+--des.monster({ id = "green slime", coord = {23,13}, asleep = 1, peaceful = 0 })

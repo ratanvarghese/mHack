@@ -11,6 +11,7 @@ staticfn struct obj *costly_tin(int);
 staticfn int opentin(void);
 staticfn int unfaint(void);
 
+
 staticfn const char *food_xname(struct obj *, boolean);
 staticfn void choke(struct obj *);
 staticfn void recalc_wt(void);
@@ -71,6 +72,10 @@ const char *const hu_stat[] = {
     "Satiated", "        ", "Hungry  ", "Weak    ",
     "Fainting", "Fainted ", "Starved "
 };
+const char * cahu_stat[] = {
+    "Ovrwound", "        ", "Waning  ", "Unwound ",
+    "Unwound ", "Stopped ", "Stopped "
+};
 
 static const struct victual_info zero_victual = { 0 };
 
@@ -102,7 +107,8 @@ is_edible(struct obj *obj)
         return TRUE;
 
     if (metallivorous(gy.youmonst.data) && is_metallic(obj)
-        && (gy.youmonst.data != &mons[PM_RUST_MONSTER] || is_rustprone(obj)))
+        && (gy.youmonst.data != &mons[PM_RUST_MONSTER] || is_rustprone(obj))
+        && (gy.youmonst.data != &mons[PM_GOLD_BUG] || is_golden(obj)))
         return TRUE;
 
     /* Ghouls only eat non-veggy corpses or eggs (see dogfood()) */
@@ -1294,8 +1300,8 @@ cpostfx(int pm)
     if (check_intrinsics) {
         struct permonst *ptr = &mons[pm];
 
-        if (dmgtype(ptr, AD_STUN) || dmgtype(ptr, AD_HALU)
-            || pm == PM_VIOLET_FUNGUS) {
+        if ((dmgtype(ptr, AD_STUN) || dmgtype(ptr, AD_HALU)
+            || pm == PM_VIOLET_FUNGUS) && (pm != PM_BANDERSNATCH)) {
             pline("Oh wow!  Great stuff!");
             (void) make_hallucinated((HHallucination & TIMEOUT) + 200L, FALSE,
                                      0L);
@@ -1499,6 +1505,8 @@ tin_variety(
 
     if (!displ && r == HOMEMADE_TIN && !obj->blessed && !rn2(7))
         r = ROTTEN_TIN; /* some homemade tins go bad */
+    else if(mnum == PM_OTYUGH)
+        r = ROTTEN_TIN;
 
     if (r == ROTTEN_TIN && (ismnum(mnum) && nonrotting_corpse(mnum)))
         r = HOMEMADE_TIN; /* lizards don't rot */
@@ -1579,6 +1587,14 @@ consume_tin(const char *mesg)
                 use_up_tin(tin);
                 return;
             }
+        }
+
+        if (Upolyd && gy.youmonst.data == &mons[PM_CLOCKWORK_AUTOMATON] ){
+            You("have no way to eat, so you discard the tin instead.");
+            if (!Hallucination)
+                tin->dknown = tin->known = TRUE;
+            use_up_tin(tin);
+            return;
         }
 
         /* in case stop_occupation() was called on previous meal */
@@ -1795,6 +1811,11 @@ Hear_again(void)
 staticfn int
 rottenfood(struct obj *obj)
 {
+    if (gy.youmonst.data == &mons[PM_OTYUGH]){
+        pline ("Yum!  Rotten %s!", foodword(obj));
+        return 1;
+    }
+
     pline("Blecch!  %s %s!",
           is_rottable(obj) ? "Rotten" : "Awful", foodword(obj));
     if (!rn2(4)) {
@@ -1879,7 +1900,8 @@ eatcorpse(struct obj *otmp)
     }
 
     /* 3.7: globs don't become tainted, they shrink away */
-    if (!glob && !stoneable && !slimeable && rotted > 5L) {
+    if (!glob && !stoneable && !slimeable && rotted > 5L
+        && gy.youmonst.data != &mons[PM_OTYUGH]) {
         boolean cannibal = maybe_cannibal(mnum, FALSE);
 
         /* tp++; -- early return makes this unnecessary */
@@ -1923,6 +1945,11 @@ eatcorpse(struct obj *otmp)
             You("seem unaffected by the poison.");
 
     /* now any corpse left too long will make you mildly ill */
+    } else if (rotted && gy.youmonst.data == &mons[PM_OTYUGH]) {
+        tp++;
+        pline("Yum - that %s was tainted!",
+            mons[mnum].mlet == S_FUNGUS ? "fungoid vegetation" :
+            !vegetarian(&mons[mnum]) ? "meat" : "protoplasm");
     } else if ((rotted > 5L || (rotted > 3L && rn2(5))) && !Sick_resistance) {
         tp++;
         You_feel("%ssick.", (Sick) ? "very " : "");
@@ -2819,6 +2846,11 @@ doeat(void)
         pline("If you can't breathe air, how can you consume solids?");
         return ECMD_OK;
     }
+    if (Upolyd && gy.youmonst.data == &mons[PM_CLOCKWORK_AUTOMATON] ){
+        pline("You can't eat anything in your current state.");
+        return ECMD_OK;
+    }
+
     if (!(otmp = floorfood("eat", 0)))
         return ECMD_OK;
     if (check_capacity((char *) 0))
@@ -3034,7 +3066,8 @@ doeat(void)
                                  && (otmp->orotten || !rn2(7))))) {
             if (rottenfood(otmp)) {
                 otmp->orotten = TRUE;
-                dont_start = TRUE;
+                if (gy.youmonst.data != &mons[PM_OTYUGH])
+                    dont_start = TRUE;
             }
             consume_oeaten(otmp, 1); /* oeaten >>= 1 */
         } else if (!already_partly_eaten) {
@@ -3174,7 +3207,10 @@ gethungry(void)
        this first uhunger decrement, but to stay in such form the hero
        will need to wear an Amulet of Unchanging so still burn a small
        amount of nutrition in the 'moves % 20' ring/amulet check below */
-    if ((!Unaware || !rn2(10)) /* slow metabolic rate while asleep */
+    if (Upolyd && gy.youmonst.data == &mons[PM_CLOCKWORK_AUTOMATON] && 
+        (!u.usleep || !rn2(10)))
+        u.uhunger--;
+    else if ((!Unaware || !rn2(10)) /* slow metabolic rate while asleep */
         && (carnivorous(gy.youmonst.data)
             || herbivorous(gy.youmonst.data)
             || metallivorous(gy.youmonst.data))
@@ -3368,6 +3404,8 @@ newuhs(boolean incr)
     static unsigned save_hs;
     static boolean saved_hs = FALSE;
     int h = u.uhunger;
+    boolean clockwork = (Upolyd &&
+        gy.youmonst.data == &mons[PM_CLOCKWORK_AUTOMATON]);
 
     newhs = (h > 1000)
                 ? SATIATED
@@ -3422,13 +3460,20 @@ newuhs(boolean incr)
 
                 /* stop what you're doing, then faint */
                 stop_occupation();
-                You("faint from lack of food.");
-                incr_itimeout(&HDeaf, duration);
-                disp.botl = TRUE;
-                nomul(-duration);
-                gm.multi_reason = "fainted from lack of food";
-                gn.nomovemsg = "You regain consciousness.";
-                ga.afternmv = unfaint;
+                if (clockwork){
+                    Your("clockwork comes to a complete stop.");
+                    nomul(-200);
+                    gn.nomovemsg = "Testing 1.";
+                    ga.afternmv = rehumanize_wrapper;
+                } else {
+                    You("faint from lack of food.");
+                    incr_itimeout(&HDeaf, duration);
+                    disp.botl = TRUE;
+                    nomul(-duration);
+                    gm.multi_reason = "fainted from lack of food";
+                    gn.nomovemsg = "You regain consciousness.";
+                    ga.afternmv = unfaint;
+                }
                 newhs = FAINTED;
                 if (!Levitation)
                     selftouch("Falling, you");
@@ -3470,6 +3515,18 @@ newuhs(boolean incr)
 
         switch (newhs) {
         case HUNGRY:
+            if (clockwork) {
+                if (Hallucination)
+                    Your((!incr)? "cuckoo only feels hungry now.":
+                        "cuckoo is feeling hungry.");
+                else
+                    You_feel((!incr) ? "your mainspring tightening." :
+                        "the power of your mainspring waning.");
+                if (incr && go.occupation && go.occupation != windclock)
+                    stop_occupation();
+                break;
+            }
+
             if (Hallucination) {
                 You(!incr ? "now have a lesser case of the munchies."
                     : "are getting the munchies.");
@@ -3483,6 +3540,17 @@ newuhs(boolean incr)
             end_running(TRUE);
             break;
         case WEAK:
+            if (clockwork) {
+                You_feel("your mainspring %s and your gears %s.",
+                    (Hallucination)?"sprunging":"unwinding",
+                    (!incr)?"still slipping":
+                    (u.uhunger < 45 ) ? "slipping":
+                    "starting to slip");  
+                if (incr && go.occupation && go.occupation != windclock)
+                    stop_occupation();
+                break;
+            }
+
             if (Hallucination)
                 pline(!incr ? "You still have the munchies."
               : "The munchies are interfering with your motor capabilities.");
@@ -3969,5 +4037,80 @@ Finish_digestion(void)
     }
     return 0;
 }
+
+
+int
+rehumanize_wrapper(void) {
+    rehumanize();
+    return 0;
+}
+
+int
+start_clockwinding(struct obj * key) {
+    char buf[BUFSZ], qbuf[QBUFSZ], msgbuf[BUFSZ];
+    int turns,ret;
+  
+    if (key->otyp != SKELETON_KEY)
+        return 0;
+    You("use the key to wind up your clockwork.");
+    Sprintf(qbuf, "How many turns?");
+    getlin(qbuf, buf);
+    (void)mungspaces(buf);
+    if (buf[0] == '\033' || buf[0] == '\0') ret = 0;
+    else ret = sscanf(buf, "%d", &turns);
+  
+    if (ret != 1 || turns <= 0){
+        pline("Never mind.");
+        return 0;
+    }
+    svc.context.victual.piece = key;
+    svc.context.victual.canchoke = TRUE;
+    svc.context.victual.usedtime = 0;
+    svc.context.victual.fullwarn = FALSE;
+    svc.context.victual.reqtime = turns;
+    Sprintf(msgbuf, "winding");
+    set_occupation(windclock, msgbuf, 0);
+    return 1;
+}
+
+
+
+int
+windclock(void) {
+    if (svc.context.victual.reqtime == svc.context.victual.usedtime) {
+        go.occupation = 0;
+        You("finish winding.");
+        newuhs(FALSE);
+        svc.context.victual.piece = 0;
+    } else if (!carried(svc.context.victual.piece)) {
+        newuhs(FALSE);
+        stop_occupation();
+        svc.context.victual.piece = 0;
+        return 0;
+    } else if(svc.context.victual.canchoke && u.uhunger >= 2000) {
+        Your("mainspring is wound too tight!");
+        Your("clockwork breaks apart!");
+        svk.killer.format = KILLED_BY;
+        Strcpy(svk.killer.name, "overclocking");
+        done(DISINTEGRATED); /* get the "reconstituted" life-saving */
+        svc.context.victual.piece = 0;
+        return 0;
+    } else if (u.uhunger >= 1500 && !svc.context.victual.fullwarn) {
+        pline("You're having a hard time cranking the key.");
+        svc.context.victual.fullwarn = TRUE;
+        if (yn_function("Stop winding?",ynchars,'y',TRUE)=='y') {
+            svc.context.victual.piece = 0;
+            stop_occupation();
+            newuhs(FALSE);
+            return 0;
+        }
+    } else {
+        u.uhunger += 10;
+        svc.context.victual.usedtime ++;
+    }
+    disp.botl = 1;
+    return 1;
+}
+
 
 /*eat.c*/

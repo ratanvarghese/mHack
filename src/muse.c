@@ -2678,6 +2678,20 @@ searches_for_item(struct monst *mon, struct obj *obj)
     if (typ == WAN_SPEED_MONSTER || typ == POT_SPEED)
         return (boolean) (mon->mspeed != MFAST);
 
+    /* some monsters only want certain items */
+    switch (mon->data->mlet){
+        case S_QUANTMECH:
+            if(mon->data == &mons[PM_CLOCKWORK_AUTOMATON] &&
+                !m_carrying(mon,SKELETON_KEY) &&
+                typ == SKELETON_KEY) {
+                return TRUE;
+            }
+            return FALSE;
+            break;
+        default:
+          break;
+    }
+
     switch (obj->oclass) {
     case WAND_CLASS:
         if (obj->spe <= 0)
@@ -2782,6 +2796,12 @@ mon_reflects(struct monst *mon, const char *str)
         if (str)
             pline(str, s_suffix(mon_nam(mon)), "scales");
         return TRUE;
+    } else if (mon->data == &mons[PM_DIAMOND_GOLEM]
+               || mon->data == &mons[PM_SAPPHIRE_GOLEM]
+               || mon->data == &mons[PM_CRYSTAL_GOLEM]) {
+        if (str)
+            pline(str, s_suffix(mon_nam(mon)), "body");
+        return TRUE;
     }
     return FALSE;
 }
@@ -2814,6 +2834,12 @@ ureflects(const char *fmt, const char *str)
     } else if (gy.youmonst.data == &mons[PM_SILVER_DRAGON]) {
         if (fmt && str)
             pline(fmt, str, "scales");
+        return TRUE;
+    } else if (gy.youmonst.data == &mons[PM_DIAMOND_GOLEM]
+                || gy.youmonst.data == &mons[PM_SAPPHIRE_GOLEM]
+                || gy.youmonst.data == &mons[PM_CRYSTAL_GOLEM]) {
+        if (fmt && str)
+            pline(fmt, str, "body");
         return TRUE;
     }
     return FALSE;

@@ -16,8 +16,8 @@ des.map({ halign = "half-left", valign = "center", map = [[
 |.S.........S.|
 ---.-------.---
   |.|.....|.|  
----.|.....|.---
-|.S.|.....|.S.|
+---.-------.---
+|.S.........S.|
 ---S-------S---
   |.|     |.|  
   ---     ---  
@@ -29,8 +29,8 @@ shuffle(place)
 
 des.ladder("up", 11,07)
 des.ladder("down", 03,07)
-des.monster("&",05,06)
-des.monster("&",09,06)
+des.monster("&",05,05)
+des.monster("&",09,05)
 des.monster("hell hound",11,05)
 des.monster("hell hound",03,05)
 des.monster("winter wolf cub",07,03)
@@ -56,20 +56,19 @@ local spbooks = {
    "spellbook of cause fear",
    "spellbook of charm monster",
    "spellbook of invisibility",
+   "spellbook of levitation",
    "spellbook of teleport away",
    "spellbook of stone to flesh",
    "spellbook of polymorph",
+   "spellbook of swap places",
+   "spellbook of rejuvenation"
 }
 shuffle(spbooks);
-des.object(spbooks[1],06,05)
-des.object(spbooks[2],06,06)
-des.object(spbooks[3],06,07)
-des.object(spbooks[4],07,05)
-des.object(spbooks[5],07,06)
-des.object(spbooks[6],07,07)
-des.object(spbooks[7],08,05)
-des.object(spbooks[8],08,06)
-des.object(spbooks[9],08,07)
+des.object(spbooks[1],05,05)
+des.object(spbooks[2],06,05)
+des.object(spbooks[3],07,05)
+des.object(spbooks[4],08,05)
+des.object(spbooks[5],09,05)
 
 -- Walls in the tower are non diggable
 des.non_diggable(selection.area(00,00,14,10))

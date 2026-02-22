@@ -153,6 +153,7 @@ were_summon(
         return 0;
     for (i = rnd(5); i > 0; i--) {
         switch (pm) {
+        case PM_NOSFERATU:
         case PM_WERERAT:
         case PM_HUMAN_WERERAT:
             typ = rn2(3) ? PM_SEWER_RAT

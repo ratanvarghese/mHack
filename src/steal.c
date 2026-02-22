@@ -59,7 +59,7 @@ findgold(struct obj *argchain, boolean only_coins)
  * Steal gold coins only.  Leprechauns don't care for lesser coins.
 */
 void
-stealgold(struct monst *mtmp)
+stealgold(struct monst *mtmp, boolean eat)
 {
     struct obj *fgold;
     struct obj *ygold;
@@ -119,6 +119,13 @@ stealgold(struct monst *mtmp)
         }
         freeinv(ygold);
         add_to_minv(mtmp, ygold);
+        if (eat) {
+            m_consume_obj(mtmp, ygold);
+            mtmp->mhp += d(1, 8);
+            if(mtmp->mhp > mtmp->mhpmax) {
+                mtmp->mhp = mtmp->mhpmax;
+            }
+        }
         if (!tele_restrict(mtmp))
             (void) rloc(mtmp, RLOC_MSG);
         monflee(mtmp, 0, FALSE, FALSE);
@@ -411,7 +418,7 @@ steal(struct monst *mtmp, char *objnambuf)
         return 1; /* let her flee */
     }
 
-    if (monkey_business || uarmg) {
+    if (monkey_business || uarmg || (mtmp->data == &mons[PM_POOKA])) {
         ; /* skip ring special cases */
     } else if (Adornment & LEFT_RING) {
         otmp = uleft;

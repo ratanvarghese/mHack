@@ -100,6 +100,8 @@ formatkiller(
         "drowned in ", "burned by ", "dissolved in ", "crushed to death by ",
         /* STONING, TURNED_SLIME, GENOCIDED, */
         "petrified by ", "turned to slime by ", "killed by ",
+        /* DISINTEGRATED */
+        "disintegrated by ",
         /* PANICKED, TRICKED, QUIT, ESCAPED, ASCENDED */
         "", "", "", "", ""
     };
