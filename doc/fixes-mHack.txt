@@ -164,6 +164,7 @@ Added the spell of rejuvenation, a level 7 healing spell.
 	prevents both the healing and the draining. Players of experience level 5 or
 	lower are also prevented from going through either effect.
 	This spell is the new crowning gift for Monks.
+Added ouroboros monster
 
 Platform- and/or Interface-Specific New Features
 ------------------------------------------------
