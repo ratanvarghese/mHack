@@ -52,6 +52,9 @@ struct u_event {
     Bitfield(udemigod, 1);          /* killed the wiz */
     Bitfield(uvibrated, 1);         /* stepped on "vibrating square" */
     Bitfield(ascended, 1);          /* has offered the Amulet */
+
+    Bitfield(amulet_wish, 1);       /* has gained a wish from the Amulet */
+    /* 7 free bits */
 };
 
 /*
@@ -160,11 +163,13 @@ struct u_conduct {     /* number of times... */
 };
 
 struct u_roleplay {
-    boolean blind;  /* permanently blind */
-    boolean nudist; /* has not worn any armor, ever */
-    boolean deaf;   /* permanently deaf */
-    boolean pauper; /* no starting inventory */
-    long numbones;  /* # of bones files loaded  */
+    boolean blind;   /* permanently blind */
+    boolean nudist;  /* has not worn any armor, ever */
+    boolean deaf;    /* permanently deaf */
+    boolean pauper;  /* no starting inventory */
+    boolean reroll;  /* starting inventory/attr rerolling enabled */
+    long numbones;   /* # of bones files loaded */
+    long numrerolls; /* # of rerolls used */
 };
 
 /*** Unified structure containing role information ***/
@@ -531,6 +536,7 @@ struct _hitmon_data {
     boolean needpoismsg;
     boolean poiskilled;
     boolean already_killed;
+    boolean offmap;
     boolean destroyed;
     boolean dryit;
     boolean doreturn;

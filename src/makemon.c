@@ -1,4 +1,4 @@
-/* NetHack 3.7	makemon.c	$NHDT-Date: 1720128166 2024/07/04 21:22:46 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.249 $ */
+/* NetHack 3.7	makemon.c	$NHDT-Date: 1770949988 2026/02/12 18:33:08 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.271 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2012. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -359,8 +359,10 @@ m_initweap(struct monst *mtmp)
             /* make long sword be +0 to +3, mace be +3 to +6 to compensate
                for being significantly weaker against large opponents */
             otmp->spe = rn2(4);
-            if (typ == MACE)
+            if (typ == MACE) {
                 otmp->spe += 3;
+                otmp->material = SILVER;
+            }
             (void) mpickobj(mtmp, otmp);
 
             otmp = mksobj(!rn2(4) || is_lord(ptr) ? SHIELD_OF_REFLECTION
@@ -1373,7 +1375,7 @@ makemon(
     mtmp->seen_resistance = M_SEEN_NOTHING;
     mtmp->mpeaceful = (mmflags & MM_ANGRY) ? FALSE : peace_minded(ptr);
     if ((mmflags & MM_MINVIS) != 0) /* for ^G */
-        mon_set_minvis(mtmp); /* call after place_monster() */
+        mon_set_minvis(mtmp, FALSE); /* call after place_monster() */
 
     switch (ptr->mlet) {
     case S_MIMIC:
@@ -1589,8 +1591,10 @@ makemon(
             }
             if (what) {
                 set_msg_xy(mtmp->mx, mtmp->my);
-                Norep("%s%s appears%s%c", what,
+                Norep("%s%s %s%s%c", what,
                       exclaim ? " suddenly" : "",
+                      /* 'what' might be "gold pieces" so need plural verb */
+                      vtense(what, "appear"),
                       next2u(x, y) ? " next to you"
                       : (distu(x, y) <= (BOLT_LIM * BOLT_LIM)) ? " close by"
                         : "",
@@ -1851,6 +1855,7 @@ mk_gen_ok(int mndx, unsigned mvflagsmask, unsigned genomask)
 
 /* monsters in order by mlet & difficulty for mkclass() */
 static int mongen_order[NUMMONS];
+static xint8 mclass_maxf[MAXMCLASSES];
 static boolean mongen_order_init = FALSE;
 
 staticfn int QSORTCALLBACK
@@ -1900,15 +1905,18 @@ check_mongen_order(void)
 staticfn void
 init_mongen_order(void)
 {
-    int i;
+    int i, mlet;
 
     if (mongen_order_init)
         return;
 
     mongen_order_init = TRUE;
-    for (i = LOW_PM; i < NUMMONS; i++)
+    for (i = LOW_PM; i < NUMMONS; i++) {
         mongen_order[i] = i;
-
+        mlet = mons[i].mlet;
+        if ((xint8) (mons[i].geno & G_FREQ) > mclass_maxf[mlet])
+            mclass_maxf[mlet] = (xint8) (mons[i].geno & G_FREQ);
+    }
 #if (NH_DEVEL_STATUS != NH_STATUS_RELEASED)
     check_mongen_order();
 #endif
@@ -1940,9 +1948,11 @@ dump_mongen(void)
         Snprintf(nmbuf, sizeof nmbuf, "PM_%s%s",
                  monsdump[MONSi(i)].nm,
                  (i == SPECIAL_PM - 1) ? "" : ",");
-        raw_printf("    %*s /* %c seq=%3d, idx=%3d, sym='%c', diff=%2d %s */",
+        raw_printf("    %*s /* %c seq=%3d, idx=%3d, sym='%c', diff=%2d, freq=%2d[%d] %s */",
                    -nmwidth, nmbuf, (i == MONSi(i)) ? ' ' : '.', i, MONSi(i),
                    mlet, (int) mons[MONSi(i)].difficulty,
+                   (int) (mons[MONSi(i)].geno & G_FREQ),
+                   (int) mclass_maxf[(int) mons[MONSi(i)].mlet],
                    (special == (G_NOGEN | G_UNIQ)) ? "(G_NOGEN | G_UNIQ)"
                    : (special == G_NOGEN)          ? "(G_NOGEN)"
                    : (special == G_UNIQ)           ? "(G_UNIQ)"
@@ -1973,6 +1983,7 @@ mkclass_aligned(char class, int spc, /* special mons[].geno handling */
     int k, nums[SPECIAL_PM + 1]; /* +1: insurance for final return value */
     int maxmlev, gehennom = Inhell != 0;
     unsigned mv_mask, gn_mask;
+    boolean zero_freq_for_entire_class;
 
     (void) memset((genericptr_t) nums, 0, sizeof nums);
     maxmlev = level_difficulty() >> 1;
@@ -1982,6 +1993,8 @@ mkclass_aligned(char class, int spc, /* special mons[].geno handling */
     }
 
     init_mongen_order();
+    /* the following must come after init_mongen_order() */
+    zero_freq_for_entire_class = (mclass_maxf[(int) class] == 0);
 
     /*  Assumption #1:  monsters of a given class are contiguous in the
      *                  mons[] array.  Player monsters and quest denizens
@@ -2031,7 +2044,8 @@ mkclass_aligned(char class, int spc, /* special mons[].geno handling */
                 && mons[MONSi(last)].difficulty > mons[MONSi(last - 1)].difficulty
                 && rn2(2))
                 break;
-            if ((k = (mons[MONSi(last)].geno & G_FREQ)) > 0) {
+            if ((k = (mons[MONSi(last)].geno & G_FREQ)) > 0
+                || (k = (zero_freq_for_entire_class ? 1 : 0)) > 0) {
                 /* skew towards lower value monsters at lower exp. levels
                    (this used to be done in the next loop, but that didn't
                    work well when multiple species had the same level and

@@ -1,4 +1,4 @@
-/* NetHack 3.7	uhitm.c	$NHDT-Date: 1736575153 2025/01/10 21:59:13 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.461 $ */
+/* NetHack 3.7	uhitm.c	$NHDT-Date: 1752823766 2025/07/17 23:29:26 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.477 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2012. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -13,6 +13,8 @@ staticfn boolean mhitm_mgc_atk_negated(struct monst *, struct monst *,
 staticfn boolean known_hitum(struct monst *, struct obj *, int *, int, int,
                            struct attack *, int) NONNULLARG13;
 staticfn boolean theft_petrifies(struct obj *) NONNULLARG1;
+staticfn void mhitm_really_poison(struct monst *, struct attack *,
+                                  struct monst *, struct mhitm_data *);
 staticfn void steal_it(struct monst *, struct attack *) NONNULLARG1;
 /* hitum_cleave() has contradictory information. There's a comment
  * beside the 1st arg 'target' stating non-null, but later on there
@@ -24,6 +26,7 @@ staticfn void hmon_hitmon_barehands(struct _hitmon_data *,
                              struct monst *) NONNULLARG12;
 staticfn void hmon_hitmon_weapon_ranged(struct _hitmon_data *, struct monst *,
                              struct obj *) NONNULLARG123;
+staticfn boolean backstabbable(struct monst *) NONNULLARG1;
 staticfn void hmon_hitmon_weapon_melee(struct _hitmon_data *, struct monst *,
                              struct obj *) NONNULLARG123;
 staticfn void hmon_hitmon_weapon(struct _hitmon_data *, struct monst *,
@@ -207,7 +210,7 @@ attack_checks(
         return FALSE;
 
     if (svc.context.forcefight) {
-        /* Do this in the caller, after we checked that the monster
+        /* Do this in the caller, after we have checked that the monster
          * didn't die from the blow.  Reason: putting the 'I' there
          * causes the hero to forget the square's contents since
          * both 'I' and remembered contents are stored in .glyph.
@@ -387,7 +390,8 @@ find_roll_to_hit(
 
     *role_roll_penalty = 0; /* default is `none' */
 
-    tmp = 1 + Luck + abon() + find_mac(mtmp) + u.uhitinc
+    tmp = 1 + abon() + find_mac(mtmp) + u.uhitinc
+          + (sgn(Luck) * ((abs(Luck) + 2) / 3))
           + maybe_polyd(gy.youmonst.data->mlevel, u.ulevel);
 
     /* some actions should occur only once during multiple attacks */
@@ -677,7 +681,7 @@ hitum_cleave(
     int count, umort, x = u.ux, y = u.uy;
 
     /* find the direction toward primary target */
-    i = xytod(u.dx, u.dy);
+    i = xytodir(u.dx, u.dy);
     if (i == DIR_ERR) {
         impossible("hitum_cleave: unknown target direction [%d,%d,%d]?",
                    u.dx, u.dy, u.dz);
@@ -953,6 +957,20 @@ hmon_hitmon_weapon_ranged(
     }
 }
 
+/* can monster be stabbed in the back? */
+staticfn boolean
+backstabbable(struct monst *mon)
+{
+    return !amorphous(mon->data)
+        && !is_whirly(mon->data)
+        && !noncorporeal(mon->data)
+        && mon->data->mlet != S_BLOB
+        && mon->data->mlet != S_EYE
+        && mon->data->mlet != S_FUNGUS
+        && canseemon(mon)
+        && (mon->mflee || helpless(mon));
+}
+
 staticfn void
 hmon_hitmon_weapon_melee(
     struct _hitmon_data *hmd,
@@ -968,13 +986,20 @@ hmon_hitmon_weapon_melee(
     hmd->dmg = dmgval(obj, mon);
     /* a minimal hit doesn't exercise proficiency */
     hmd->train_weapon_skill = (hmd->dmg > 1);
+
+    /* Healer with anatomy knowledge */
+    if (Role_if(PM_HEALER) && hmd->hand_to_hand
+        && obj->oclass == WEAPON_CLASS
+        && objects[obj->otyp].oc_skill == P_KNIFE)
+        hmd->dmg += min(3, svm.mvitals[monsndx(mon->data)].died / 6);
+
     /* special attack actions */
     if (!hmd->train_weapon_skill || mon == u.ustuck || u.twoweap
         /* Cleaver can hit up to three targets at once so don't
            let it also hit from behind or shatter foes' weapons */
         || (hmd->hand_to_hand && is_art(obj, ART_CLEAVER))) {
         ; /* no special bonuses */
-    } else if (mon->mflee && Role_if(PM_ROGUE) && !Upolyd
+    } else if (Role_if(PM_ROGUE) && backstabbable(mon) && !Upolyd
                /* multi-shot throwing is too powerful here */
                && hmd->hand_to_hand) {
         You("strike %s from behind!", mon_nam(mon));
@@ -1067,7 +1092,7 @@ hmon_hitmon_weapon_melee(
         && (is_ammo(obj) || is_missile(obj))) {
         if (ammo_and_launcher(obj, uwep)) {
             /* elves and samurai do extra damage using their own
-               bows with own arrows; they're highly trained */
+               bows with their own arrows; they're highly trained */
             if (Role_if(PM_SAMURAI) && obj->otyp == YA
                 && uwep->otyp == YUMI)
                 hmd->dmg++;
@@ -1079,6 +1104,10 @@ hmon_hitmon_weapon_melee(
         if (obj->opoisoned && is_poisonable(obj))
             hmd->ispoisoned = TRUE;
     }
+
+    /* permapoisoned is non-ammo/missile, limit the poison */
+    if (permapoisoned(obj) && hmd->dieroll <= 5)
+        hmd->ispoisoned = TRUE;
     /* maybe break your glass weapon or monster's glass armor; put
      * this at the end so that other stuff doesn't have to check obj
      * && obj->whatever all the time */
@@ -1104,7 +1133,8 @@ hmon_hitmon_weapon(
         /* or strike with a missile in your hand... */
         || (!hmd->thrown && (is_missile(obj) || is_ammo(obj)))
         /* or use a pole at short range and not mounted... */
-        || (!hmd->thrown && !u.usteed && is_pole(obj))
+        || (!hmd->thrown && !u.usteed && is_pole(obj)
+            && !is_art(obj,ART_SNICKERSNEE))
         /* or throw a missile without the proper bow... */
         || (is_ammo(obj) && (hmd->thrown != HMON_THROWN
                              || !ammo_and_launcher(obj, uwep)))) {
@@ -1185,7 +1215,7 @@ hmon_hitmon_misc_obj(
                 corpse_xname(obj, (const char *) 0,
                              obj->dknown ? CXN_PFX_THE
                              : CXN_ARTICLE));
-            obj->dknown = 1;
+            observe_object(obj);
             if (!munstone(mon, TRUE))
                 minstapetrify(mon, TRUE);
             if (resists_ston(mon))
@@ -1375,6 +1405,16 @@ hmon_hitmon_misc_obj(
         hmd->needrustmsg = TRUE;
         break;
     default:
+        if ((objects[obj->otyp].oc_material == VEGGY ||
+             objects[obj->otyp].oc_material == PAPER) &&
+            obj->oclass != SPBOOK_CLASS) {
+            /* vegetables (and similar) do no damage, because they
+               aren't rigid enough; paper objects also do no damage,
+               except for books */
+            hmd->dmg = 0;
+            hmd->get_dmg_bonus = FALSE;
+            break;
+        }
         /* non-weapons can damage because of their weight */
         /* (but not too much) */
         hmd->dmg = (obj->owt + 99) / 100;
@@ -1573,7 +1613,7 @@ hmon_hitmon_poison(
 
     if (hmd->specialpoison) {
         obj->opoisoned = FALSE;
-    } else if (!rn2(nopoison)) {
+    } else if (!permapoisoned(obj) && !rn2(nopoison)) {
         /* remove poison now in case obj ends up in a bones file */
         obj->opoisoned = FALSE;
         /* defer "obj is no longer poisoned" until after hit message */
@@ -1643,7 +1683,7 @@ hmon_hitmon_pet(
     struct obj *obj UNUSED)
 {
     if (mon->mtame && hmd->dmg > 0) {
-        /* do this even if the pet is being killed (affects revival) */
+        /* do this even if the pet is being killed or migrating (affects revival) */
         abuse_dog(mon); /* reduces tameness */
         /* flee if still alive and still tame; if already suffering from
            untimed fleeing, no effect, otherwise increases timed fleeing */
@@ -1661,7 +1701,7 @@ hmon_hitmon_splitmon(
     if ((hmd->mdat == &mons[PM_BLACK_PUDDING]
          || hmd->mdat == &mons[PM_BROWN_PUDDING])
         /* pudding is alive and healthy enough to split */
-        && mon->mhp > 1 && !mon->mcan
+        && mon->mhp > 1 && !mon->mcan && !hmd->offmap
         /* iron weapon using melee or polearm hit [3.6.1: metal weapon too;
            also allow either or both weapons to cause split when twoweap] */
         && obj && (obj == uwep || (u.twoweap && obj == uswapwep))
@@ -1770,6 +1810,7 @@ hmon_hitmon(
     int dieroll)
 {
     struct _hitmon_data hmd;
+    boolean maybe_knockback = FALSE;
 
     hmd.dmg = 0;
     hmd.thrown = thrown;
@@ -1795,6 +1836,7 @@ hmon_hitmon(
     hmd.needpoismsg = FALSE;
     hmd.poiskilled = FALSE;
     hmd.already_killed = FALSE;
+    hmd.offmap = FALSE;
     hmd.destroyed = FALSE;
     hmd.dryit = FALSE;
     hmd.doreturn = FALSE;
@@ -1854,6 +1896,9 @@ hmon_hitmon(
         hmon_hitmon_jousting(&hmd, mon, obj);
     } else if (hmd.unarmed && hmd.dmg > 1 && !thrown && !obj && !Upolyd) {
         hmon_hitmon_stagger(&hmd, mon, obj);
+    } else if (!hmd.unarmed && hmd.dmg > 1 && !thrown && !Upolyd
+               && !u.twoweap && uwep) {
+        maybe_knockback = TRUE;
     }
 
     if (!hmd.already_killed) {
@@ -1870,9 +1915,21 @@ hmon_hitmon(
         mon->mhp -= hmd.dmg;
     }
     /* adjustments might have made tmp become less than what
-       a level draining artifact has already done to max HP */
+       a level-draining artifact has already done to max HP */
     if (mon->mhp > mon->mhpmax)
         mon->mhp = mon->mhpmax;
+    if (mon->mx == 0) {
+        /*
+         * jousting can lead to:
+         *     mhurtle_to_doom()
+         *      mhurtle()
+         *       mintrap()
+         *        trapeffect_hole()
+         *         trapeffect_level_telep()
+         *          migrate_to_level()
+         * Set offmap in that situation so code to follow can test for it.*/
+        hmd.offmap = TRUE;
+    }
     if (DEADMONSTER(mon))
         hmd.destroyed = TRUE;
 
@@ -1985,9 +2042,17 @@ hmon_hitmon(
         Your("%s %s no longer poisoned.", hmd.saved_oname,
              vtense(hmd.saved_oname, "are"));
 
-    if (!hmd.destroyed)
-        wakeup(mon, TRUE);
+    if (!hmd.destroyed && !hmd.offmap) {
+        int hitflags = M_ATTK_HIT;
 
+        wakeup(mon, TRUE);
+        if (maybe_knockback
+            && mhitm_knockback(&gy.youmonst, mon, gy.youmonst.data->mattk,
+                               &hitflags, TRUE)) {
+            if ((hitflags & M_ATTK_DEF_DIED) != 0)
+                hmd.destroyed = TRUE;
+        }
+    }
     return hmd.destroyed ? FALSE : TRUE;
 }
 
@@ -2163,6 +2228,11 @@ joust(struct monst *mon, /* target */
         return 0;
     /* sanity check; lance must be wielded in order to joust */
     if (obj != uwep && (obj != uswapwep || !u.twoweap))
+        return 0;
+    /* can't joust while trapped--not enough room to maneuver;
+     * TODO? if the steed is trapped in a pit, perhaps the hero ought to be
+     * able to joust against a monster that's in a conjoined pit */
+    if (u.utrap)
         return 0;
 
     /* if using two weapons, use worse of lance and two-weapon skills */
@@ -3149,6 +3219,29 @@ mhitm_ad_curs(
     }
 }
 
+/* Helper for mhitm_ad_drst(), containing some code that is also called from
+ * mhitm_ad_phys (for poisoned weapons) and shouldn't be subject to magic
+ * cancellation or a 1/8 chance roll.
+ * In this specific case, the "mhitm" in the name ACTUALLY means just that -
+ * this should be called only for monster versus monster situations. */
+staticfn void
+mhitm_really_poison(struct monst *magr, struct attack *mattk,
+                    struct monst *mdef, struct mhitm_data *mhm)
+{
+    if (gv.vis && canspotmon(magr))
+        pline("%s %s was poisoned!", s_suffix(Monnam(magr)),
+              mpoisons_subj(magr, mattk));
+    if (resists_poison(mdef)) {
+        if (gv.vis && canspotmon(mdef) && canspotmon(magr))
+            pline_The("poison doesn't seem to affect %s.",
+                        mon_nam(mdef));
+    } else {
+        mhm->damage += rn1(10, 6);
+        if (mhm->damage >= mdef->mhp && gv.vis && canspotmon(mdef))
+            pline_The("poison was deadly...");
+    }
+}
+
 void
 mhitm_ad_drst(
     struct monst *magr, struct attack *mattk,
@@ -3190,22 +3283,7 @@ mhitm_ad_drst(
     } else {
         /* mhitm */
         if (!negated && !rn2(8)) {
-            if (gv.vis && canspotmon(magr))
-                pline("%s %s was poisoned!", s_suffix(Monnam(magr)),
-                      mpoisons_subj(magr, mattk));
-            if (resists_poison(mdef)) {
-                if (gv.vis && canspotmon(mdef) && canspotmon(magr))
-                    pline_The("poison doesn't seem to affect %s.",
-                              mon_nam(mdef));
-            } else {
-                if (rn2(10)) {
-                    mhm->damage += rn1(10, 6);
-                } else {
-                    if (gv.vis && canspotmon(mdef))
-                        pline_The("poison was deadly...");
-                    mhm->damage = mdef->mhp;
-                }
-            }
+            mhitm_really_poison(magr, mattk, mdef, mhm);
         }
     }
 }
@@ -3307,7 +3385,14 @@ mhitm_ad_drin(
         }
         /* adjattrib gives dunce cap message when appropriate */
         (void) adjattrib(A_INT, -rnd(2), FALSE);
-
+        if (!rn2(5)) {
+            losespells();
+            gs.skipdrin = TRUE;
+        }
+        if (!rn2(5)) {
+            drain_weapon_skill(rnd(2));
+            gs.skipdrin = TRUE;
+        }
     } else {
         /* mhitm */
         char buf[BUFSZ];
@@ -4091,6 +4176,8 @@ mhitm_ad_phys(
             if (mattk->aatyp == AT_WEAP && otmp) {
                 struct obj *marmg;
                 int tmp;
+                boolean was_poisoned = (otmp->opoisoned
+                                        || permapoisoned(otmp));
 
                 if (otmp->otyp == CORPSE
                     && touch_petrifies(&mons[otmp->corpsenm])) {
@@ -4139,6 +4226,9 @@ mhitm_ad_phys(
                     tmp -= rnd(-u.uac);
                 if (tmp < 1)
                     tmp = 1;
+                if (Half_physical_damage)
+                    tmp = (tmp + 1) / 2;
+
                 if (u.mh - tmp > 1
                     && (otmp->material == IRON
                         /* relevant 'metal' objects are scalpel and tsurugi */
@@ -4155,6 +4245,22 @@ mhitm_ad_phys(
                         You("divide as %s hits you!", mon_nam(magr));
                 }
                 rustm(&gy.youmonst, otmp);
+                if (was_poisoned && gm.mhitu_dieroll <= 5) {
+                    char buf[BUFSZ];
+                    int poison_pot = otmp->opoisoned ? otmp->opoisoned : POT_SICKNESS;
+
+                    /* similar to mhitm_really_poison, but we don't use the
+                     * exact same values, nor do we want same 1/8 chance of
+                     * poison taking (use 1/4, same as in the mhitm case). */
+                    Sprintf(buf, "%s %s", s_suffix(Monnam(magr)),
+                            mpoisons_subj(magr, mattk));
+                    /* arbitrary, but most poison sources in the game are
+                     * strength-based. With hpdamchance = 10, HP damage occurs
+                     * 1/2 of the time and it will hit Str rest of the time.
+                     * (This is the same as poisoned ammo.) */
+                    poisoned(buf, A_STR, pmname(magr->data, Mgender(magr)),
+                             10, FALSE, poison_pot);
+                }
             } else if (mattk->aatyp != AT_TUCH || mhm->damage != 0
                        || magr != u.ustuck) {
                 hitmsg(magr, mattk);
@@ -4234,6 +4340,13 @@ mhitm_ad_phys(
             }
             if (mhm->damage)
                 rustm(mdef, mwep);
+            if ((mwep->opoisoned || permapoisoned(mwep)) && !rn2(4)) {
+                /* 1/4 chance of weapon poison applying is the same as in
+                 * uhitm and mhitu cases. But since we don't need to call
+                 * any special functions or go through tangled hmon_hitmon
+                 * code, we can just jump straight to the poisoning. */
+                mhitm_really_poison(magr, mattk, mdef, mhm);
+            }
         } else if (pa == &mons[PM_PURPLE_WORM] && pd == &mons[PM_SHRIEKER]) {
             /* hack to enhance mm_aggression(); we don't want purple
                worm's bite attack to kill a shrieker because then it
@@ -5718,6 +5831,7 @@ gulpum(struct monst *mdef, struct attack *mattk)
                    "you totally digest <mdef>" will be coming soon (after
                    several turns) but the level-gain message seems out of
                    order if the kill message is left implicit */
+                gm.mswallower = &gy.youmonst;
                 xkilled(mdef, XKILL_GIVEMSG | XKILL_NOCORPSE);
                 if (!DEADMONSTER(mdef)) { /* monster lifesaved */
                     You("hurriedly regurgitate the sizzling in your %s.",
@@ -5758,6 +5872,7 @@ gulpum(struct monst *mdef, struct attack *mattk)
                     } else
                         exercise(A_CON, TRUE);
                 }
+                gm.mswallower = (struct monst *) 0;
                 end_engulf();
                 return M_ATTK_DEF_DIED;
             case AD_PHYS:
@@ -5924,12 +6039,31 @@ mhitm_knockback(
     const char *knockedhow;
     coordxy dx, dy, defx, defy;
     int knockdistance = rn2(3) ? 1 : 2; /* 67%: 1 step, 33%: 2 steps */
+    int chance = 6; /* 1/6 chance of attack knocking back a monster */
     boolean u_agr = (magr == &gy.youmonst);
     boolean u_def = (mdef == &gy.youmonst);
     boolean was_u = FALSE, dismount = FALSE;
+    struct obj *wep = weapon_used ? (u_agr ? uwep : MON_WEP(magr))
+                                  : (struct obj *) 0;
 
-    /* 1/6 chance of attack knocking back a monster */
-    if (rn2(6))
+    if (wep && is_art(wep, ART_OGRESMASHER))
+        chance = 2;
+
+    if (rn2(chance))
+        return FALSE;
+
+    /* only certain attacks qualify for knockback */
+    if (!((mattk->adtyp == AD_PHYS)
+          && (mattk->aatyp == AT_CLAW
+              || mattk->aatyp == AT_KICK
+              || mattk->aatyp == AT_BUTT
+              || mattk->aatyp == AT_WEAP)))
+        return FALSE;
+
+    /* don't knockback if attacker also wants to grab or engulf */
+    if (attacktype(magr->data, AT_ENGL)
+        || attacktype(magr->data, AT_HUGS)
+        || sticks(magr->data))
         return FALSE;
 
     /* decide where the first step will place the target; not accurate
@@ -5974,12 +6108,8 @@ mhitm_knockback(
     if (!(magr->data->msize > (mdef->data->msize + 1)))
         return FALSE;
 
-    /* only certain attacks qualify for knockback */
-    if (!((mattk->adtyp == AD_PHYS)
-          && (mattk->aatyp == AT_CLAW
-              || mattk->aatyp == AT_KICK
-              || mattk->aatyp == AT_BUTT
-              || (mattk->aatyp == AT_WEAP && !weapon_used))))
+    /* no knockback with a flimsy or non-blunt weapon */
+    if (wep && (is_flimsy(wep) || !is_blunt_weapon(wep)))
         return FALSE;
 
     /* needs a solid physical hit */
@@ -6105,6 +6235,14 @@ hmonas(struct monst *mon)
 
     for (i = 0; i < NATTK; i++) {
         /* sum[i] = M_ATTK_MISS; -- now done above */
+
+        /* target might have been knocked back so no longer in range, or an
+           engulfing vampshifted fog cloud killed and reverted to vampire
+           that's placed at another spot (hero occupies mon's first spot) */
+        if (i > 0 && (m_at(gb.bhitpos.x, gb.bhitpos.y) != mon
+                      || DEADMONSTER(mon)))
+            continue;
+
         mattk = getmattk(&gy.youmonst, mon, i, sum, &alt_attk);
         if (gs.skipdrin && mattk->aatyp == AT_TENT && mattk->adtyp == AD_DRIN)
             continue;
@@ -6200,6 +6338,10 @@ hmonas(struct monst *mon)
             FALLTHROUGH;
             /*FALLTHRU*/
         case AT_KICK:
+            if (mattk->aatyp == AT_KICK && mtrapped_in_pit(&gy.youmonst))
+                continue;
+            FALLTHROUGH;
+            /*FALLTHRU*/
         case AT_BITE:
         case AT_STNG:
         case AT_BUTT:
@@ -6905,11 +7047,13 @@ item_catches_drain(struct monst *mdef)
 void
 that_is_a_mimic(
     struct monst *mtmp, /* a hidden mimic (nonnull) */
-    boolean reveal_it) /* True: remove its disguise */
+    unsigned mimic_flags) /* 0, MIM_REVEAL, MIM_OMIT_WAIT, REVEAL+OMIT */
 {
     static char generic[] = "a monster";
     char fmtbuf[BUFSZ];
     const char *what = NULL;
+    boolean reveal_it = (mimic_flags & MIM_REVEAL) != 0,
+            omit_wait = (mimic_flags & MIM_OMIT_WAIT) != 0;
 
     Strcpy(fmtbuf, "Wait!  That's %s!");
     if (Blind) {
@@ -6918,7 +7062,7 @@ that_is_a_mimic(
         else if (M_AP_TYPE(mtmp) == M_AP_MONSTER)
             what = a_monnam(mtmp); /* differs from what was sensed */
     } else {
-        coordxy x = u.ux + u.dx, y = u.uy + u.dy;
+        coordxy x = mtmp->mx, y = mtmp->my;
         int glyph = glyph_at(x, y);
 
         if (glyph_is_cmap(glyph)) {
@@ -6969,8 +7113,11 @@ that_is_a_mimic(
             what = a_monnam(mtmp);
     }
 
-    if (what)
-        pline(fmtbuf, what);
+    if (what) {
+        int i = (omit_wait && !strncmp(fmtbuf, "Wait!  ", 7)) ? 7 : 0;
+
+        pline(&fmtbuf[i], what);
+    }
     if (reveal_it)
         seemimic(mtmp);
 }
@@ -6981,7 +7128,7 @@ RESTORE_WARNING_FORMAT_NONLITERAL
 void
 stumble_onto_mimic(struct monst *mtmp)
 {
-    that_is_a_mimic(mtmp, TRUE);
+    that_is_a_mimic(mtmp, MIM_REVEAL);
 
     if (!u.ustuck && !mtmp->mflee && dmgtype(mtmp->data, AD_STCK)
         /* must be adjacent; attack via polearm could be from farther away */
@@ -6994,6 +7141,21 @@ stumble_onto_mimic(struct monst *mtmp)
     if (!canspotmon(mtmp)
         && !glyph_is_invisible(levl[mtmp->mx][mtmp->my].glyph))
         map_invisible(mtmp->mx, mtmp->my);
+}
+
+boolean
+disguised_as_non_mon(struct monst *mtmp)
+{
+    return (!sensemon(mtmp)
+            && M_AP_TYPE(mtmp)
+            && M_AP_TYPE(mtmp) != M_AP_MONSTER);
+}
+
+boolean
+disguised_as_mon(struct monst *mtmp)
+{
+    return (M_AP_TYPE(mtmp)
+            && M_AP_TYPE(mtmp) == M_AP_MONSTER);
 }
 
 staticfn void

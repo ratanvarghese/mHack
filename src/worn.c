@@ -1,4 +1,4 @@
-/* NetHack 3.7	worn.c	$NHDT-Date: 1736530208 2025/01/10 09:30:08 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.116 $ */
+/* NetHack 3.7	worn.c	$NHDT-Date: 1770949988 2026/02/12 18:33:08 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.119 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2013. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -215,6 +215,70 @@ wearmask_to_obj(long wornmask)
     return (struct obj *) 0;
 }
 
+/* convert an armor wornmask to corresponding category */
+int
+wornmask_to_armcat(long mask)
+{
+    int cat = 0;
+
+    switch (mask & W_ARMOR) {
+    case W_ARM:
+        cat = ARM_SUIT;
+        break;
+    case W_ARMC:
+        cat = ARM_CLOAK;
+        break;
+    case W_ARMH:
+        cat = ARM_HELM;
+        break;
+    case W_ARMS:
+        cat = ARM_SHIELD;
+        break;
+    case W_ARMG:
+        cat = ARM_GLOVES;
+        break;
+    case W_ARMF:
+        cat = ARM_BOOTS;
+        break;
+    case W_ARMU:
+        cat = ARM_SHIRT;
+        break;
+    }
+    return cat;
+}
+
+/* convert an armor category to corresponding wornmask */
+long
+armcat_to_wornmask(int cat)
+{
+    long mask = 0L;
+
+    switch (cat) {
+    case ARM_SUIT:
+        mask = W_ARM;
+        break;
+    case ARM_CLOAK:
+        mask = W_ARMC;
+        break;
+    case ARM_HELM:
+        mask = W_ARMH;
+        break;
+    case ARM_SHIELD:
+        mask = W_ARMS;
+        break;
+    case ARM_GLOVES:
+        mask = W_ARMG;
+        break;
+    case ARM_BOOTS:
+        mask = W_ARMF;
+        break;
+    case ARM_SHIRT:
+        mask = W_ARMU;
+        break;
+    }
+    return mask;
+}
+
 /* return a bitmask of the equipment slot(s) a given item might be worn in */
 long
 wearslot(struct obj *obj)
@@ -409,11 +473,13 @@ check_wornmask_slots(void)
 } /* check_wornmask_slots() */
 
 void
-mon_set_minvis(struct monst *mon)
+mon_set_minvis(
+    struct monst *mon,
+    boolean cursed_potion)
 {
-    mon->perminvis = 1;
+    mon->perminvis = !cursed_potion ? 1 : 0;
     if (!mon->invis_blkd) {
-        mon->minvis = 1;
+        mon->minvis = mon->perminvis;
         newsym(mon->mx, mon->my); /* make it disappear */
         if (mon->wormno)
             see_wsegs(mon); /* and any tail too */
@@ -433,7 +499,7 @@ mon_adjust_speed(
     switch (adjust) {
     case 2:
         mon->permspeed = MFAST;
-        give_msg = FALSE; /* special case monster creation */
+        give_msg = FALSE; /* special-case monster creation */
         break;
     case 1:
         if (mon->permspeed == MSLOW)
@@ -946,7 +1012,7 @@ m_dowear_type(
         }
     }
     update_mon_extrinsics(mon, best, TRUE, creation);
-    /* if couldn't see it but now can, or vice versa, */
+    /* if couldn't see it but now can, or vice versa */
     if (!creation && (sawmon ^ canseemon(mon))) {
         if (mon->minvis && !See_invisible) {
             pline("Suddenly you cannot see %s.", nambuf);

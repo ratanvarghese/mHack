@@ -152,7 +152,6 @@ void do_oracles(void);
 void do_date(void);
 void do_dungeon(void);
 void do_options(void);
-void do_monstr(void);
 void do_objs(void);
 void do_permonst(void);
 void do_questtxt(void);
@@ -339,7 +338,7 @@ do_makedefs(char *options)
             rafile(*options);
             break;
 #if defined(OLD_MAKEDEFS_OPTIONS)
-	case 'o':
+        case 'o':
         case 'O':
             do_objs();
             break;
@@ -361,7 +360,7 @@ do_makedefs(char *options)
             do_questtxt();
             break;
 #else
-	case 'o': case 'O': case 'e': case 'E': case 'v': case 'V':
+        case 'o': case 'O': case 'e': case 'E': case 'v': case 'V':
         case 'p': case 'P': case 'q': case 'Q':
             Fprintf(stderr, "Old makedefs option.\n"
                 "Rebuild makedefs with '-DOLD_MAKEDEFS_OPTIONS'"
@@ -393,7 +392,7 @@ oldfunctionality(char sought)
         char ucoflet;
         const char *ofnam;
     } ofn[] = {
-	{ 'e', 'E', DGN_O_FILE },
+        { 'e', 'E', DGN_O_FILE },
         { 'o', 'O', ONAME_FILE },
         { 'p', 'P', MONST_FILE },
         { 'q', 'Q', QTXT_O_FILE },
@@ -661,15 +660,15 @@ do_ext_makedefs(int argc, char **argv)
             }
             CONTINUE;
         }
-	IS_OPTION("grep-defined"){
-	    struct grep_var *p;
+        IS_OPTION("grep-defined"){
+            struct grep_var *p;
 
-	    CONSUME;
-	    p = grepsearch(argv[0]);
-		// NB: Exit status is ready for the shell:
-		//     0=defined, 1=not defined
-	    makedefs_exit(!(p && p->is_defined));
-	}
+            CONSUME;
+            p = grepsearch(argv[0]);
+                // NB: Exit status is ready for the shell:
+                //     0=defined, 1=not defined
+            makedefs_exit(!(p && p->is_defined));
+        }
 #ifdef notyet
         IS_OPTION("help") {
         }
@@ -1869,18 +1868,6 @@ do_date(void)
     }
     Fprintf(ofp, "#define VERSION_SANITY1 0x%08lx%s\n", version.entity_count,
             ul_sfx);
-#ifndef __EMSCRIPTEN__
-    Fprintf(ofp, "#define VERSION_SANITY2 0x%08lx%s\n", version.struct_sizes1,
-            ul_sfx);
-    Fprintf(ofp, "#define VERSION_SANITY3 0x%08lx%s\n", version.struct_sizes2,
-            ul_sfx);
-#else /* __EMSCRIPTEN__ */
-    Fprintf(ofp, "#define VERSION_SANITY2 0x%08llx%s\n", version.struct_sizes1,
-            ul_sfx);
-    Fprintf(ofp, "#define VERSION_SANITY3 0x%08llx%s\n", version.struct_sizes2,
-            ul_sfx);
-#endif /* !__EMSCRIPTEN__ */
-
     Fprintf(ofp, "\n");
     Fprintf(ofp, "#define VERSION_STRING \"%s\"\n",
             mdlib_version_string(buf, "."));

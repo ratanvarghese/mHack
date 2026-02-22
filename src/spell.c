@@ -1,10 +1,11 @@
-/* NetHack 3.7	spell.c	$NHDT-Date: 1725227807 2024/09/01 21:56:47 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.173 $ */
+/* NetHack 3.7	spell.c	$NHDT-Date: 1769498874 2026/01/26 23:27:54 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.185 $ */
 /*      Copyright (c) M. Stephenson 1988                          */
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
 
 /* spellmenu arguments; 0..n-1 used as svs.spl_book[] index when swapping */
+#define SPELLMENU_DUMP (-3)
 #define SPELLMENU_CAST (-2)
 #define SPELLMENU_VIEW (-1)
 #define SPELLMENU_SORT (MAXSPELL) /* special menu entry */
@@ -108,7 +109,7 @@ staticfn void propagate_chain_lightning(struct chain_lightning_queue *,
  *      Fighters find body armour & shield a little less limiting.
  *      Headgear, Gauntlets and Footwear are not role-specific (but
  *      still have an effect, except helm of brilliance, which is designed
- *      to permit magic-use).
+ *      to permit magic use).
  */
 
 #define uarmhbon 4 /* Metal helmets interfere with the mind */
@@ -199,7 +200,7 @@ confused_book(struct obj *spellbook)
     boolean gone = FALSE;
 
     if (!rn2(3) && spellbook->otyp != SPE_BOOK_OF_THE_DEAD) {
-        spellbook->in_use = TRUE; /* in case called from learn */
+        spellbook->in_use = TRUE; /* in case called from learn() */
         pline(
          "Being confused you have difficulties in controlling your actions.");
         display_nhwindow(WIN_MESSAGE, FALSE);
@@ -233,7 +234,7 @@ deadbook_pacify_undead(struct monst *mtmp)
     }
 }
 
-/* special effects for The Book of the Dead; reading it while blind is
+/* special effects for the Book of the Dead; reading it while blind is
    allowed so that needs to be taken into account too */
 staticfn void
 deadbook(struct obj *book2)
@@ -243,7 +244,7 @@ deadbook(struct obj *book2)
 
     You("turn the pages of the Book of the Dead...");
     makeknown(SPE_BOOK_OF_THE_DEAD);
-    book2->dknown = 1; /* in case blind now and hasn't been seen yet */
+    observe_object(book2); /* in case blind now and hasn't been seen yet */
     /* KMH -- Need ->known to avoid "_a_ Book of the Dead" */
     book2->known = 1;
     if (invocation_pos(u.ux, u.uy) && !On_stairs(u.ux, u.uy)) {
@@ -722,11 +723,12 @@ rejectcasting(void)
 staticfn boolean
 getspell(int *spell_no)
 {
-    int nspells, idx;
+    int nspells, idx, retry_limit;
     char ilet, lets[BUFSZ], qbuf[QBUFSZ];
     struct _cmd_queue cq, *cmdq;
 
-    if (spellid(0) == NO_SPELL) {
+    nspells = num_spells();
+    if (!nspells) {
         You("don't know any spells right now.");
         return FALSE;
     }
@@ -737,7 +739,6 @@ getspell(int *spell_no)
         cq = *cmdq;
         free(cmdq);
         if (cq.typ == CMDQ_KEY) {
-            nspells = num_spells();
             idx = spell_let_to_idx(cq.key);
             if (idx < 0 || idx >= nspells)
                 return FALSE;
@@ -749,27 +750,33 @@ getspell(int *spell_no)
     }
 
     if (flags.menu_style == MENU_TRADITIONAL) {
-        /* we know there is at least 1 known spell */
-        nspells = num_spells();
-
+        /* if we get here, we know there is at least 1 known spell */
         if (nspells == 1)
             Strcpy(lets, "a");
         else if (nspells < 27)
             Sprintf(lets, "a-%c", 'a' + nspells - 1);
         else if (nspells == 27)
-            Sprintf(lets, "a-zA");
+            Strcpy(lets, "a-zA");
         /* this assumes that there are at most 52 spells... */
         else
             Sprintf(lets, "a-zA-%c", 'A' + nspells - 27);
 
-        for (;;) {
-            Snprintf(qbuf, sizeof(qbuf), "Cast which spell? [%s *?]",
-                     lets);
+        Snprintf(qbuf, sizeof qbuf, "Cast which spell? [%s *?]", lets);
+        for (retry_limit = 0; ; ++retry_limit) {
+            if (retry_limit == 10) {
+                /* limit is mainly to prevent the fuzzer from getting stuck
+                   since hangup should hit the 'quitchars' case; fuzzer
+                   would too, but after an arbitrary number of attempts */
+                pline("That's enough tries.");
+                return FALSE;
+            }
             ilet = yn_function(qbuf, (char *) 0, '\0', TRUE);
             if (ilet == '*' || ilet == '?')
                 break; /* use menu mode */
-            if (strchr(quitchars, ilet))
+            if (strchr(quitchars, ilet)) {
+                pline1(Never_mind);
                 return FALSE;
+            }
 
             idx = spell_let_to_idx(ilet);
             if (idx < 0 || idx >= nspells) {
@@ -894,13 +901,16 @@ skill_based_spellbook_id(void)
             break;
         case P_UNSKILLED:
         default:
-            known_up_to_level = 1;
+            /* paupers need more skill than this to ID books, but most wizards
+               know the basics */
+            known_up_to_level = u.uroleplay.pauper ? 0 : 1;
             break;
         }
 
         if (objects[booktype].oc_level <= known_up_to_level)
-            /* makeknown(booktype) but don't exercise Wisdom */
-            discover_object(booktype, TRUE, FALSE);
+            /* makeknown(booktype) but don't exercise Wisdom or mark as
+               encountered */
+            discover_object(booktype, TRUE, FALSE, FALSE);
     }
 }
 
@@ -1651,13 +1661,23 @@ spelleffects(int spell_otyp, boolean atme, boolean force)
     case SPE_CURE_BLINDNESS:
         healup(0, 0, FALSE, TRUE);
         break;
-    case SPE_CURE_SICKNESS:
-        if (Sick)
-            You("are no longer ill.");
-        if (Slimed)
-            make_slimed(0L, "The slime disappears!");
+    case SPE_CURE_SICKNESS: {
+        boolean was_sick = !!Sick, was_slimed = !!Slimed;
+
+        /* cure conditions (which updates status) before feedback */
         healup(0, 0, TRUE, FALSE);
+        /*
+         *  Sick + !Slimed -- You are no longer ill.
+         * !Sick + !Slimed -- You are not ill.
+         * !Sick +  Slimed -- The slime disappears.
+         *  Sick +  Slimed -- You are no longer ill.  The slime disappears.
+         */
+        if (was_sick || !was_slimed)
+            You("are %s ill.", was_sick ? "no longer" : "not");
+        if (was_slimed)
+            make_slimed(0L, "The slime disappears!");
         break;
+    }
     case SPE_CREATE_FAMILIAR:
         (void) make_familiar((struct obj *) 0, u.ux, u.uy, FALSE);
         break;
@@ -2155,13 +2175,27 @@ dovspell(void)
 
 DISABLE_WARNING_FORMAT_NONLITERAL
 
+/* lists spells for endgame dumplog purposes */
+void
+show_spells(void)
+{
+    int unused = SPELLMENU_DUMP;
+    if (spellid(0) == NO_SPELL) {
+        pline("You didn't know any spells.");
+        pline("%s", "");
+    } else {
+        pline("Spells:");
+        nhUse(dospellmenu("", SPELLMENU_DUMP, &unused));
+    }
+}
+
 /* shows menu of known spells, with options to sort them.
    return FALSE on cancel, TRUE otherwise.
    spell_no is set to the internal spl_book index, if any selected */
 staticfn boolean
 dospellmenu(
     const char *prompt,
-    int splaction, /* SPELLMENU_CAST, SPELLMENU_VIEW, or
+    int splaction, /* SPELLMENU_CAST, SPELLMENU_VIEW, SPELLMENU_DUMP or
                     * svs.spl_book[] index */
     int *spell_no)
 {
@@ -2181,12 +2215,16 @@ dospellmenu(
      * The correct spacing of the columns when not using
      * tab separation depends on the following:
      * (1) that the font is monospaced, and
-     * (2) that selection letters are pre-pended to the
-     * given string and are of the form "a - ".
+     * (2) that selection letters are prepended to the
+     *     given string and are of the form "a - ".
+     * For SPELLMENU_DUMP, (2) is untrue, so four spaces
+     * need to be subtracted.
      */
     if (!iflags.menu_tab_sep) {
-        Sprintf(buf, "%-20s     Level %-12s Fail Retention",
-                "    Name", "Category");
+        Sprintf(buf, "%s%-20s Level %-12s Fail Retention",
+                splaction == SPELLMENU_DUMP ? "" : "    ",
+                "Name",
+                "Category");
         fmt = "%-20s  %2d   %-12s %3d%% %9s";
         sep = ' ';
     } else {
@@ -2256,7 +2294,7 @@ staticfn int
 percent_success(int spell)
 {
     /* Intrinsic and learned ability are combined to calculate
-     * the probability of player's success at cast a given spell.
+     * the probability of player's success at casting a given spell.
      */
     int chance, splcaster, special, statused;
     int difficulty;
@@ -2307,13 +2345,13 @@ percent_success(int spell)
 
     /* Calculate learned ability */
 
-    /* Players basic likelihood of being able to cast any spell
+    /* The player's basic likelihood of being able to cast any spell
      * is based of their `magic' statistic. (Int or Wis)
      */
     chance = 11 * statused / 2;
 
     /*
-     * High level spells are harder.  Easier for higher level casters.
+     * High-level spells are harder.  Easier for higher-level casters.
      * The difficulty is based on the hero's level and their skill level
      * in that spell type.
      */

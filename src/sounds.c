@@ -337,6 +337,7 @@ dosounds(void)
                 "the chime of a cash register.", "Neiman and Marcus arguing!",
             };
             You_hear1(shop_msg[rn2(2) + hallu]);
+            noisy_shop(sroom);
         }
         return;
     }
@@ -1197,7 +1198,7 @@ domonnoise(struct monst *mtmp)
             (void) demon_talk(mtmp);
             break;
         }
-	FALLTHROUGH;
+        FALLTHROUGH;
         /* FALLTHRU */
     case MS_CUSS:
         if (!mtmp->mpeaceful)

@@ -1,4 +1,4 @@
-/* NetHack 3.7	eat.c	$NHDT-Date: 1715177703 2024/05/08 14:15:03 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.334 $ */
+/* NetHack 3.7	eat.c	$NHDT-Date: 1740534854 2025/02/25 17:54:14 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.344 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2012. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -136,7 +136,7 @@ init_uhunger(void)
     u.uhs = NOT_HUNGRY;
     if (ATEMP(A_STR) < 0) {
         ATEMP(A_STR) = 0;
-        (void) encumber_msg();
+        encumber_msg();
     }
 }
 
@@ -615,6 +615,12 @@ eat_brains(
     struct permonst *pd = mdef->data;
     boolean give_nutrit = FALSE;
     int result = M_ATTK_HIT, xtra_dmg = rnd(10);
+
+    /* previous tentacle attack might have triggered fatal passive
+       counterattack [callers ought to be updated to avoid this situation] */
+    if (magr != &gy.youmonst && DEADMONSTER(magr)) {
+        return M_ATTK_AGR_DIED;
+    }
 
     if (noncorporeal(pd)) {
         if (visflag)
@@ -1548,8 +1554,14 @@ consume_tin(const char *mesg)
     if (r != SPINACH_TIN) {
         mnum = tin->corpsenm;
         if (mnum == NON_PM) {
-            pline("It turns out to be empty.");
-            tin->dknown = tin->known = 1;
+            if (Hallucination)
+                pline("It's full of %s.",
+                      rn2(2) ? "air elemental souffle"
+                             : "dehydrated water");
+            else
+                pline("It turns out to be empty.");
+            observe_object(tin);
+            tin->known = 1;
             tin = costly_tin(COST_OPEN);
             use_up_tin(tin);
             if (always_eat)
@@ -1581,8 +1593,10 @@ consume_tin(const char *mesg)
             if (y_n("Eat it?") == 'n') {
                 if (flags.verbose)
                     You("discard the open tin.");
-                if (!Hallucination)
-                    tin->dknown = tin->known = 1;
+                if (!Hallucination) {
+                    observe_object(tin);
+                    tin->known = 1;
+                }
                 tin = costly_tin(COST_OPEN);
                 use_up_tin(tin);
                 return;
@@ -1604,7 +1618,8 @@ consume_tin(const char *mesg)
 
         eating_conducts(&mons[mnum]);
 
-        tin->dknown = tin->known = 1;
+        observe_object(tin);
+        tin->known = 1;
         /* charge for one at pre-eating cost */
         tin = svc.context.tin.tin = costly_tin(COST_OPEN);
 
@@ -1651,7 +1666,8 @@ consume_tin(const char *mesg)
                   Blind ? "" : " ", Blind ? "" : hcolor(NH_GREEN));
         } else {
             pline("It contains spinach.");
-            tin->dknown = tin->known = 1;
+            observe_object(tin);
+            tin->known = 1;
         }
 
         if (!always_eat && y_n("Eat it?") == 'n') {
@@ -2289,7 +2305,8 @@ eataccessory(struct obj *otmp)
         if (u.uhp <= 0)
             return; /* died from sink fall */
     }
-    otmp->known = otmp->dknown = 1; /* by taste */
+    observe_object(otmp);
+    otmp->known = 1; /* by taste */
     if (!rn2(otmp->oclass == RING_CLASS ? 3 : 5)) {
         switch (otmp->otyp) {
         default:

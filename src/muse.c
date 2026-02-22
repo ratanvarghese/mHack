@@ -1,4 +1,4 @@
-/* NetHack 3.7	muse.c	$NHDT-Date: 1737392015 2025/01/20 08:53:35 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.234 $ */
+/* NetHack 3.7	muse.c	$NHDT-Date: 1770949988 2026/02/12 18:33:08 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.241 $ */
 /*      Copyright (C) 1990 by Ken Arromdee                         */
 /* NetHack may be freely redistributed.  See license for details.  */
 
@@ -29,6 +29,7 @@ staticfn boolean linedup_chk_corpse(coordxy, coordxy);
 staticfn void m_use_undead_turning(struct monst *, struct obj *);
 staticfn boolean hero_behind_chokepoint(struct monst *);
 staticfn boolean mon_has_friends(struct monst *);
+staticfn boolean mon_likes_objpile_at(struct monst *mtmp, coordxy x, coordxy y) NONNULLARG1;
 staticfn int mbhitm(struct monst *, struct obj *);
 staticfn boolean fhito_loc(struct obj *obj, coordxy x, coordxy y,
                            int (*fhito)(OBJ_P, OBJ_P));
@@ -207,7 +208,7 @@ mplayhorn(
                     ? "nearby" : "in the distance");
         unknow_object(otmp); /* hero loses info when unseen obj is used */
     } else if (self) {
-        otmp->dknown = 1;
+        observe_object(otmp);
         objnamp = xname(otmp);
         if (strlen(objnamp) >= QBUFSZ)
             objnamp = simpleonames(otmp);
@@ -216,7 +217,7 @@ mplayhorn(
         pline("%s!", monverbself(mtmp, Monnam(mtmp), "play", objbuf));
         makeknown(otmp->otyp); /* (wands handle this slightly differently) */
     } else {
-        otmp->dknown = 1;
+        observe_object(otmp);
         objnamp = xname(otmp);
         if (strlen(objnamp) >= QBUFSZ)
             objnamp = simpleonames(otmp);
@@ -242,7 +243,7 @@ mreadmsg(struct monst *mtmp, struct obj *otmp)
     if (!vismon && Deaf)
         return; /* no feedback */
 
-    otmp->dknown = 1; /* seeing or hearing scroll read reveals its label */
+    observe_object(otmp); /* seeing/hearing scroll read reveals its label */
     Strcpy(onambuf, singular(otmp, vismon ? doname : ansimpleoname));
 
     if (vismon) {
@@ -291,7 +292,7 @@ staticfn void
 mquaffmsg(struct monst *mtmp, struct obj *otmp)
 {
     if (canseemon(mtmp)) {
-        otmp->dknown = 1;
+        observe_object(otmp);
         pline_mon(mtmp, "%s drinks %s!", Monnam(mtmp), singular(otmp, doname));
     } else if (!Deaf) {
         Soundeffect(se_mon_chugging_potion, 25);
@@ -1347,14 +1348,14 @@ hero_behind_chokepoint(struct monst *mtmp)
     coordxy x = mtmp->mux + dx;
     coordxy y = mtmp->muy + dy;
 
-    int dir = xytod(dx, dy);
+    int dir = xytodir(dx, dy);
     int dir_l = DIR_CLAMP(DIR_LEFT2(dir));
     int dir_r = DIR_CLAMP(DIR_RIGHT2(dir));
 
     coord c1, c2;
 
-    dtoxy(&c1, dir_l);
-    dtoxy(&c2, dir_r);
+    dirtocoord(&c1, dir_l);
+    dirtocoord(&c2, dir_r);
     c1.x += x, c2.x += x;
     c1.y += y, c2.y += y;
 
@@ -1384,6 +1385,30 @@ mon_has_friends(struct monst *mtmp)
                 && !mon2->mtame && !mon2->mpeaceful)
                 return TRUE;
         }
+
+    return FALSE;
+}
+
+/* does monster like object pile at x,y? */
+staticfn boolean
+mon_likes_objpile_at(struct monst *mtmp, coordxy x, coordxy y)
+{
+    int i;
+    struct obj *otmp;
+
+    if (!isok(x,y) || !OBJ_AT(x,y))
+        return FALSE;
+
+    /* monster likes any of the top 3 items in the pile? */
+    for (i = 0, otmp = svl.level.objects[x][y]; otmp && i < 3; i++) {
+        if (mon_would_take_item(mtmp, otmp))
+            return TRUE;
+        otmp = otmp->nexthere;
+    }
+
+    /* pile is larger than 3 stacks? */
+    if (i >= 3)
+        return TRUE;
 
     return FALSE;
 }
@@ -1488,6 +1513,7 @@ find_offensive(struct monst *mtmp)
             /* do try to move hero to a more vulnerable spot */
             && (onscary(u.ux, u.uy, mtmp)
                 || (hero_behind_chokepoint(mtmp) && mon_has_friends(mtmp))
+                || mon_likes_objpile_at(mtmp, u.ux, u.uy)
                 || stairway_at(u.ux, u.uy))) {
             gm.m.offensive = obj;
             gm.m.has_offense = MUSE_WAN_TELEPORTATION;
@@ -1982,7 +2008,7 @@ use_offensive(struct monst *mtmp)
          * are not objects.  Also set dknown in mthrowu.c.
          */
         if (cansee(mtmp->mx, mtmp->my)) {
-            otmp->dknown = 1;
+            observe_object(otmp);
             pline_mon(mtmp, "%s hurls %s!",
                       Monnam(mtmp), singular(otmp, doname));
         }
@@ -2415,7 +2441,7 @@ use_misc(struct monst *mtmp)
             mquaffmsg(mtmp, otmp);
         /* format monster's name before altering its visibility */
         Strcpy(nambuf, mon_nam(mtmp));
-        mon_set_minvis(mtmp);
+        mon_set_minvis(mtmp, !otmp->cursed ? FALSE : TRUE);
         if (vismon && mtmp->minvis) { /* was seen, now invisible */
             if (canspotmon(mtmp)) {
                 pline("%s body takes on a %s transparency.",
@@ -2428,6 +2454,17 @@ use_misc(struct monst *mtmp)
             }
             if (oseen)
                 makeknown(otmp->otyp);
+        } else if (vismon && !mtmp->minvis) {
+            /* cursed potion; mon tried to make itself invisible but failed */
+            pline("%s briefly seems to be transparent.", Monnam(mtmp));
+            /* we could call map_invisible() before the pline(), then
+               newsym() after; unseen monster glyph would be visible during
+               the pline, but hero would forget any remembered object under
+               the monster */
+        } else if (!vismon && canseemon(mtmp)) {
+            /* cursed potion; this won't happen because a monster will only
+               drink a potion of invisibility when not already invisible */
+            pline("%s suddenly appears!", Monnam(mtmp));
         }
         if (otmp->otyp == POT_INVISIBILITY) {
             if (otmp->cursed)
@@ -2509,7 +2546,7 @@ use_misc(struct monst *mtmp)
             int where_to = rn2(4);
             struct obj *obj = uwep;
             const char *hand;
-            char the_weapon[BUFSZ];
+            char the_weapon[BUFSZ], hand_buf[BUFSZ];
 
             if (!obj || !canletgo(obj, "")
                 || (u.twoweap && canletgo(uswapwep, "") && rn2(2)))
@@ -2521,10 +2558,12 @@ use_misc(struct monst *mtmp)
             hand = body_part(HAND);
             if (bimanual(obj))
                 hand = makeplural(hand);
+            (void) strncpy(hand_buf, hand, sizeof hand_buf - 1);
+            hand_buf[sizeof hand_buf - 1] = '\0';
 
             if (vismon)
                 pline_mon(mtmp, "%s flicks a bullwhip towards your %s!",
-                          Monnam(mtmp), hand);
+                          Monnam(mtmp), hand_buf);
             if (obj->otyp == HEAVY_BALL) {
                 pline("%s fails to wrap around %s.", The_whip, the_weapon);
                 return 1;
@@ -2533,7 +2572,7 @@ use_misc(struct monst *mtmp)
                          the_weapon);
             if (welded(obj)) {
                 pline("%s welded to your %s%c",
-                      !is_plural(obj) ? "It is" : "They are", hand,
+                      !is_plural(obj) ? "It is" : "They are", hand_buf,
                       !obj->bknown ? '!' : '.');
                 /* obj->bknown = 1; */ /* welded() takes care of this */
                 where_to = 0;
@@ -2552,7 +2591,7 @@ use_misc(struct monst *mtmp)
             switch (where_to) {
             case 1: /* onto floor beneath mon */
                 pline_mon(mtmp, "%s yanks %s from your %s!", Monnam(mtmp),
-                          the_weapon, hand);
+                          the_weapon, hand_buf);
                 place_object(obj, mtmp->mx, mtmp->my);
                 break;
             case 2: /* onto floor beneath you */
@@ -3156,7 +3195,7 @@ muse_unslime(
          * Monsters don't start with oil and don't actively pick up oil
          * so this may never occur in a real game.  (Possible though;
          * nymph can steal potions of oil; shapechanger could take on
-         * nymph form or vacuum up stuff as a g.cube and then eventually
+         * nymph form or vacuum up stuff as a gel.cube and then eventually
          * engage with a green slime.)
          */
 
@@ -3170,7 +3209,7 @@ muse_unslime(
         vis |= canseemon(mon); /* burning potion may improve visibility */
         if (vis) {
             if (!Unaware)
-                obj->dknown = 1; /* hero is watching mon drink obj */
+                observe_object(obj); /* hero is watching mon drink obj */
             pline("%s quaffs a burning %s",
                   saw_lit ? upstart(strcpy(Pronoun, mhe(mon))) : Monnam(mon),
                   simpleonames(obj));

@@ -1804,7 +1804,6 @@ pickup_object(
     long count, /* if non-zero, pick up a subset of this amount */
     boolean telekinesis) /* not picking it up directly by hand */
 {
-    unsigned save_how_lost;
     int res;
 
     if(Gold_touch) {
@@ -1823,7 +1822,7 @@ pickup_object(
     /* In case of auto-pickup, where we haven't had a chance
        to look at it yet; affects docall(SCR_SCARE_MONSTER). */
     if (!Blind)
-        obj->dknown = 1;
+        observe_object(obj);
 
     if (obj == uchain) { /* do not pick up attached chain */
         return 0;
@@ -1869,16 +1868,12 @@ pickup_object(
         }
     }
 
-    save_how_lost = obj->how_lost;
     /* obj has either already passed autopick_testobj or we are explicitly
-       picking it off the floor, so override obj->how_lost; otherwise we
-       couldn't pick up a thrown, stolen, or dropped item that was split
-       off from a carried stack even while still carrying the rest of the
-       stack unless we have at least one free slot available */
-    obj->how_lost &= ~LOSTOVERRIDEMASK;  /* affects merge_choice() */
+       picking it off the floor, so addinv() will override obj->how_lost;
+       otherwise we couldn't pick up a thrown, stolen, or dropped item that
+       was split off from a carried stack even while still carrying the
+       rest of the stack unless we have at least one free slot available */
     res = lift_object(obj, (struct obj *) 0, &count, telekinesis);
-    obj->how_lost = save_how_lost; /* even when res > 0,
-                                    * in case we call splitobj() below */
     if (res <= 0)
         return res;
 
@@ -1888,7 +1883,6 @@ pickup_object(
     if (obj->quan != count && obj->otyp != LOADSTONE)
         obj = splitobj(obj, count);
 
-    obj->how_lost &= ~LOSTOVERRIDEMASK;
     obj = pick_obj(obj);
 
     if (uwep && uwep == obj)
@@ -1979,10 +1973,9 @@ pickup_prinv(
 }
 
 /*
- * prints a message if encumbrance changed since the last check and
- * returns the new encumbrance value (from near_capacity()).
+ * prints a message if encumbrance changed since the last check
  */
-int
+void
 encumber_msg(void)
 {
     int newcap = near_capacity();
@@ -2025,7 +2018,6 @@ encumber_msg(void)
     }
 
     go.oldcap = newcap;
-    return newcap;
 }
 
 /* Is there a container at x,y. Optional: return count of containers at x,y */
@@ -2058,7 +2050,7 @@ able_to_loot(
         if (u.usteed && P_SKILL(P_RIDING) < P_BASIC)
             rider_cant_reach(); /* not skilled enough to reach */
         else
-            cant_reach_floor(x, y, FALSE, TRUE);
+            cant_reach_floor(x, y, FALSE, TRUE, FALSE);
         return FALSE;
     } else if ((is_pool(x, y) && (looting || !Underwater)) || is_lava(x, y)) {
         /* at present, can't loot in water even when Underwater;
@@ -3857,7 +3849,7 @@ tipcontainer(struct obj *box) /* or bag */
         if (targetbox)
             targetbox->owt = weight(targetbox);
         if (srcheld || dstheld)
-            (void) encumber_msg();
+            encumber_msg();
     }
 
     if (srcheld || dstheld)

@@ -1,10 +1,11 @@
-/* NetHack 3.7	o_init.c	$NHDT-Date: 1720391455 2024/07/07 22:30:55 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.87 $ */
+/* NetHack 3.7	o_init.c	$NHDT-Date: 1771216675 2026/02/15 20:37:55 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.101 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2011. */
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
 
+#ifndef SFCTOOL
 staticfn void setgemprobs(d_level *);
 staticfn void randomize_gem_colors(void);
 staticfn void shuffle(int, int, boolean);
@@ -13,6 +14,7 @@ staticfn int QSORTCALLBACK discovered_cmp(const genericptr, const genericptr);
 staticfn char *sortloot_descr(int, char *);
 staticfn char *disco_typename(int);
 staticfn void disco_append_typename(char *, int);
+staticfn void disco_fmt_uniq(int, char *outbuf) NONNULLARG2;
 staticfn void disco_output_sorted(winid, char **, int, boolean);
 staticfn char *oclass_to_name(char, char *);
 
@@ -193,7 +195,7 @@ init_objects(void)
        bases[class] through bases[class+1]-1 for all classes
        (except for ILLOBJ_CLASS which is separated from WEAPON_CLASS
        by generic objects); second extra entry is to prevent an
-       explained crash in doclassdisco(), where the code ended up
+       unexplained crash in doclassdisco(), where the code ended up
        attempting to process non-existent class MAXOCLASSES; the
        [MAXOCLASSES+1] element gives that non-class 0 objects
        when traversing objects[] from bases[X] through bases[X+1]-1 */
@@ -347,7 +349,7 @@ shuffle_all(void)
 /* Return TRUE if the provided string matches the unidentified description of
  * the provided object. */
 boolean
-objdescr_is(struct obj* obj, const char * descr)
+objdescr_is(struct obj *obj, const char *descr)
 {
     const char *objdescr;
 
@@ -375,12 +377,15 @@ savenames(NHFILE *nhfp)
     int i;
     unsigned int len;
 
-    if (perform_bwrite(nhfp)) {
-        if (nhfp->structlevel) {
-            bwrite(nhfp->fd, (genericptr_t) svb.bases, sizeof svb.bases);
-            bwrite(nhfp->fd, (genericptr_t) svd.disco, sizeof svd.disco);
-            bwrite(nhfp->fd, (genericptr_t) objects,
-                   sizeof(struct objclass) * NUM_OBJECTS);
+    if (update_file(nhfp)) {
+        for (i = 0; i < (MAXOCLASSES + 2); ++i) {
+            Sfo_int(nhfp, &svb.bases[i], "names-bases");
+        }
+        for (i = 0; i < NUM_OBJECTS; ++i) {
+            Sfo_short(nhfp, &svd.disco[i], "names-disco");
+        }
+        for (i = 0; i < NUM_OBJECTS; ++i) {
+            Sfo_objclass(nhfp, &objects[i], "names-objclass");
         }
     }
     /* as long as we use only one version of Hack we
@@ -388,12 +393,11 @@ savenames(NHFILE *nhfp)
        oc_uname for all objects */
     for (i = 0; i < NUM_OBJECTS; i++)
         if (objects[i].oc_uname) {
-            if (perform_bwrite(nhfp)) {
+            if (update_file(nhfp)) {
                 len = Strlen(objects[i].oc_uname) + 1;
-                if (nhfp->structlevel) {
-                    bwrite(nhfp->fd, (genericptr_t) &len, sizeof len);
-                    bwrite(nhfp->fd, (genericptr_t) objects[i].oc_uname, len);
-                }
+                Sfo_unsigned(nhfp, &len, "names-len");
+                Sfo_char(nhfp, objects[i].oc_uname, "names-oc_uname",
+                             (int) len);
             }
             if (release_data(nhfp)) {
                 free((genericptr_t) objects[i].oc_uname);
@@ -401,6 +405,7 @@ savenames(NHFILE *nhfp)
             }
         }
 }
+#endif /* !SFCTOOL */
 
 void
 restnames(NHFILE *nhfp)
@@ -408,63 +413,82 @@ restnames(NHFILE *nhfp)
     int i;
     unsigned int len = 0;
 
-    if (nhfp->structlevel) {
-        mread(nhfp->fd, (genericptr_t) svb.bases, sizeof svb.bases);
-        mread(nhfp->fd, (genericptr_t) svd.disco, sizeof svd.disco);
-        mread(nhfp->fd, (genericptr_t) objects,
-              NUM_OBJECTS * sizeof (struct objclass));
+    for (i = 0; i < (MAXOCLASSES + 2); ++i) {
+        Sfi_int(nhfp, &svb.bases[i], "names-bases");
+    }
+    for (i = 0; i < NUM_OBJECTS; ++i) {
+        Sfi_short(nhfp, &svd.disco[i], "names-disco");
+    }
+    for (i = 0; i < NUM_OBJECTS; ++i) {
+        Sfi_objclass(nhfp, &objects[i], "names-objclass");
     }
     for (i = 0; i < NUM_OBJECTS; i++) {
         if (objects[i].oc_uname) {
-            if (nhfp->structlevel) {
-                mread(nhfp->fd, (genericptr_t) &len, sizeof len);
-            }
+            Sfi_unsigned(nhfp, &len, "names-len");
             objects[i].oc_uname = (char *) alloc(len);
-            if (nhfp->structlevel) {
-                mread(nhfp->fd, (genericptr_t) objects[i].oc_uname, len);
-            }
+            Sfi_char(nhfp, objects[i].oc_uname, "names-oc_uname", (int) len);
         }
     }
+#ifndef SFCTOOL
 #ifdef TILES_IN_GLYPHMAP
     shuffle_tiles();
 #endif
+#endif
+}
+
+#ifndef SFCTOOL
+/* make the object dknown and mark it as encountered */
+void
+observe_object(struct obj *obj)
+{
+    int oindx = obj->otyp;
+
+    /* skip for generic objects and for STRANGE_OBJECT */
+    if (oindx >= FIRST_OBJECT && !Hallucination) {
+        obj->dknown = 1;
+        discover_object(oindx, FALSE, TRUE, FALSE);
+    }
 }
 
 void
 discover_object(
-    int oindx,
-    boolean mark_as_known,
-    boolean credit_hero)
+    int oindx,                   /* type of object */
+    boolean mark_as_known,       /* discover the type */
+    boolean mark_as_encountered, /* mark the type as having been seen/felt */
+    boolean credit_hero)         /* exercise wisdom */
 {
-    if (!objects[oindx].oc_name_known
+    if (oindx < FIRST_OBJECT) /* don't discover generic objects */
+        return;
+
+    if ((!objects[oindx].oc_name_known && mark_as_known)
+        || (!objects[oindx].oc_encountered && mark_as_encountered)
         || (Role_if(PM_SAMURAI)
             && Japanese_item_name(oindx, (const char *) 0))) {
         int dindx, acls = objects[oindx].oc_class;
 
         /* Loop thru disco[] 'til we find the target (which may have been
            uname'd) or the next open slot; one or the other will be found
-           before we reach the next class...
-         */
+           before we reach the next class... */
         for (dindx = svb.bases[acls]; svd.disco[dindx] != 0; dindx++)
             if (svd.disco[dindx] == oindx)
                 break;
         svd.disco[dindx] = oindx;
 
-        /* if already known, we forced an item with a Japanese name into
-           disco[] but don't want to exercise wisdom or update perminv */
-        if (objects[oindx].oc_name_known)
-            return;
+        if (mark_as_encountered)
+            objects[oindx].oc_encountered = 1;
 
-        if (mark_as_known) {
+        if (!objects[oindx].oc_name_known && mark_as_known) {
             objects[oindx].oc_name_known = 1;
             if (credit_hero)
                 exercise(A_WIS, TRUE);
-        }
-        /* !in_moveloop => initial inventory, gameover => final disclosure */
-        if (program_state.in_moveloop && !program_state.gameover) {
-            if (objects[oindx].oc_class == GEM_CLASS)
-                gem_learned(oindx); /* could affect price of unpaid gems */
-            update_inventory();
+
+            /* !in_moveloop => initial inventory,
+               gameover => final disclosure */
+            if (program_state.in_moveloop && !program_state.gameover) {
+                if (objects[oindx].oc_class == GEM_CLASS)
+                    gem_learned(oindx); /* could affect price of unpaid gems */
+                update_inventory();
+            }
         }
     }
 }
@@ -473,7 +497,7 @@ discover_object(
 void
 undiscover_object(int oindx)
 {
-    if (!objects[oindx].oc_name_known) {
+    if (!objects[oindx].oc_name_known && !objects[oindx].oc_encountered) {
         int dindx, acls = objects[oindx].oc_class;
         boolean found = FALSE;
 
@@ -495,7 +519,6 @@ undiscover_object(int oindx)
 
         if (objects[oindx].oc_class == GEM_CLASS)
             gem_learned(oindx); /* ok, it's actually been unlearned */
-        update_inventory();
     }
 }
 
@@ -508,16 +531,21 @@ interesting_to_discover(int i)
     if (Role_if(PM_SAMURAI) && Japanese_item_name(i, (const char *) 0))
         return TRUE;
 
-    /* Pre-discovered objects are now printed with a '*' */
+    /* Objects that were discovered without encountering them are now printed
+       with a '*' */
     return (boolean) (objects[i].oc_uname != (char *) 0
-                      || (objects[i].oc_name_known
+                      || ((objects[i].oc_name_known
+                           || objects[i].oc_encountered)
                           && OBJ_DESCR(objects[i]) != (char *) 0));
 }
 
 /* items that should stand out once they're known */
 static const short uniq_objs[] = {
-    AMULET_OF_YENDOR, SPE_BOOK_OF_THE_DEAD, CANDELABRUM_OF_INVOCATION,
+    AMULET_OF_YENDOR,
+    /* same order as major oracularity; alphabetical when fully IDed */
     BELL_OF_OPENING,
+    SPE_BOOK_OF_THE_DEAD,
+    CANDELABRUM_OF_INVOCATION,
 };
 
 /* discoveries qsort comparison function */
@@ -544,7 +572,7 @@ sortloot_descr(int otyp, char *outbuf)
     o = cg.zeroobj;
     o.otyp = otyp;
     o.oclass = objects[otyp].oc_class;
-    o.dknown = 1;
+    o.dknown = 1; /* not observe_object, this isn't a real object */
     o.known = (objects[otyp].oc_name_known || !objects[otyp].oc_uses_known)
               ? 1 : 0;
     o.corpsenm = NON_PM; /* suppress statue and figurine details */
@@ -561,6 +589,7 @@ sortloot_descr(int otyp, char *outbuf)
             sl_cookie.orderclass, sl_cookie.subclass, sl_cookie.disco);
     return outbuf;
 }
+#endif /* !SFCTOOL */
 
 #define DISCO_BYCLASS      0 /* by discovery order within each class */
 #define DISCO_SORTLOOT     1 /* by discovery order within each subclass */
@@ -575,6 +604,8 @@ static const char *const disco_orders_descr[] = {
     "alphabetical across all classes",
     (char *) 0
 };
+
+#ifndef SFCTOOL
 
 int
 choose_disco_sort(
@@ -681,11 +712,28 @@ disco_append_typename(char *buf, int dis)
     }
 }
 
+/* minor fixup for Book of the Dead needed in more than one place */
+staticfn void
+disco_fmt_uniq(int uidx, char *outbuf)
+{
+    Sprintf(outbuf, "  %s", objects[uidx].oc_name_known
+                              ? OBJ_NAME(objects[uidx])
+                              : OBJ_DESCR(objects[uidx]));
+    /* in the spellbooks section of main discoveries list, encountered
+       but not fully discovered Book of the Dead is shown as
+       "spellbook (papyrus)" like other encountered but not discovered books;
+       in the unique/relics section we want "papyrus spellbook" instead */
+    if (!objects[uidx].oc_name_known
+        && objects[uidx].oc_class == SPBOOK_CLASS)
+        Strcat(outbuf, " spellbook");
+}
+
 /* sort and output sorted_lines to window and free the lines */
 staticfn void
-disco_output_sorted(winid tmpwin,
-                    char **sorted_lines, int sorted_ct,
-                    boolean lootsort)
+disco_output_sorted(
+    winid tmpwin,
+    char **sorted_lines, int sorted_ct,
+    boolean lootsort)
 {
     char *p;
     int j;
@@ -693,6 +741,7 @@ disco_output_sorted(winid tmpwin,
     qsort(sorted_lines, sorted_ct, sizeof (char *), discovered_cmp);
     for (j = 0; j < sorted_ct; ++j) {
         p = sorted_lines[j];
+        assert(p != NULL); /* pacify static analyzer */
         if (lootsort) {
             p[6] = p[0]; /* '*' or ' ' */
             p += 6;
@@ -710,7 +759,7 @@ dodiscovered(void) /* free after Robert Viduya */
     char *s, *p, oclass, prev_class,
          classes[MAXOCLASSES], buf[BUFSZ],
          *sorted_lines[NUM_OBJECTS]; /* overkill */
-    int i, dis, ct, uniq_ct, arti_ct, sorted_ct, recipe_ct;
+    int i, dis, ct, uniq_ct, arti_ct, sorted_ct, uidx, recipe_ct;
     long sortindx;  // should be ptrdiff_t, but we don't require that exists
     boolean alphabetized, alphabyclass, lootsort;
 
@@ -731,17 +780,27 @@ dodiscovered(void) /* free after Robert Viduya */
     putstr(tmpwin, 0, buf);
     putstr(tmpwin, 0, "");
 
-    /* gather "unique objects" into a pseudo-class; note that they'll
-       also be displayed individually within their regular class */
+    /*
+     * FIXME?
+     *  relics and artifacts don't obey player's sort order even though
+     *  the header line states that they're shown in such-and-such order.
+     */
+
+    /* gather "unique objects", also called "relics", into a pseudo-class;
+       they'll also be displayed individually within their regular class */
     uniq_ct = 0;
-    for (i = dis = 0; i < SIZE(uniq_objs); i++)
-        if (objects[uniq_objs[i]].oc_name_known) {
+    for (i = dis = 0; i < SIZE(uniq_objs); i++) {
+        uidx = uniq_objs[i];
+        if (objects[uidx].oc_name_known
+            || (objects[uidx].oc_encountered && uidx != AMULET_OF_YENDOR)) {
             if (!dis++)
-                putstr(tmpwin, iflags.menu_headings.attr, "Unique items");
+                putstr(tmpwin, iflags.menu_headings.attr,
+                       "Unique items or Relics");
             ++uniq_ct;
-            Sprintf(buf, "  %s", OBJ_NAME(objects[uniq_objs[i]]));
+            disco_fmt_uniq(uidx, buf);
             putstr(tmpwin, 0, buf);
         }
+    }
     /* display any known artifacts as another pseudo-class */
     arti_ct = disp_artifact_discoveries(tmpwin);
 
@@ -773,7 +832,7 @@ dodiscovered(void) /* free after Robert Viduya */
                         prev_class = oclass;
                     }
                 }
-                Strcpy(buf,  objects[dis].oc_pre_discovered ? "* " : "  ");
+                Strcpy(buf, objects[dis].oc_encountered ? "  " : "* ");
                 if (lootsort)
                     (void) sortloot_descr(dis, &buf[2]);
                 disco_append_typename(buf, dis);
@@ -821,23 +880,25 @@ oclass_to_name(char oclass, char *buf)
     return buf;
 }
 
-/* the #knownclass command - show discovered object types for one class */
+/* the #knownclass command - show discovered object types for one class;
+   in addition to actual object classes, supports pseudo-class 'a' for
+   discovered artifacts and 'u' (or 'r', for "relics") for unique items */
 int
 doclassdisco(void)
 {
     static NEARDATA const char
         prompt[] = "View discoveries for which sort of objects?",
         havent_discovered_any[] = "haven't discovered any %s yet.",
-        unique_items[] = "unique items",
+        unique_items[] = "unique items or relics",
         artifact_items[] = "artifacts",
         alchemic_recipes[] = "alchemic recipes";
     winid tmpwin = WIN_ERR;
     menu_item *pick_list = 0;
     anything any;
     char *p, *s, c, oclass, menulet, allclasses[MAXOCLASSES],
-         discosyms[2 + MAXOCLASSES + 1], buf[BUFSZ],
+         discosyms[3 + MAXOCLASSES + 1], buf[BUFSZ],
          *sorted_lines[NUM_OBJECTS]; /* overkill */
-    int i, ct, dis, xtras, sorted_ct;
+    int i, ct, dis, xtras, sorted_ct, uidx;
     boolean traditional, alphabetized, lootsort;
     int clr = NO_COLOR;
 
@@ -861,25 +922,40 @@ doclassdisco(void)
     any = cg.zeroany;
     menulet = 'a';
 
-    /* check whether we've discovered any unique objects */
-    for (i = 0; i < SIZE(uniq_objs); i++)
-        if (objects[uniq_objs[i]].oc_name_known) {
+    /*
+     * FIXME?
+     *  relics and artifacts don't obey player's sort order even though
+     *  the header line states that they're shown in such-and-such order.
+     */
+
+    /* check whether we've discovered any unique objects (primarily the
+       invocation items; the Guidebook calls unique items "relics" but the
+       Amulet of Yendor is unique too so we haven't made a blanket change
+       from 'u' to 'r') */
+    for (i = 0; i < SIZE(uniq_objs); i++) {
+        uidx = uniq_objs[i];
+        if (objects[uidx].oc_name_known
+            || (objects[uidx].oc_encountered && uidx != AMULET_OF_YENDOR)) {
             Strcat(discosyms, "u");
             if (!traditional) {
                 any.a_int = 'u';
-                add_menu(tmpwin, &nul_glyphinfo, &any, menulet++,
-                         0, ATR_NONE, clr, unique_items, MENU_ITEMFLAGS_NONE);
+                /* FIXME: having 'r' as an accelerator to provide an unseen
+                   synonym works but doesn't make much sense since the main
+                   selector is 'a' (implicit lootabc) rather than 'u' */
+                add_menu(tmpwin, &nul_glyphinfo, &any, menulet++, 'r',
+                         ATR_NONE, clr, unique_items, MENU_ITEMFLAGS_NONE);
             }
             break;
         }
+    }
 
     /* check whether we've discovered any artifacts */
     if (disp_artifact_discoveries(WIN_ERR) > 0) {
         Strcat(discosyms, "a");
         if (!traditional) {
             any.a_int = 'a';
-            add_menu(tmpwin, &nul_glyphinfo, &any, menulet++,
-                     0, ATR_NONE, clr, artifact_items, MENU_ITEMFLAGS_NONE);
+            add_menu(tmpwin, &nul_glyphinfo, &any, menulet++, 0,
+                     ATR_NONE, clr, artifact_items, MENU_ITEMFLAGS_NONE);
         }
     }
 
@@ -929,14 +1005,14 @@ doclassdisco(void)
     /* have player choose a class */
     c = '\0'; /* class not chosen yet */
     if (traditional) {
-        char allclasses_plustwo[sizeof allclasses + 2];
+        char allclasses_plustwo[sizeof allclasses + 3];
 
         /* we'll prompt even if there's only one viable class; we add all
            nonviable classes as unseen acceptable choices so player can ask
            for discoveries of any class whether it has discoveries or not */
-        Sprintf(allclasses_plustwo, "%s%c%c", allclasses, 'u', 'a');
+        Sprintf(allclasses_plustwo, "%s%c%c%c", allclasses, 'a', 'u', 'r');
         for (s = allclasses_plustwo, xtras = 0; *s; ++s) {
-            c = (*s == 'u' || *s == 'a') ? *s : def_oc_syms[(int) *s].sym;
+            c = strchr("aur", *s) ? *s : def_oc_syms[(int) *s].sym;
             if (!strchr(discosyms, c)) {
                 if (!xtras++)
                     (void) strkitten(discosyms, '\033');
@@ -975,14 +1051,19 @@ doclassdisco(void)
     ct = 0;
     switch (c) {
     case 'u':
+    case 'r':
         putstr(tmpwin, iflags.menu_headings.attr,
                upstart(strcpy(buf, unique_items)));
-        for (i = 0; i < SIZE(uniq_objs); i++)
-            if (objects[uniq_objs[i]].oc_name_known) {
+        for (i = 0; i < SIZE(uniq_objs); i++) {
+            uidx = uniq_objs[i];
+            if (objects[uidx].oc_name_known
+                || (objects[uidx].oc_encountered
+                    && uidx != AMULET_OF_YENDOR)) {
                 ++ct;
-                Sprintf(buf, "  %s", OBJ_NAME(objects[uniq_objs[i]]));
+                disco_fmt_uniq(uidx, buf);
                 putstr(tmpwin, 0, buf);
             }
+        }
         if (!ct)
             You(havent_discovered_any, unique_items);
         break;
@@ -1022,7 +1103,7 @@ doclassdisco(void)
              ++i) {
             if ((dis = svd.disco[i]) != 0 && interesting_to_discover(dis)) {
                 ++ct;
-                Strcpy(buf,  objects[dis].oc_pre_discovered ? "* " : "  ");
+                Strcpy(buf, objects[dis].oc_encountered ? "  " : "* ");
                 if (lootsort)
                     (void) sortloot_descr(dis, &buf[2]);
                 disco_append_typename(buf, dis);
@@ -1124,13 +1205,14 @@ rename_disco(void)
             odummy.oclass = objects[dis].oc_class;
             odummy.quan = 1L;
             odummy.known = !objects[dis].oc_uses_known;
-            odummy.dknown = 1;
+            odummy.dknown = 1; /* not observe_object: it isn't real */
             docall(&odummy);
         }
     }
     destroy_nhwindow(tmpwin);
     return;
 }
+#endif /* !SFCTOOL */
 
 void
 get_sortdisco(char *opts, boolean cnf)

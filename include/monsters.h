@@ -47,8 +47,10 @@
  *      Rule #1:        monsters of a given class are contiguous in the
  *                      mons[] array.
  *
- *      Rule #2:        monsters of a given class are presented in ascending
- *                      order of strength.
+ *      Rule #2:        monsters of a given class are generally kept in
+ *                      the same order as in previous versions of NetHack
+ *                      (they used to be presented in ascending order of
+ *                      strength, but this rule no longer applies).
  *
  *      Rule #3:        monster frequency is included in the geno mask;
  *                      the frequency can be from 0 to 7.  0's will also
@@ -97,7 +99,7 @@
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
         SIZ(1, 5, MS_BUZZ, MZ_TINY), MR_POISON, MR_POISON,
         M1_ANIMAL | M1_FLY | M1_NOHANDS | M1_POIS, M2_HOSTILE | M2_FEMALE, 0,
-        5, CLR_YELLOW, KILLER_BEE),
+        6, CLR_YELLOW, KILLER_BEE),
     MON(NAM("soldier ant"), S_ANT,
         LVL(3, 18, 3, 0, 0), (G_GENO | G_SGROUP | 2),
         A(ATTK(AT_BITE, AD_PHYS, 2, 4), ATTK(AT_STNG, AD_DRST, 3, 4),
@@ -105,7 +107,7 @@
         SIZ(20, 5, MS_SILENT, MZ_TINY), MR_POISON, MR_POISON,
         M1_ANIMAL | M1_NOHANDS | M1_OVIPAROUS | M1_POIS | M1_CARNIVORE,
         M2_HOSTILE, 0,
-        6, CLR_BLUE, SOLDIER_ANT),
+        7, CLR_BLUE, SOLDIER_ANT),
     MON(NAM("fire ant"), S_ANT,
         LVL(3, 18, 3, 10, 0), (G_GENO | G_SGROUP | 1),
         A(ATTK(AT_BITE, AD_PHYS, 2, 4), ATTK(AT_BITE, AD_FIRE, 2, 4),
@@ -666,7 +668,7 @@
         LVL(4, 0, 8, 10, 0), (G_GENO | 2),
         A(ATTK(AT_NONE, AD_COLD, 0, 6),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(50, 20, MS_SILENT, MZ_MEDIUM), MR_COLD | MR_POISON,
+        SIZ(WT_JELLY, 20, MS_SILENT, MZ_MEDIUM), MR_COLD | MR_POISON,
         MR_COLD | MR_POISON,
         M1_BREATHLESS | M1_AMORPHOUS | M1_NOEYES | M1_NOLIMBS | M1_NOHEAD
             | M1_MINDLESS | M1_NOTAKE,
@@ -676,7 +678,7 @@
         LVL(5, 0, 8, 10, 0), (G_GENO | 1),
         A(ATTK(AT_NONE, AD_ACID, 0, 6),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(50, 20, MS_SILENT, MZ_MEDIUM),
+        SIZ(WT_JELLY, 20, MS_SILENT, MZ_MEDIUM),
         MR_ACID | MR_STONE, MR_ACID | MR_STONE,
         M1_BREATHLESS | M1_AMORPHOUS | M1_NOEYES | M1_NOLIMBS | M1_NOHEAD
             | M1_MINDLESS | M1_ACID | M1_NOTAKE,
@@ -686,7 +688,7 @@
         LVL(6, 3, 8, 20, 0), (G_GENO | 2),
         A(ATTK(AT_ENGL, AD_ACID, 3, 6), ATTK(AT_NONE, AD_ACID, 3, 6),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(50, 20, MS_SILENT, MZ_MEDIUM),
+        SIZ(WT_JELLY, 20, MS_SILENT, MZ_MEDIUM),
         MR_ACID | MR_STONE, MR_ACID | MR_STONE,
         M1_BREATHLESS | M1_AMORPHOUS | M1_NOEYES | M1_NOLIMBS | M1_NOHEAD
             | M1_MINDLESS | M1_ACID | M1_NOTAKE,
@@ -792,14 +794,14 @@
         LVL(3, 12, 9, 20, 0), (G_GENO | 2),
         A(ATTK(AT_CLAW, AD_SITM, 0, 0), ATTK(AT_CLAW, AD_SEDU, 0, 0),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(600, 300, MS_SEDUCE, MZ_HUMAN), 0, 0, M1_HUMANOID | M1_TPORT,
+        SIZ(WT_NYMPH, 300, MS_SEDUCE, MZ_HUMAN), 0, 0, M1_HUMANOID | M1_TPORT,
         M2_HOSTILE | M2_FEMALE | M2_COLLECT, M3_INFRAVISIBLE,
         5, CLR_GREEN, WOOD_NYMPH),
     MON(NAM("water nymph"), S_NYMPH,
         LVL(3, 12, 9, 20, 0), (G_GENO | 2),
         A(ATTK(AT_CLAW, AD_SITM, 0, 0), ATTK(AT_CLAW, AD_SEDU, 0, 0),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(600, 300, MS_SEDUCE, MZ_HUMAN), 0, 0,
+        SIZ(WT_NYMPH, 300, MS_SEDUCE, MZ_HUMAN), 0, 0,
         M1_HUMANOID | M1_TPORT | M1_SWIM, M2_HOSTILE | M2_FEMALE | M2_COLLECT,
         M3_INFRAVISIBLE,
         5, CLR_BLUE, WATER_NYMPH),
@@ -807,7 +809,7 @@
         LVL(3, 12, 9, 20, 0), (G_GENO | 2),
         A(ATTK(AT_CLAW, AD_SITM, 0, 0), ATTK(AT_CLAW, AD_SEDU, 0, 0),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(600, 300, MS_SEDUCE, MZ_HUMAN), 0, 0, M1_HUMANOID | M1_TPORT,
+        SIZ(WT_NYMPH, 300, MS_SEDUCE, MZ_HUMAN), 0, 0, M1_HUMANOID | M1_TPORT,
         M2_HOSTILE | M2_FEMALE | M2_COLLECT, M3_INFRAVISIBLE,
         5, CLR_BROWN, MOUNTAIN_NYMPH),
     /*
@@ -1169,7 +1171,7 @@
         LVL(3, 1, 0, 0, 0), (G_GENO | G_NOCORPSE | 2),
         A(ATTK(AT_ENGL, AD_PHYS, 1, 6),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(0, 0, MS_SILENT, MZ_HUGE), MR_SLEEP | MR_POISON | MR_STONE, 0,
+        SIZ(WT_ETHEREAL, 0, MS_SILENT, MZ_HUGE), MR_SLEEP | MR_POISON | MR_STONE, 0,
         M1_FLY | M1_BREATHLESS | M1_NOEYES | M1_NOLIMBS | M1_NOHEAD
             | M1_MINDLESS | M1_AMORPHOUS | M1_UNSOLID,
         M2_HOSTILE | M2_NEUTER, 0,
@@ -1178,7 +1180,7 @@
         LVL(4, 20, 2, 30, 0), (G_GENO | G_NOCORPSE | 2),
         A(ATTK(AT_ENGL, AD_BLND, 2, 8),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(0, 0, MS_SILENT, MZ_HUGE), MR_SLEEP | MR_POISON | MR_STONE, 0,
+        SIZ(WT_ETHEREAL, 0, MS_SILENT, MZ_HUGE), MR_SLEEP | MR_POISON | MR_STONE, 0,
         M1_FLY | M1_BREATHLESS | M1_NOEYES | M1_NOLIMBS | M1_NOHEAD
             | M1_MINDLESS,
         M2_HOSTILE | M2_NEUTER, 0,
@@ -1187,7 +1189,7 @@
         LVL(5, 20, 2, 30, 0), (G_NOHELL | G_GENO | G_NOCORPSE | 1),
         A(ATTK(AT_ENGL, AD_COLD, 1, 6),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(0, 0, MS_SILENT, MZ_HUGE),
+        SIZ(WT_ETHEREAL, 0, MS_SILENT, MZ_HUGE),
         MR_COLD | MR_SLEEP | MR_POISON | MR_STONE, 0,
         M1_FLY | M1_BREATHLESS | M1_NOEYES | M1_NOLIMBS | M1_NOHEAD
             | M1_MINDLESS,
@@ -1197,7 +1199,7 @@
         LVL(6, 20, 2, 30, 0), (G_GENO | G_NOCORPSE | 1),
         A(ATTK(AT_ENGL, AD_ELEC, 1, 6), ATTK(AT_ENGL, AD_DREN, 2, 6),
           ATTK(AT_NONE, AD_ELEC, 0, 4), NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(0, 0, MS_SILENT, MZ_HUGE),
+        SIZ(WT_ETHEREAL, 0, MS_SILENT, MZ_HUGE),
         MR_ELEC | MR_SLEEP | MR_DISINT | MR_POISON | MR_STONE, 0,
         M1_FLY | M1_BREATHLESS | M1_NOEYES | M1_NOLIMBS | M1_NOHEAD
             | M1_MINDLESS | M1_UNSOLID,
@@ -1207,7 +1209,7 @@
         LVL(7, 22, 2, 30, 0), (G_HELL | G_GENO | G_NOCORPSE | 2),
         A(ATTK(AT_ENGL, AD_SCLD, 1, 8),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(0, 0, MS_SILENT, MZ_HUGE),
+        SIZ(WT_ETHEREAL, 0, MS_SILENT, MZ_HUGE),
         MR_FIRE | MR_SLEEP | MR_POISON | MR_STONE, 0,
         M1_FLY | M1_BREATHLESS | M1_NOEYES | M1_NOLIMBS | M1_NOHEAD
             | M1_MINDLESS | M1_UNSOLID,
@@ -1217,7 +1219,7 @@
         LVL(8, 22, 2, 30, 0), (G_HELL | G_GENO | G_NOCORPSE | 1),
         A(ATTK(AT_ENGL, AD_FIRE, 1, 10), ATTK(AT_NONE, AD_FIRE, 0, 4),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(0, 0, MS_SILENT, MZ_HUGE),
+        SIZ(WT_ETHEREAL, 0, MS_SILENT, MZ_HUGE),
         MR_FIRE | MR_SLEEP | MR_POISON | MR_STONE, 0,
         M1_FLY | M1_BREATHLESS | M1_NOEYES | M1_NOLIMBS | M1_NOHEAD
             | M1_MINDLESS | M1_UNSOLID,
@@ -1292,7 +1294,7 @@
         LVL(3, 15, 0, 0, 0), (G_NOCORPSE | G_GENO | 4),
         A(ATTK(AT_EXPL, AD_BLND, 10, 20),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(0, 0, MS_SILENT, MZ_SMALL),
+        SIZ(WT_ETHEREAL, 0, MS_SILENT, MZ_SMALL),
         MR_FIRE | MR_COLD | MR_ELEC | MR_DISINT | MR_SLEEP | MR_POISON
             | MR_ACID | MR_STONE, 0,
         M1_FLY | M1_BREATHLESS | M1_AMORPHOUS | M1_NOEYES | M1_NOLIMBS
@@ -1304,7 +1306,7 @@
         LVL(5, 15, 0, 0, 0), (G_NOCORPSE | G_GENO | 2),
         A(ATTK(AT_EXPL, AD_HALU, 10, 12),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(0, 0, MS_SILENT, MZ_SMALL),
+        SIZ(WT_ETHEREAL, 0, MS_SILENT, MZ_SMALL),
         MR_FIRE | MR_COLD | MR_ELEC | MR_DISINT | MR_SLEEP | MR_POISON
             | MR_ACID | MR_STONE, 0,
         M1_FLY | M1_BREATHLESS | M1_AMORPHOUS | M1_NOEYES | M1_NOLIMBS
@@ -1519,7 +1521,7 @@
         LVL(12, 9, 2, 10, 0), G_GENO,
         A(ATTK(AT_BITE, AD_PHYS, 2, 6),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(1500, 500, MS_ROAR, MZ_HUGE), 0, 0,
+        SIZ(WT_BABY_DRAGON, 500, MS_ROAR, MZ_HUGE), 0, 0,
         M1_FLY | M1_THICK_HIDE | M1_NOHANDS | M1_CARNIVORE,
         M2_HOSTILE | M2_STRONG | M2_GREEDY | M2_JEWELS, 0,
         13, CLR_GRAY, BABY_GRAY_DRAGON),
@@ -1527,7 +1529,7 @@
         LVL(12, 9, 2, 10, 0), G_GENO,
         A(ATTK(AT_BITE, AD_PHYS, 2, 6),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(1500, 500, MS_ROAR, MZ_HUGE), 0, 0,
+        SIZ(WT_BABY_DRAGON, 500, MS_ROAR, MZ_HUGE), 0, 0,
         M1_FLY | M1_THICK_HIDE | M1_NOHANDS | M1_CARNIVORE,
         M2_HOSTILE | M2_STRONG | M2_GREEDY | M2_JEWELS, M3_INFRAVISIBLE,
         13, HI_GOLD, BABY_GOLD_DRAGON),
@@ -1535,7 +1537,7 @@
         LVL(12, 9, 2, 10, 0), G_GENO,
         A(ATTK(AT_BITE, AD_PHYS, 2, 6),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(1500, 500, MS_ROAR, MZ_HUGE), 0, 0,
+        SIZ(WT_BABY_DRAGON, 500, MS_ROAR, MZ_HUGE), 0, 0,
         M1_FLY | M1_THICK_HIDE | M1_NOHANDS | M1_CARNIVORE,
         M2_HOSTILE | M2_STRONG | M2_GREEDY | M2_JEWELS, 0,
         13, DRAGON_SILVER, BABY_SILVER_DRAGON),
@@ -1545,7 +1547,7 @@
         LVL(12, 9, 2, 10, 0), G_GENO,
         A(ATTK(AT_BITE, AD_PHYS, 2, 6),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(1500, 500, MS_ROAR, MZ_HUGE), 0, 0,
+        SIZ(WT_BABY_DRAGON, 500, MS_ROAR, MZ_HUGE), 0, 0,
         M1_FLY | M1_THICK_HIDE | M1_NOHANDS | M1_CARNIVORE,
         M2_HOSTILE | M2_STRONG | M2_GREEDY | M2_JEWELS, 0,
         13, CLR_CYAN, BABY_SHIMMERING_DRAGON),
@@ -1554,7 +1556,7 @@
         LVL(12, 9, 2, 10, 0), G_GENO,
         A(ATTK(AT_BITE, AD_PHYS, 2, 6),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(1500, 500, MS_ROAR, MZ_HUGE), MR_FIRE, 0,
+        SIZ(WT_BABY_DRAGON, 500, MS_ROAR, MZ_HUGE), MR_FIRE, 0,
         M1_FLY | M1_THICK_HIDE | M1_NOHANDS | M1_CARNIVORE,
         M2_HOSTILE | M2_STRONG | M2_GREEDY | M2_JEWELS, M3_INFRAVISIBLE,
         13, CLR_RED, BABY_RED_DRAGON),
@@ -1562,7 +1564,7 @@
         LVL(12, 9, 2, 10, 0), G_GENO,
         A(ATTK(AT_BITE, AD_PHYS, 2, 6),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(1500, 500, MS_ROAR, MZ_HUGE), MR_COLD, 0,
+        SIZ(WT_BABY_DRAGON, 500, MS_ROAR, MZ_HUGE), MR_COLD, 0,
         M1_FLY | M1_THICK_HIDE | M1_NOHANDS | M1_CARNIVORE,
         M2_HOSTILE | M2_STRONG | M2_GREEDY | M2_JEWELS, 0,
         13, CLR_WHITE, BABY_WHITE_DRAGON),
@@ -1570,7 +1572,7 @@
         LVL(12, 9, 2, 10, 0), G_GENO,
         A(ATTK(AT_BITE, AD_PHYS, 2, 6),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(1500, 500, MS_ROAR, MZ_HUGE), MR_SLEEP, 0,
+        SIZ(WT_BABY_DRAGON, 500, MS_ROAR, MZ_HUGE), MR_SLEEP, 0,
         M1_FLY | M1_THICK_HIDE | M1_NOHANDS | M1_CARNIVORE,
         M2_HOSTILE | M2_STRONG | M2_GREEDY | M2_JEWELS, 0,
         13, CLR_ORANGE, BABY_ORANGE_DRAGON),
@@ -1578,7 +1580,7 @@
         LVL(12, 9, 2, 10, 0), G_GENO,
         A(ATTK(AT_BITE, AD_PHYS, 2, 6),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(1500, 500, MS_ROAR, MZ_HUGE), MR_DISINT, 0,
+        SIZ(WT_BABY_DRAGON, 500, MS_ROAR, MZ_HUGE), MR_DISINT, 0,
         M1_FLY | M1_THICK_HIDE | M1_NOHANDS | M1_CARNIVORE,
         M2_HOSTILE | M2_STRONG | M2_GREEDY | M2_JEWELS, 0,
         13, CLR_BLACK, BABY_BLACK_DRAGON),
@@ -1586,7 +1588,7 @@
         LVL(12, 9, 2, 10, 0), G_GENO,
         A(ATTK(AT_BITE, AD_PHYS, 2, 6),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(1500, 500, MS_ROAR, MZ_HUGE), MR_ELEC, 0,
+        SIZ(WT_BABY_DRAGON, 500, MS_ROAR, MZ_HUGE), MR_ELEC, 0,
         M1_FLY | M1_THICK_HIDE | M1_NOHANDS | M1_CARNIVORE,
         M2_HOSTILE | M2_STRONG | M2_GREEDY | M2_JEWELS, 0,
         13, CLR_BLUE, BABY_BLUE_DRAGON),
@@ -1594,7 +1596,7 @@
         LVL(12, 9, 2, 10, 0), G_GENO,
         A(ATTK(AT_BITE, AD_PHYS, 2, 6),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(1500, 500, MS_ROAR, MZ_HUGE), MR_POISON, 0,
+        SIZ(WT_BABY_DRAGON, 500, MS_ROAR, MZ_HUGE), MR_POISON, 0,
         M1_FLY | M1_THICK_HIDE | M1_NOHANDS | M1_CARNIVORE | M1_POIS,
         M2_HOSTILE | M2_STRONG | M2_GREEDY | M2_JEWELS, 0,
         13, CLR_GREEN, BABY_GREEN_DRAGON),
@@ -1602,7 +1604,7 @@
         LVL(12, 9, 2, 10, 0), G_GENO,
         A(ATTK(AT_BITE, AD_PHYS, 2, 6),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(1500, 500, MS_ROAR, MZ_HUGE), MR_ACID | MR_STONE, 0,
+        SIZ(WT_BABY_DRAGON, 500, MS_ROAR, MZ_HUGE), MR_ACID | MR_STONE, 0,
         M1_FLY | M1_THICK_HIDE | M1_NOHANDS | M1_CARNIVORE | M1_ACID,
         M2_HOSTILE | M2_STRONG | M2_GREEDY | M2_JEWELS, 0,
         13, CLR_YELLOW, BABY_YELLOW_DRAGON),
@@ -1752,7 +1754,7 @@
         LVL(8, 36, 2, 30, 0), (G_NOCORPSE | 1),
         A(ATTK(AT_ENGL, AD_PHYS, 1, 10),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(0, 0, MS_SILENT, MZ_HUGE), MR_POISON | MR_STONE, 0,
+        SIZ(WT_ETHEREAL, 0, MS_SILENT, MZ_HUGE), MR_POISON | MR_STONE, 0,
         M1_NOEYES | M1_NOLIMBS | M1_NOHEAD | M1_MINDLESS | M1_BREATHLESS
             | M1_UNSOLID | M1_FLY,
         M2_STRONG | M2_NEUTER, 0,
@@ -1761,7 +1763,7 @@
         LVL(8, 12, 2, 30, 0), (G_NOCORPSE | 1),
         A(ATTK(AT_CLAW, AD_FIRE, 3, 6), ATTK(AT_NONE, AD_FIRE, 0, 4),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(0, 0, MS_SILENT, MZ_HUGE), MR_FIRE | MR_POISON | MR_STONE, 0,
+        SIZ(WT_ETHEREAL, 0, MS_SILENT, MZ_HUGE), MR_FIRE | MR_POISON | MR_STONE, 0,
         M1_NOEYES | M1_NOLIMBS | M1_NOHEAD | M1_MINDLESS | M1_BREATHLESS
             | M1_UNSOLID | M1_FLY | M1_NOTAKE,
         M2_STRONG | M2_NEUTER, M3_INFRAVISIBLE,
@@ -1777,7 +1779,7 @@
         M2_STRONG | M2_NEUTER, 0,
         10, CLR_BROWN, EARTH_ELEMENTAL),
     MON(NAM("water elemental"), S_ELEMENTAL,
-        LVL(8, 6, 2, 30, 0), (G_NOCORPSE | 1),
+        LVL(8, 5, 2, 30, 0), (G_NOCORPSE | 1),
         A(ATTK(AT_CLAW, AD_PHYS, 5, 6),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
         SIZ(2500, 0, MS_SILENT, MZ_HUGE), MR_POISON | MR_STONE, 0,
@@ -2663,7 +2665,7 @@
         LVL(6, 12, 4, 15, -6), (G_GENO | 2),
         A(ATTK(AT_TUCH, AD_DRLI, 1, 6),
           NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK, NO_ATTK),
-        SIZ(0, 0, MS_SILENT, MZ_HUMAN),
+        SIZ(WT_ETHEREAL, 0, MS_SILENT, MZ_HUMAN),
         MR_COLD | MR_SLEEP | MR_POISON | MR_STONE, 0,
         M1_BREATHLESS | M1_FLY | M1_HUMANOID | M1_UNSOLID,
         M2_UNDEAD | M2_STALK | M2_HOSTILE, 0,

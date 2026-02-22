@@ -86,7 +86,7 @@ static const char
  * 1.  Initializing the slot during character generation or a
  *     restore.
  * 2.  Setting the slot due to a player's actions.
- * 3.  If one of the objects in the slot are split off, these
+ * 3.  If one of the objects in the slot is split off, these
  *     functions can be used to put the remainder back in the slot.
  * 4.  Putting an item that was thrown and returned back into the slot.
  * 5.  Emptying the slot, by passing a null object.  NEVER pass
@@ -123,7 +123,7 @@ setuwep(struct obj *obj)
     if (obj) {
         gu.unweapon = (obj->oclass == WEAPON_CLASS)
                        ? is_launcher(obj) || is_ammo(obj) || is_missile(obj)
-                             || (is_pole(obj) && !u.usteed)
+            || (is_pole(obj) && !u.usteed && !is_art(obj, ART_SNICKERSNEE))
                        : !is_weptool(obj) && !is_wet_towel(obj);
     } else
         gu.unweapon = TRUE; /* for "bare hands" message */
@@ -968,7 +968,7 @@ chwepon(struct obj *otmp, int amount)
         if (otyp != STRANGE_OBJECT)
             makeknown(otyp);
         if (multiple)
-            (void) encumber_msg();
+            encumber_msg();
         return 1;
     } else if (uwep->otyp == CRYSKNIFE && amount < 0) {
         multiple = (uwep->quan > 1L);
@@ -985,7 +985,7 @@ chwepon(struct obj *otmp, int amount)
         if (otyp != STRANGE_OBJECT && otmp->bknown)
             makeknown(otyp);
         if (multiple)
-            (void) encumber_msg();
+            encumber_msg();
         return 1;
     }
 
@@ -1031,7 +1031,7 @@ chwepon(struct obj *otmp, int amount)
 
     /*
      * Enchantment, which normally improves a weapon, has an
-     * addition adverse reaction on Magicbane whose effects are
+     * additional adverse reaction on Magicbane whose effects are
      * spe dependent.  Give an obscure clue here.
      */
     if (u_wield_art(ART_MAGICBANE) && uwep->spe >= 0) {

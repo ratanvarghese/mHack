@@ -1,4 +1,4 @@
-/* NetHack 3.7	potion.c	$NHDT-Date: 1737605675 2025/01/22 20:14:35 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.274 $ */
+/* NetHack 3.7	potion.c	$NHDT-Date: 1770949988 2026/02/12 18:33:08 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.279 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2013. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -52,6 +52,7 @@ staticfn int dip_hands_ok(struct obj *);
 staticfn void hold_potion(struct obj *, const char *, const char *,
                         const char *);
 staticfn void poof(struct obj *);
+staticfn boolean dip_potion_explosion(struct obj *, int);
 staticfn int potion_dip(struct obj *obj, struct obj *potion);
 
 /* used to indicate whether quaff or dip has skipped an opportunity to
@@ -67,6 +68,7 @@ static struct alchemic_recipe recipe_list[MAX_ALCHEMIC_RECIPES];
 staticfn boolean
 alchemy_skill_check(void)
 {
+    int sides = (uarmc && uarmc->otyp == ALCHEMY_SMOCK) ? 10 : 6;
     int cutoff = 6;
     switch(P_SKILL(P_ALCHEMY)) {
     case P_MASTER:
@@ -85,7 +87,7 @@ alchemy_skill_check(void)
     default:
         cutoff = 5;
     }
-    return rnd(6) > cutoff;
+    return rnd(sides) > cutoff;
 }
 
 staticfn void
@@ -444,7 +446,7 @@ make_sick(long xtime,
 {
     struct kinfo *kptr;
     struct obj *otmp;
-    int copperarmor;
+    int copperarmor = 0;
     long old = Sick;
 
 #if 0   /* tell player even if hero is unconscious */
@@ -1027,6 +1029,9 @@ peffect_restore_ability(struct obj *otmp)
                WEAK or worse, but that's handled via ATEMP(A_STR) now */
             if (ABASE(i) < lim) {
                 ABASE(i) = lim;
+                /* reset stat abuse (but not exercise) to 0 as well */
+                AEXE(i) = max(AEXE(i), 0);
+
                 disp.botl = TRUE;
                 /* only first found if not blessed */
                 if (!otmp->blessed)
@@ -1189,6 +1194,10 @@ peffect_invisibility(struct obj *otmp)
     if (otmp->cursed) {
         pline("For some reason, you feel your presence is known.");
         aggravate();
+
+        /* doing this gives temporary invisibility, but removes permanent
+           invisibility */
+        HInvis &= ~FROMOUTSIDE;
     }
 }
 
@@ -2168,12 +2177,22 @@ potionhit(struct monst *mon, struct obj *obj, int how)
                     mon->mconf = TRUE;
                 break;
             case POT_INVISIBILITY: {
-                boolean sawit = canspotmon(mon);
+                boolean sawit = canspotmon(mon),
+                        cursed_potion = obj->cursed ? TRUE : FALSE;
 
-                angermon = FALSE;
-                mon_set_minvis(mon);
-                if (sawit && !canspotmon(mon) && cansee(mon->mx, mon->my))
-                    map_invisible(mon->mx, mon->my);
+                angermon = mon->minvis && cursed_potion;
+                mon_set_minvis(mon, cursed_potion);
+                if (sawit && !canspotmon(mon)) {
+                    if (cansee(mon->mx, mon->my))
+                        map_invisible(mon->mx, mon->my);
+                } else if (sawit && cursed_potion) {
+                    pline("%s briefly seems to be transparent.", Monnam(mon));
+                    /* see use_misc(muse.c) for comment about map_invisible() */
+                } else if (!sawit && canspotmon(mon)) {
+                    /* if an invisible mon glyph was present, mon_set_minvis()'s
+                       newsym() has gotten rid of it */
+                    pline("%s appears!", Monnam(mon));
+                }
                 break;
             }
             case POT_SLEEPING:
@@ -2188,7 +2207,7 @@ potionhit(struct monst *mon, struct obj *obj, int how)
                     /* really should be rnd(5) for consistency with players
                      * breathing potions, but...
                      */
-                    paralyze_monst(mon, rnd(5));
+                    paralyze_monst(mon, rnd(25));
                 }
                 break;
             case POT_SPEED:
@@ -2769,6 +2788,31 @@ poof(struct obj *potion)
     useup(potion);
 }
 
+/* do dipped potion(s) explode? */
+staticfn boolean
+dip_potion_explosion(struct obj *obj, int dmg)
+{
+    if (obj->cursed || obj->otyp == POT_ACID
+        || (obj->otyp == POT_OIL && obj->lamplit)
+        || !alchemy_skill_check()) {
+        /* it would be better to use up the whole stack in advance
+           of the message, but we can't because we need to keep it
+           around for potionbreathe() [and we can't set obj->in_use
+           to 'amt' because that's not implemented] */
+        obj->in_use = 1;
+        pline("%sThey explode!", !Deaf ? "BOOM!  " : "");
+        wake_nearto(u.ux, u.uy, (BOLT_LIM + 1) * (BOLT_LIM + 1));
+        exercise(A_STR, FALSE);
+        if (!breathless(gy.youmonst.data) || haseyes(gy.youmonst.data))
+            potionbreathe(obj);
+        useupall(obj);
+        losehp(dmg, /* not physical damage */
+               "alchemic blast", KILLED_BY_AN);
+        return TRUE;
+    }
+    return FALSE;
+}
+
 /* called by dodip() or dip_into() after obj and potion have been chosen */
 staticfn int
 potion_dip(struct obj *obj, struct obj *potion)
@@ -2896,23 +2940,9 @@ potion_dip(struct obj *obj, struct obj *potion)
             freeinv(obj);
             hold_potion(obj, "You drop %s!", doname(obj), (const char *) 0);
             return ECMD_TIME;
-        } else if (obj->cursed || obj->otyp == POT_ACID
-            || (obj->otyp == POT_OIL && obj->lamplit) || !alchemy_skill_check()) {
+        } else if (dip_potion_explosion(obj, amt + rnd(9))) {
             /* Mixing potions is dangerous...
                KMH, balance patch -- acid is particularly unstable */
-            /* it would be better to use up the whole stack in advance
-               of the message, but we can't because we need to keep it
-               around for potionbreathe() [and we can't set obj->in_use
-               to 'amt' because that's not implemented] */
-            obj->in_use = 1;
-            pline("%sThey explode!", !Deaf ? "BOOM!  " : "");
-            wake_nearto(u.ux, u.uy, (BOLT_LIM + 1) * (BOLT_LIM + 1));
-            exercise(A_STR, FALSE);
-            if (!breathless(gy.youmonst.data) || haseyes(gy.youmonst.data))
-                potionbreathe(obj);
-            useupall(obj);
-            losehp(amt + rnd(9), /* not physical damage */
-                   "alchemic blast", KILLED_BY_AN);
             return ECMD_TIME;
         } else {
             useupall(obj);
@@ -2955,9 +2985,10 @@ potion_dip(struct obj *obj, struct obj *potion)
             obj->opoisoned = potion->otyp;
             poof(potion);
             return ECMD_TIME;
-        } else if (obj->opoisoned && (potion->otyp == POT_HEALING
-                                      || potion->otyp == POT_EXTRA_HEALING
-                                      || potion->otyp == POT_FULL_HEALING)) {
+        } else if (obj->opoisoned && !permapoisoned(obj)
+                   && (potion->otyp == POT_HEALING
+                       || potion->otyp == POT_EXTRA_HEALING
+                       || potion->otyp == POT_FULL_HEALING)) {
             pline("A coating wears off %s.", the(xname(obj)));
             obj->opoisoned = 0;
             poof(potion);
@@ -3081,10 +3112,10 @@ potion_dip(struct obj *obj, struct obj *potion)
         else
             singlepotion->cursed = obj->cursed; /* odiluted left as-is */
         singlepotion->bknown = FALSE;
-        if (Blind) {
-            singlepotion->dknown = FALSE;
-        } else {
-            singlepotion->dknown = !Hallucination;
+        singlepotion->dknown = FALSE; /* provisionally */
+        if (!Blind) {
+            if (!Hallucination)
+                observe_object(singlepotion);
             *newbuf = '\0';
             if (mixture == POT_WATER && singlepotion->dknown)
                 Sprintf(newbuf, "clears");
@@ -3104,7 +3135,7 @@ potion_dip(struct obj *obj, struct obj *potion)
                 struct obj fakeobj;
 
                 fakeobj = cg.zeroobj;
-                fakeobj.dknown = 1;
+                fakeobj.dknown = 1; /* no need to observe_object */
                 fakeobj.otyp = old_otyp;
                 fakeobj.oclass = POTION_CLASS;
                 docall(&fakeobj);
