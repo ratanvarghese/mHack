@@ -45,7 +45,7 @@ staticfn void get_room_loc(coordxy *, coordxy *, struct mkroom *);
 staticfn void get_free_room_loc(coordxy *, coordxy *, struct mkroom *,
                               packed_coord);
 staticfn boolean create_subroom(struct mkroom *, coordxy, coordxy, coordxy,
-                              coordxy, xint16, xint16);
+                              coordxy, xint16, xint16, boolean);
 staticfn void create_door(room_door *, struct mkroom *);
 staticfn void create_trap(spltrap *, struct mkroom *);
 staticfn int noncoalignment(aligntyp);
@@ -160,6 +160,7 @@ int lspo_teleport_region(lua_State *);
 int lspo_gas_cloud(lua_State *);
 int lspo_terrain(lua_State *);
 int lspo_trap(lua_State *);
+int lspo_ugname(lua_State *);
 int lspo_wall_property(lua_State *);
 int lspo_wallify(lua_State *);
 
@@ -1300,7 +1301,7 @@ is_ok_location(coordxy x, coordxy y, getloc_flags_t humidity)
         if (!bould || (bould && (humidity & SOLID)))
             return TRUE;
     }
-    if ((humidity & WET) && is_pool(x, y))
+    if ((humidity & WET) && (is_pool(x, y) || IS_PUDDLE(typ)))
         return TRUE;
     if ((humidity & HOT) && is_lava(x, y))
         return TRUE;
@@ -1487,7 +1488,8 @@ create_room(
     coordxy x, coordxy y,
     coordxy w, coordxy h,
     coordxy xal, coordxy yal,
-    xint16 rtype, xint16 rlit)
+    xint16 rtype, xint16 rlit,
+    boolean special_nowall)
 {
     coordxy xabs = 0, yabs = 0;
     int wtmp, htmp, xaltmp, yaltmp, xtmp, ytmp;
@@ -1652,7 +1654,7 @@ create_room(
     if (!vault) {
         gs.smeq[svn.nroom] = svn.nroom;
         add_room(xabs, yabs, xabs + wtmp - 1, yabs + htmp - 1, rlit, rtype,
-                 FALSE);
+                 special_nowall);
     } else {
         svr.rooms[svn.nroom].lx = xabs;
         svr.rooms[svn.nroom].ly = yabs;
@@ -1669,7 +1671,8 @@ create_subroom(
     struct mkroom *proom,
     coordxy x, coordxy y,
     coordxy w, coordxy h,
-    xint16 rtype, xint16 rlit)
+    xint16 rtype, xint16 rlit,
+    boolean special_nowall)
 {
     coordxy width, height;
 
@@ -1702,7 +1705,7 @@ create_subroom(
         rtype = OROOM;
     rlit = litstate_rnd(rlit);
     add_subroom(proom, proom->lx + x, proom->ly + y, proom->lx + x + w - 1,
-                proom->ly + y + h - 1, rlit, rtype, FALSE);
+                proom->ly + y + h - 1, rlit, rtype, special_nowall);
     return TRUE;
 }
 
@@ -2317,6 +2320,9 @@ create_object(object *o, struct mkroom *croom)
 
             remove_object(otmp);
             if (cobj) {
+                if(cobj->otyp == ICE_BOX) {
+                    freeze_object(otmp);
+                }
                 otmp = add_to_container(cobj, otmp);
                 cobj->owt = weight(cobj);
             } else {
@@ -2377,6 +2383,19 @@ create_object(object *o, struct mkroom *croom)
             }
             otmp->owt = weight(otmp);
             mongone(was);
+        }
+    }
+
+    if(o->material.str) {
+        int i, l;
+        for (i = 1; i < NUM_MATERIAL_TYPES; i++) {
+            l = strlen(materialnm[i]);
+            if (l > 0 && !strncmpi(o->material.str, materialnm[i], l) && valid_obj_material(otmp, i))
+            {
+                otmp->material = i;
+                l++;
+                break; /* from the for loop */
+            }
         }
     }
 
@@ -2804,11 +2823,11 @@ build_room(room *r, struct mkroom *mkr)
 
     if (mkr) {
         aroom = &gs.subrooms[gn.nsubroom];
-        okroom = create_subroom(mkr, r->x, r->y, r->w, r->h, rtype, r->rlit);
+        okroom = create_subroom(mkr, r->x, r->y, r->w, r->h, rtype, r->rlit, r->special_nowall);
     } else {
         aroom = &svr.rooms[svn.nroom];
         okroom = create_room(r->x, r->y, r->w, r->h, r->xalign, r->yalign,
-                             rtype, r->rlit);
+                             rtype, r->rlit, r->special_nowall);
     }
 
     if (okroom) {
@@ -2948,6 +2967,10 @@ fill_empty_maze(void)
         for (x = rn2(2); x; x--) {
             maze1xy(&mm, DRY);
             (void) makemon(&mons[PM_MINOTAUR], mm.x, mm.y, NO_MM_FLAGS);
+        }
+        for (x = rn2(2); x; x--) {
+            maze1xy(&mm, DRY);
+            (void) makemon(&mons[PM_LABYRINTH_TRAPPER], mm.x, mm.y, NO_MM_FLAGS);
         }
         for (x = rnd((int) (12 * mapfact) / 100); x; x--) {
             maze1xy(&mm, DRY);
@@ -3548,6 +3571,7 @@ lspo_object(lua_State *L)
 {
     static object zeroobject = {
             { 0 },   /* Str_or_len name */
+            { 0 },   /* Str_or_len material */
             0,       /* corpsenm */
             0, 0,    /* id, spe */
             0,       /* coord */
@@ -3625,6 +3649,7 @@ lspo_object(lua_State *L)
         tmpobj.curse_state = get_table_buc(L);
         tmpobj.corpsenm = NON_PM;
         tmpobj.name.str = get_table_str_opt(L, "name", (char *) 0);
+        tmpobj.material.str = get_table_str_opt(L, "material", (char *) 0);
         tmpobj.quan = get_table_int_or_random(L, "quantity", -1);
         tmpobj.buried = get_table_boolean_opt(L, "buried", 0);
         tmpobj.lit = get_table_boolean_opt(L, "lit", 0);
@@ -3738,6 +3763,7 @@ lspo_object(lua_State *L)
         spo_pop_container();
 
     Free(tmpobj.name.str);
+    Free(tmpobj.material.str);
 
     nhl_push_obj(L, otmp);
 
@@ -4066,6 +4092,7 @@ lspo_room(lua_State *L)
         tmproom.needfill = get_table_int_opt(L, "filled",
                                              gi.in_mk_themerooms ? 0 : 1);
         tmproom.joined = get_table_boolean_opt(L, "joined", TRUE);
+        tmproom.special_nowall = get_table_boolean_opt(L, "special_nowall", FALSE);
 
         if (!gc.coder->failed_room[gc.coder->n_subroom - 1]) {
             tmpcr = build_room(&tmproom, gc.coder->croom);
@@ -5978,6 +6005,14 @@ lspo_wallify(lua_State *L)
     return 0;
 }
 
+int
+lspo_ugname(lua_State *L)
+{
+    lua_pushstring(L, u_gname());
+    return 1;
+}
+
+
 /* reset_level is only needed for testing purposes */
 int
 lspo_reset_level(lua_State *L)
@@ -6401,6 +6436,7 @@ static const struct luaL_Reg nhl_functions[] = {
     { "reset_level", lspo_reset_level },
     { "finalize_level", lspo_finalize_level },
     { "gas_cloud", lspo_gas_cloud },
+    { "ugname", lspo_ugname },
     /* TODO: { "branch", lspo_branch }, */
     /* TODO: { "portal", lspo_portal }, */
     { NULL, NULL }

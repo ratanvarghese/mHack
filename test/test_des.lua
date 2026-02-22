@@ -175,7 +175,7 @@ function test_object()
    des.object({ class = ")", buc = "not-uncursed" });
    des.object({ class = "=", buc = "not-blessed" });
    des.object({ id = "bamboo arrow", quantity = 100 });
-   des.object({ id = "leather armor", eroded = 1 });
+   des.object({ id = "light armor", eroded = 1 });
    des.object({ id = "probing", recharged = 2, spe = 3 });
    des.object({ name = "Random object" });
    des.object({ class = "*", name = "Random stone" });

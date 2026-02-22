@@ -310,6 +310,7 @@ savegamestate(NHFILE *nhfp)
         Sfo_spell(nhfp, &svs.spl_book[i], "gamestate-spl_book");
     }
     save_artifacts(nhfp);
+    save_alchemic_recipes(nhfp);
     save_oracles(nhfp);
     Sfo_char(nhfp, svp.pl_character, "gamestate-pl_character", sizeof svp.pl_character);
     Sfo_char(nhfp, svp.pl_fruit, "gamestate-pl_fruit", sizeof svp.pl_fruit);

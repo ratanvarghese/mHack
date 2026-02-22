@@ -19,6 +19,7 @@ staticfn int gulpmm(struct monst *, struct monst *, struct attack *);
 staticfn int explmm(struct monst *, struct monst *, struct attack *);
 staticfn int mdamagem(struct monst *, struct monst *, struct attack *,
                     struct obj *, int);
+staticfn int defdisintagr(struct monst *, struct monst *, struct attack *, struct obj *);
 staticfn void mswingsm(struct monst *, struct monst *, struct obj *);
 staticfn int passivemm(struct monst *, struct monst *, boolean, int,
                      struct obj *);
@@ -183,20 +184,26 @@ mdisplacem(
 {
     struct permonst *pa, *pd;
     int tx, ty, fx, fy;
+    boolean uatk = (magr == &gy.youmonst);
 
     /* sanity checks; could matter if we unexpectedly get a long worm */
     if (!magr || !mdef || magr == mdef)
         return M_ATTK_MISS;
     pa = magr->data, pd = mdef->data;
     tx = mdef->mx, ty = mdef->my; /* destination */
-    fx = magr->mx, fy = magr->my; /* current location */
-    if (m_at(fx, fy) != magr || m_at(tx, ty) != mdef)
+    if(uatk) {
+        fx = u.ux, fy = u.uy;
+    } else {
+        fx = magr->mx, fy = magr->my; /* current location */
+    }
+
+    if ((m_at(fx, fy) != magr && !uatk) || m_at(tx, ty) != mdef)
         return M_ATTK_MISS;
 
     /* The 1 in 7 failure below matches the chance in do_attack()
      * for pet displacement.
      */
-    if (!rn2(7))
+    if (!rn2(7) && !uatk)
         return M_ATTK_MISS;
 
     /* Grid bugs cannot displace at an angle. */
@@ -221,9 +228,10 @@ mdisplacem(
      */
     gv.vis = (canspotmon(magr) && canspotmon(mdef));
 
-    if (touch_petrifies(pd) && !resists_ston(magr)) {
+    if ((touch_petrifies(pd) || (mdef->mgoldtouch && monmaterial(monsndx(magr->data)) != GOLD))
+        && !resists_ston(magr)) {
         if (!which_armor(magr, W_ARMG)) {
-            if (poly_when_stoned(pa)) {
+            if (poly_when_petrified(pa, mdef->mgoldtouch ? GOLD : MINERAL)) {
                 mon_to_stone(magr);
                 return M_ATTK_HIT; /* no damage during the polymorph */
             }
@@ -232,9 +240,9 @@ mdisplacem(
                     pline("%s tries to move %s out of %s way.", Monnam(magr),
                           mon_nam(mdef), is_rider(pa) ? "the" : mhis(magr));
                 }
-                pline_mon(magr, "%s turns to stone!", Monnam(magr));
+                pline_mon(magr, "%s turns to %s!", Monnam(magr), mdef->mgoldtouch ? "gold" : "stone");
             }
-            monstone(magr);
+            monstone_material(magr,mdef->mgoldtouch ? GOLD: MINERAL);
             if (!DEADMONSTER(magr))
                 return M_ATTK_HIT; /* lifesaved */
             else if (magr->mtame && !gv.vis)
@@ -243,12 +251,16 @@ mdisplacem(
         }
     }
 
-    remove_monster(fx, fy); /* pick up from orig position */
+    if(!uatk) {
+        remove_monster(fx, fy); /* pick up from orig position */
+    }
     if (mdef->wormno)
         remove_worm(mdef);
     else
         remove_monster(tx, ty);
-    place_monster(magr, tx, ty); /* put down at target spot */
+    if(!uatk) {
+        place_monster(magr, tx, ty); /* put down at target spot */
+    }
     place_monster(mdef, fx, fy);
     if (mdef->wormno) /* now put down tail */
         place_worm_tail_randomly(mdef, fx, fy);
@@ -259,6 +271,10 @@ mdisplacem(
     if (gv.vis && !quietly)
         pline("%s moves %s out of %s way!", Monnam(magr), mon_nam(mdef),
               is_rider(pa) ? "the" : mhis(magr));
+    if(uatk) {
+        u.ux = tx, u.uy = ty;
+        u_on_newpos(u.ux, u.uy);
+    }
     newsym(fx, fy);  /* see it       */
     newsym(tx, ty);  /*   all happen */
     flush_screen(0); /* make sure it shows up */
@@ -381,6 +397,16 @@ mattackm(
             continue;
 
         mattk = getmattk(magr, mdef, i, res, &alt_attk);
+        if (magr->data == & mons[PM_CLOCKWORK_AUTOMATON]) {
+            if ((magr->mspec_used < CLOCKWORK_PANIC) ||
+                  (magr->mspec_used < CLOCKWORK_LOW && i) ||
+                  (magr->mspec_used < CLOCKWORK_MED && i>=2) ||
+                  (magr->mspec_used < CLOCKWORK_HIGH && i>=4) ) 
+                continue;
+            else
+                magr->mspec_used -= 15;
+        }
+
         /* reduce verbosity for mind flayer attacking creature without a
            head (or worm's tail); this is similar to monster with multiple
            attacks after a wildmiss against displaced or invisible hero */
@@ -434,7 +460,10 @@ mattackm(
              * players, or under conflict or confusion.
              */
             if (!magr->mconf && !Conflict && mwep && mattk->aatyp != AT_WEAP
-                && touch_petrifies(mdef->data)) {
+                && ((touch_disintegrates(mdef->data) &&
+                    (mattk->aatyp == AT_WEAP || !(resists_disint(magr))) )
+                    || touch_petrifies(mdef->data))
+                ) {
                 strike = 0;
                 break;
             }
@@ -455,8 +484,9 @@ mattackm(
                 res[i] = hitmm(magr, mdef, mattk, mwep, dieroll);
                 if ((mdef->data == &mons[PM_BLACK_PUDDING]
                      || mdef->data == &mons[PM_BROWN_PUDDING])
-                    && (mwep && (objects[mwep->otyp].oc_material == IRON
-                                 || objects[mwep->otyp].oc_material == METAL))
+                    && (mwep && (mwep->material == IRON
+                                 || mwep->material == COLD_IRON
+                                 || mwep->material == METAL))
                     && mdef->mhp > 1 && !mdef->mcan) {
                     struct monst *mclone;
 
@@ -519,6 +549,12 @@ mattackm(
                 strike = 0;
                 break;
             }
+            if((magr->data == &mons[PM_BANDERSNATCH]) &&
+                !yeasty_food(mdef->data)) {
+                strike = 0;
+                break;
+            }
+
             /* D: Prevent engulf from a distance */
             if (distmin(magr->mx, magr->my, mdef->mx, mdef->my) > 1)
                 continue;
@@ -650,9 +686,7 @@ hitmm(
 {
     int compat;
     boolean weaponhit = (mattk->aatyp == AT_WEAP
-                         || (mattk->aatyp == AT_CLAW && mwep)),
-            silverhit = (weaponhit && mwep
-                         && objects[mwep->otyp].oc_material == SILVER);
+                         || (mattk->aatyp == AT_CLAW && mwep));
 
     pre_mm_attack(magr, mdef);
 
@@ -702,28 +736,6 @@ hitmm(
             }
             if (*buf)
                 pline("%s %s.", buf, mon_nam_too(mdef, magr));
-
-            if (mon_hates_silver(mdef) && silverhit) {
-                char *mdef_name = mon_nam_too(mdef, magr);
-
-                /* note: mon_nam_too returns a modifiable buffer; so
-                   does s_suffix, but it returns a single static buffer
-                   and we might be calling it twice for this message */
-                Strcpy(magr_name, s_suffix(magr_name));
-                if (!noncorporeal(mdef->data) && !amorphous(mdef->data)) {
-                    if (mdef != magr) {
-                        mdef_name = s_suffix(mdef_name);
-                    } else {
-                        (void) strsubst(mdef_name, "himself", "his own");
-                        (void) strsubst(mdef_name, "herself", "her own");
-                        (void) strsubst(mdef_name, "itself", "its own");
-                    }
-                    Strcat(mdef_name, " flesh");
-                }
-
-                pline("%s %s sears %s!", magr_name, /* s_suffix(magr_name), */
-                      simpleonames(mwep), mdef_name);
-            }
         }
     } else
         noises(magr, mattk);
@@ -746,6 +758,21 @@ gazemm(struct monst *magr, struct monst *mdef, struct attack *mattk)
     if (mdef->data->mlet == S_MIMIC && M_AP_TYPE(mdef) != M_AP_NOTHING)
         seemimic(mdef);
     mdef->mundetected = 0;
+
+    if (mattk->adtyp == AD_DRIN) {
+        if(canseemon(magr)){
+            Sprintf(buf, "%s screeches at", Monnam(magr));
+            pline("%s %s...",buf, mon_nam(mdef));
+        } else if (!u.uswallow && !Underwater) {
+            You_hear("screeching.");
+        }
+        mdef->msleeping = 0;
+        if(!mindless(mdef->data)){
+            mattk->adtyp = AD_CONF;
+            return(mdamagem(magr, mdef, mattk, (struct obj*) 0, 0));
+        }
+        return 0;
+    }
 
     if (gv.vis) {
         Sprintf(buf, "%s gazes %s",
@@ -1009,6 +1036,149 @@ explmm(struct monst *magr, struct monst *mdef, struct attack *mattk)
     return result;
 }
 
+staticfn int
+defdisintagr(
+    struct monst *magr,
+    struct monst *mdef,
+    struct attack *mattk,
+    struct obj *mwep)
+{
+    int tmp=-1; /* -1 a miss, -MM_AGR_DIED aggre died, -2 do nothing,
+                   >=0 store as tmp. */
+    if (mdef->mhp>6 && !mdef->mcan){
+        int touched = 0;
+        int mass = 0;
+        struct obj * otch = 0;
+        switch (attk_protection((int)mattk->aatyp)) {
+            /* this is in dire need of optimization */
+            case (W_ARMC|W_ARMG):
+                otch = which_armor(magr, W_ARMG);
+                if (otch) {
+                    if(!oresist_disintegration(otch)) {
+                        if(canseemon(magr))
+                            pline("%s %s disintegrates!",
+                                s_suffix(Monnam(magr)), distant_name(otch, xname));
+                        mass += otch->owt;
+                        m_useup(magr,otch);
+                        otch = 0;
+                        touched = 1;
+                    }
+                } else
+                    touched = 1;
+                otch = which_armor(magr, W_ARMC);
+                if (otch) {
+                    if(!oresist_disintegration(otch)) {
+                        if(canseemon(magr))
+                            pline("%s %s disintegrates!",
+                                s_suffix(Monnam(magr)), distant_name(otch, xname));
+                        mass += otch->owt;
+                        m_useup(magr,otch);
+                        touched = 1;
+                    }
+                } else
+                    touched = 1;
+                otch = which_armor(magr,W_ARM);
+                if (!(magr->misc_worn_check & W_ARMC) &&
+                    (otch) &&
+                    (!oresist_disintegration(otch))) {
+                    if (canseemon(magr))
+                        pline("%s %s disintegrates!",
+                            s_suffix(Monnam(magr)), distant_name(otch, xname));
+                    mass += otch->owt;
+                    m_useup(magr,otch);
+                }
+                otch = which_armor(magr,W_ARMU);
+                if (!(magr->misc_worn_check & (W_ARMC|W_ARM)) &&
+                    (otch) && 
+                    (!oresist_disintegration(otch))) {
+                    if (canseemon(magr))
+                        pline("%s %s disintegrates!",
+                            s_suffix(Monnam(magr)), distant_name(otch, xname));
+                    mass += otch->owt;
+                    m_useup(magr,otch);
+                }
+                break;
+            case (W_ARMG):
+                otch = which_armor(magr,W_ARMG);
+                if(mwep){
+                    if(!oresist_disintegration(mwep)){
+                        if (canseemon(magr))
+                            pline("%s %s disintegrates!",
+                                s_suffix(Monnam(magr)), distant_name(mwep, xname));
+                        mass += mwep->owt;
+                        m_useup(magr,mwep);
+                        tmp = 0;
+                    }
+                } else if (otch){
+                    if(!oresist_disintegration(otch)){
+                        if(canseemon(magr))
+                            pline("%s %s disintegrates!",
+                                s_suffix(Monnam(magr)), distant_name(otch, xname));
+                        mass += otch->owt;
+                        m_useup(magr,otch);
+                        touched = 1;
+                    }
+                } else
+                    touched = 1;
+                break;
+            case (W_ARMH):
+                otch = which_armor(magr,W_ARMH);
+                if (otch){
+                    if(!oresist_disintegration(otch)){
+                        if(canseemon(magr))
+                            pline("%s %s disintegrates!",
+                                s_suffix(Monnam(magr)), distant_name(otch, xname));
+                        mass += otch->owt;
+                        m_useup(magr,otch);
+                        touched = 1;
+                    }
+                } else
+                    touched = 1;
+                break;
+            case (W_ARMF):
+                otch = which_armor(magr,W_ARMF);
+                if (otch){
+                     if(!oresist_disintegration(otch)){
+                         if(canseemon(magr))
+                             pline("%s %s disintegrates!",
+                                 s_suffix(Monnam(magr)), distant_name(otch, xname));
+                         mass += otch->owt;
+                         m_useup(magr,otch);
+                         touched = 1;
+                     }
+                } else
+                    touched = 1;
+                break;
+            case (0L):
+                touched = 1;
+                break;
+            default:
+               break;
+        }
+        if (!touched || resists_disint(magr)) {
+            if(mass)
+                weight_dmg(mass);
+            tmp = mass;
+        } else {
+            boolean see_magr = canseemon(magr);
+            mass += magr->data->cwt;
+            weight_dmg(mass);
+            if(mass)
+                mdef->mhp -= mass;
+            if (see_magr)
+                pline("%s disintegrates!", Monnam(magr));
+            mondead_helper(magr,mattk->adtyp);
+            if (magr->mhp > 0)
+                return -1;
+            else if (magr->mtame && !see_magr)
+                You(brief_feeling, "peculiarly sad");
+            return -M_ATTK_AGR_DIED;
+        }
+    }
+    return tmp;
+}
+
+
 /*
  *  See comment at top of mattackm(), for return values.
  */
@@ -1029,15 +1199,38 @@ mdamagem(
     mhm.dieroll = dieroll;
     mhm.done = FALSE;
 
+    int def_disintegrated;
+    if (touch_disintegrates(pd) &&
+        (def_disintegrated = defdisintagr(magr, mdef, mattk, mwep)) != -2 )
+        switch (def_disintegrated){
+            case -M_ATTK_AGR_DIED:
+                return M_ATTK_AGR_DIED;
+                break;
+            case -1:
+                return 0;
+                break;
+            default:
+                mhm.damage = def_disintegrated;
+                break;
+        }
+
     if ((touch_petrifies(pd) /* or flesh_petrifies() */
-         || (mattk->adtyp == AD_DGST && pd == &mons[PM_MEDUSA]))
+         || (mattk->adtyp == AD_DGST && pd == &mons[PM_MEDUSA])
+         || (mdef->mgoldtouch && monmaterial(monsndx(magr->data)) != GOLD))
         && !resists_ston(magr)) {
         long protector = attk_protection((int) mattk->aatyp),
              wornitems = magr->misc_worn_check;
-
         /* wielded weapon gives same protection as gloves here */
-        if (mwep)
+        if (mwep) {
             wornitems |= W_ARMG;
+            if(mdef->mgoldtouch) {
+                struct obj* new_wep = turn_object_to_gold(mwep, canseemon(magr));
+                if(mwep != new_wep) {
+                    mpickobj(magr, new_wep);
+                    return M_ATTK_MISS;
+                }
+            }
+        }
 
         if (protector == 0L
             || (protector != ~0L && (wornitems & protector) != protector)) {
@@ -1046,8 +1239,8 @@ mdamagem(
                 return M_ATTK_HIT; /* no damage during the polymorph */
             }
             if (gv.vis && canspotmon(magr))
-                pline_mon(magr, "%s turns to stone!", Monnam(magr));
-            monstone(magr);
+                pline_mon(magr, "%s turns to %s!", Monnam(magr), mdef->mgoldtouch ? "gold" : "stone");
+            monstone_material(magr, magr->mgoldtouch ? GOLD : MINERAL);
             if (!DEADMONSTER(magr))
                 return M_ATTK_HIT; /* lifesaved */
             else if (magr->mtame && !gv.vis)
@@ -1416,7 +1609,10 @@ passivemm(
             }
             tmp = 0;
             break;
+        case AD_SCLD:
         case AD_FIRE:
+            if(!rn2(3) && mddat->mattk[i].adtyp == AD_SCLD)
+                water_damage(which_armor(magr, W_ARM), 0, FALSE);
             if (resists_fire(magr)) {
                 if (canseemon(magr)) {
                     pline_mon(magr, "%s is mildly warmed.", Monnam(magr));

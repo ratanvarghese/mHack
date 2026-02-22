@@ -5,6 +5,7 @@
 des.level_init({ style = "solidfill", fg = " " });
 
 des.level_flags("mazelevel", "noteleport", "premapped", "sokoban", "solidify");
+des.message("Left Holding the Bag")
 des.map([[
 --------------------------
 |........................|

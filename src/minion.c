@@ -59,10 +59,8 @@ int
 msummon(struct monst *mon)
 {
     struct permonst *ptr;
-    int dtype = NON_PM, cnt = 0, result = 0, census;
-    boolean xlight;
+    int dtype = NON_PM, cnt = 0;
     aligntyp atyp;
-    struct monst *mtmp;
 
     if (mon) {
         ptr = mon->data;
@@ -123,6 +121,16 @@ msummon(struct monst *mon)
         cnt = ((dtype != NON_PM)
                && !rn2(4) && !is_lord(&mons[dtype])) ? 2 : 1;
     }
+    return summon_dtype(dtype, cnt, atyp);
+}
+
+/* Something summons a monster */
+int
+summon_dtype(int dtype, int cnt, aligntyp atyp)
+{
+    int result = 0, census;
+    boolean xlight;
+    struct monst *mtmp;
 
     if (dtype == NON_PM)
         return 0;
@@ -307,8 +315,7 @@ demon_talk(struct monst *mtmp)
         return 1;
     }
     cash = money_cnt(gi.invent);
-    demand = (cash * (rnd(80) + 20 * Athome))
-           / (100 * (1 + (sgn(u.ualign.type) == sgn(mtmp->data->maligntyp))));
+    demand = bribe_price(mtmp);
 
     if (!demand || gm.multi < 0) { /* you have no gold or can't move */
         mtmp->mpeaceful = 0;
@@ -547,7 +554,7 @@ gain_guardian_angel(void)
             mtmp->mhp = mtmp->mhpmax =
                 d((int) mtmp->m_lev, 10) + 30 + rnd(30);
             if ((otmp = select_hwep(mtmp)) == 0) {
-                otmp = mksobj(SILVER_SABER, FALSE, FALSE);
+                otmp = mksobj(SABER, FALSE, FALSE);
                 if (mpickobj(mtmp, otmp))
                     panic("merged weapon?");
             }

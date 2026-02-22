@@ -279,8 +279,8 @@ obj_shuffle_range(
     case ARMOR_CLASS:
         if (otyp >= HELMET && otyp <= HELM_OF_TELEPATHY)
             *lo_p = HELMET, *hi_p = HELM_OF_TELEPATHY;
-        else if (otyp >= LEATHER_GLOVES && otyp <= GAUNTLETS_OF_DEXTERITY)
-            *lo_p = LEATHER_GLOVES, *hi_p = GAUNTLETS_OF_DEXTERITY;
+        else if (otyp >= GLOVES && otyp <= GAUNTLETS_OF_DEXTERITY)
+            *lo_p = GLOVES, *hi_p = GAUNTLETS_OF_DEXTERITY;
         else if (otyp >= CLOAK_OF_PROTECTION && otyp <= CLOAK_OF_DISPLACEMENT)
             *lo_p = CLOAK_OF_PROTECTION, *hi_p = CLOAK_OF_DISPLACEMENT;
         else if (otyp >= SPEED_BOOTS && otyp <= LEVITATION_BOOTS)
@@ -328,7 +328,7 @@ shuffle_all(void)
     };
     /* sub-class type ranges (one item from each group) */
     static short shuffle_types[] = {
-        HELMET, LEATHER_GLOVES, CLOAK_OF_PROTECTION, SPEED_BOOTS,
+        HELMET, GLOVES, CLOAK_OF_PROTECTION, SPEED_BOOTS,
     };
     int first, last, idx;
 
@@ -664,7 +664,7 @@ disco_typename(int otyp)
 
     if (Role_if(PM_SAMURAI) && Japanese_item_name(otyp, (const char *) 0)) {
         char buf[BUFSZ];
-        const char *actualn = (((otyp != MAGIC_HARP && otyp != WOODEN_HARP)
+        const char *actualn = (((otyp != MAGIC_HARP && otyp != HARP)
                                 || objects[otyp].oc_name_known)
                                ? OBJ_NAME(objects[otyp])
                                /* undiscovered harp (since wooden harp is
@@ -759,7 +759,7 @@ dodiscovered(void) /* free after Robert Viduya */
     char *s, *p, oclass, prev_class,
          classes[MAXOCLASSES], buf[BUFSZ],
          *sorted_lines[NUM_OBJECTS]; /* overkill */
-    int i, dis, ct, uniq_ct, arti_ct, sorted_ct, uidx;
+    int i, dis, ct, uniq_ct, arti_ct, sorted_ct, uidx, recipe_ct;
     long sortindx;  // should be ptrdiff_t, but we don't require that exists
     boolean alphabetized, alphabyclass, lootsort;
 
@@ -844,6 +844,11 @@ dodiscovered(void) /* free after Robert Viduya */
             }
         }
     }
+
+    /* A pseudo-class for alchemic recipes - at the end because there might be over 100 */
+    recipe_ct = disp_alchemic_recipe_discoveries(tmpwin);
+    ct += recipe_ct;
+
     if (ct == 0) {
         You("haven't discovered anything yet...");
     } else {
@@ -885,7 +890,8 @@ doclassdisco(void)
         prompt[] = "View discoveries for which sort of objects?",
         havent_discovered_any[] = "haven't discovered any %s yet.",
         unique_items[] = "unique items or relics",
-        artifact_items[] = "artifacts";
+        artifact_items[] = "artifacts",
+        alchemic_recipes[] = "alchemic recipes";
     winid tmpwin = WIN_ERR;
     menu_item *pick_list = 0;
     anything any;
@@ -950,6 +956,16 @@ doclassdisco(void)
             any.a_int = 'a';
             add_menu(tmpwin, &nul_glyphinfo, &any, menulet++, 0,
                      ATR_NONE, clr, artifact_items, MENU_ITEMFLAGS_NONE);
+        }
+    }
+
+    /* check whether we've discovered any alchemic recipes */
+    if (disp_alchemic_recipe_discoveries(WIN_ERR) > 0) {
+        Strcat(discosyms, "c");
+        if (!traditional) {
+            any.a_int = 'c';
+            add_menu(tmpwin, &nul_glyphinfo, &any, menulet++,
+                     0, ATR_NONE, clr, alchemic_recipes, MENU_ITEMFLAGS_NONE);
         }
     }
 
@@ -1065,6 +1081,12 @@ doclassdisco(void)
         ct = disp_artifact_discoveries(tmpwin);
         if (!ct)
             You(havent_discovered_any, artifact_items);
+        break;
+    case 'c':
+        /* disp_alchemic_recipe_discoveries() includes a header */
+        ct = disp_alchemic_recipe_discoveries(tmpwin);
+        if (!ct)
+            You(havent_discovered_any, alchemic_recipes);
         break;
     default:
         oclass = def_char_to_objclass(c);

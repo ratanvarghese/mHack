@@ -4,6 +4,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "artifact.h"
 
 #define Your_Own_Role(mndx)  ((mndx) == gu.urole.mnum)
 #define Your_Own_Race(mndx)  ((mndx) == gu.urace.mnum)
@@ -36,6 +37,7 @@ staticfn void seffect_amnesia(struct obj **);
 staticfn void seffect_fire(struct obj **);
 staticfn void seffect_earth(struct obj **);
 staticfn void seffect_punishment(struct obj **);
+staticfn void seffect_alchemy(struct obj **);
 staticfn void seffect_stinking_cloud(struct obj **);
 staticfn void seffect_blank_paper(struct obj **);
 staticfn void seffect_teleportation(struct obj **);
@@ -657,7 +659,7 @@ stripspe(struct obj *obj)
         pline("%s briefly.", Yobjnam2(obj, "vibrate"));
         costly_alteration(obj, COST_UNCHRG);
         obj->spe = 0;
-        if (obj->otyp == OIL_LAMP || obj->otyp == BRASS_LANTERN)
+        if (obj->otyp == OIL_LAMP || obj->otyp == LANTERN)
             obj->age = 0;
     }
 }
@@ -702,7 +704,7 @@ charge_ok(struct obj *obj)
 
     if (obj->oclass == TOOL_CLASS) {
         /* suggest tools that aren't oc_charged but can still be recharged */
-        if (obj->otyp == BRASS_LANTERN
+        if (obj->otyp == LANTERN
             || (obj->otyp == OIL_LAMP)
             /* only list magic lamps if they are not identified yet */
             || (obj->otyp == MAGIC_LAMP
@@ -857,11 +859,16 @@ recharge(struct obj *obj, int curse_bless)
                 stripspe(obj);
             } else if (rechrg && obj->otyp == MAGIC_MARKER) {
                 /* previously recharged */
-                obj->recharged = 1; /* override increment done above */
-                if (obj->spe < 3)
-                    Your("marker seems permanently dried out.");
-                else
-                    pline1(nothing_happens);
+                if(obj->oartifact) {
+                    obj->spe = 15;
+                    p_glow2(obj, NH_WHITE);
+                } else {
+                    obj->recharged = 1; /* override increment done above */
+                    if (obj->spe < 3)
+                        Your("marker seems permanently dried out.");
+                    else
+                        pline1(nothing_happens);
+                }
             } else if (is_blessed) {
                 n = rn1(16, 15); /* 15..30 */
                 if (obj->spe + n <= 50)
@@ -892,7 +899,7 @@ recharge(struct obj *obj, int curse_bless)
             }
             break;
         case OIL_LAMP:
-        case BRASS_LANTERN:
+        case LANTERN:
             if (is_cursed) {
                 stripspe(obj);
                 if (obj->lamplit) {
@@ -1416,10 +1423,15 @@ seffect_scare_monster(struct obj **sobjp)
             if (confused || scursed) {
                 mtmp->mflee = mtmp->mfrozen = mtmp->msleeping = 0;
                 mtmp->mcanmove = 1;
+            if(mtmp->data == &mons[PM_CLOCKWORK_AUTOMATON] &&
+                !mtmp->mspec_used) {
+              mtmp->mfrozen = 1;
+              mtmp->mcanmove = 0;
             } else if (!resist(mtmp, sobj->oclass, 0, NOTELL))
                 monflee(mtmp, 0, FALSE, FALSE);
             if (!mtmp->mtame)
                 ct++; /* pets don't laugh at you */
+            }
         }
     }
     if (otyp == SCR_SCARE_MONSTER || !ct) {
@@ -1935,6 +1947,43 @@ seffect_punishment(struct obj **sobjp)
 }
 
 staticfn void
+seffect_alchemy(struct obj **sobjp)
+{
+    struct obj *sobj = *sobjp;
+    boolean sblessed = sobj->blessed;
+    boolean scursed = sobj->cursed;
+    boolean confused = (Confusion != 0);
+
+    int target_output = STRANGE_OBJECT;
+    if(confused) {
+        switch(d(1,4)) {
+        case 1: target_output = POT_BOOZE; break;
+        case 2: target_output = POT_HALLUCINATION; break;
+        default: target_output = POT_CONFUSION;
+        }
+    } else if(sblessed) {
+        switch(d(1,4)) {
+        case 1: target_output = POT_GAIN_LEVEL; break;
+        case 2: target_output = POT_GAIN_ENERGY; break;
+        default: target_output = POT_FULL_HEALING;
+        }
+    } else if(scursed) {
+        switch(d(1,4)) {
+        case 1: target_output = POT_SLEEPING; break;
+        case 2: target_output = POT_PARALYSIS; break;
+        default: target_output = POT_SICKNESS;
+        }
+    }
+
+    if(discover_random_recipe(target_output)) {
+        pline("You learn an alchemic formula from the scroll.");
+        gk.known = TRUE;
+    } else {
+        pline1(nothing_happens);
+    }
+}
+
+staticfn void
 seffect_stinking_cloud(struct obj **sobjp)
 {
     struct obj *sobj = *sobjp;
@@ -2223,6 +2272,9 @@ seffects(
     case SCR_PUNISHMENT:
         seffect_punishment(&sobj);
         break;
+    case SCR_ALCHEMY:
+        seffect_alchemy(&sobj);
+        break;
     case SCR_STINKING_CLOUD:
         seffect_stinking_cloud(&sobj);
         break;
@@ -2435,14 +2487,72 @@ set_lit(coordxy x, coordxy y, genericptr_t val)
 }
 
 void
+litroom_mon(boolean on, struct obj *obj, int xx, int yy)
+{
+    struct monst * mlit = m_at(xx,yy);
+    char u_see_effects = !Blind;
+    
+    /*
+     *  If we are darkening the room and the hero is punished but not
+     *  blind, then we have to pick up and replace the ball and chain so
+     *  that we don't remember them if they are out of sight.
+     */
+    if (Punished && !on && !Blind)
+        move_bc(1, 0, uball->ox, uball->oy, uchain->ox, uchain->oy);
+
+    if (Is_rogue_level(&u.uz)) {
+        /* Can't use do_clear_area because MAX_RADIUS is too small */
+        /* rogue lighting must light the entire room */
+        int rnum = levl[xx][yy].roomno - ROOMOFFSET;
+        int rx, ry;
+        if(rnum >= 0) {
+            for(rx = svr.rooms[rnum].lx-1; rx <= svr.rooms[rnum].hx+1; rx++)
+                for(ry = svr.rooms[rnum].ly-1; ry <= svr.rooms[rnum].hy+1; ry++){
+                    if (on)
+                        set_lit(rx, ry, (genericptr_t)(&u_see_effects));
+                    else
+                        set_lit(rx, ry, 0);
+                }
+            svr.rooms[rnum].rlit = on;
+        }
+        /* hallways remain dark on the rogue level */
+    } else
+        do_clear_area(xx,yy,
+            (obj && obj->oclass==SCROLL_CLASS && obj->blessed) ? 5 : 3,
+            set_lit, (on ? (genericptr_t)&u_see_effects : 0 ) );
+    /*
+     *  If we are not blind, then force a redraw on all positions in sight
+     *  by temporarily blinding the hero.  The vision recalculation will
+     *  correctly update all previously seen positions *and* correctly
+     *  set the waslit bit [could be messed up from above].
+     */
+    if (!Blind) {
+        vision_recalc(2);
+        /* replace ball&chain */
+        if (Punished && !on)
+            move_bc(0, 0, uball->ox, uball->oy, uchain->ox, uchain->oy);
+    }
+    if (on && canseemon(mlit)){
+        pline("A lit field surrounds %s!", mon_nam(mlit));
+    }
+    if (!on && u_see_effects==2){
+        pline("A shroud of darkness settles %s!", 
+            (distu(xx,yy) > 15)?"in the distance":"nearby");
+    }
+    gv.vision_full_recalc = 1;  /* delayed vision recalculation */
+}
+
+void
 litroom(
     boolean on,      /* True: make nearby area lit; False: cursed scroll */
     struct obj *obj) /* scroll, spellbook (for spell), or wand of light */
 {
     struct obj *otmp, *nextobj;
-    boolean blessed_effect = (obj && obj->oclass == SCROLL_CLASS
-                              && obj->blessed);
+
     boolean no_op = (u.uswallow || Underwater || Is_waterlevel(&u.uz));
+    boolean blessed_effect = (obj &&
+                             ((obj->oclass == SCROLL_CLASS && obj->blessed) ||
+                             (obj->oclass == WAND_CLASS && P_SKILL(P_WAND) > P_BASIC)));
     char is_lit = 0; /* value is irrelevant but assign something anyway; its
                       * address is used as a 'not null' flag for set_lit() */
 
@@ -2966,7 +3076,7 @@ void
 punish(struct obj *sobj)
 {
     /* angrygods() calls this with NULL sobj arg */
-    struct obj *reuse_ball = (sobj && sobj->otyp == HEAVY_IRON_BALL)
+    struct obj *reuse_ball = (sobj && sobj->otyp == HEAVY_BALL)
                                 ? sobj : (struct obj *) 0;
     /* analyzer doesn't know that the one caller that passes a NULL
      * sobj (angrygods) checks !Punished first, so add a guard */
@@ -2976,7 +3086,7 @@ punish(struct obj *sobj)
     if (!reuse_ball)
         You("are being punished for your misbehavior!");
     if (Punished) {
-        Your("iron ball gets heavier.");
+        Your("heavy ball gets heavier.");
         uball->owt += WT_IRON_BALL_INCR * (1 + cursed_levy);
         return;
     }

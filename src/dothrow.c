@@ -22,7 +22,6 @@ staticfn struct obj *return_throw_to_inv(struct obj *, long, boolean,
 staticfn void tmiss(struct obj *, struct monst *, boolean);
 staticfn int throw_gold(struct obj *);
 staticfn void check_shop_obj(struct obj *, coordxy, coordxy, boolean);
-staticfn void breakmsg(struct obj *, boolean);
 staticfn boolean mhurtle_step(genericptr_t, coordxy, coordxy);
 
 /* uwep might already be removed from inventory so test for W_WEP instead;
@@ -99,6 +98,13 @@ throw_obj(struct obj *obj, int shotlimit)
         /* No direction specified, so cancel the throw */
         res = ECMD_CANCEL; /* no time passes */
         goto unsplit_stack;
+    }
+
+    if(Gold_touch) {
+        struct obj* new_obj = turn_object_to_gold(obj, TRUE);
+        if(obj != new_obj) {
+            obj = new_obj;
+        }
     }
 
     /*
@@ -370,7 +376,7 @@ dothrow(void)
 
     obj = getobj("throw", throw_ok, GETOBJ_PROMPT | GETOBJ_ALLOWCNT);
     /* it is also possible to throw food */
-    /* (or jewels, or iron balls... ) */
+    /* (or jewels, or heavy balls... ) */
 
     return obj ? throw_obj(obj, shotlimit) : ECMD_CANCEL;
 }
@@ -874,9 +880,9 @@ hurtle_step(genericptr_t arg, coordxy x, coordxy y)
                     an(pmname(mon->data, NEUTRAL)));
             instapetrify(svk.killer.name);
         }
-        if (touch_petrifies(gy.youmonst.data)
+        if ((touch_petrifies(gy.youmonst.data) || Gold_touch)
             && !which_armor(mon, W_ARMU | W_ARM | W_ARMC)) {
-            minstapetrify(mon, TRUE);
+            minstapetrify_material(mon, TRUE, Gold_touch ? GOLD : MINERAL);
         }
         wake_nearto(x, y, 10);
         return FALSE;
@@ -1045,10 +1051,10 @@ mhurtle_step(genericptr_t arg, coordxy x, coordxy y)
         pline("%s bumps into you.", Some_Monnam(mon));
         stop_occupation();
         /* check whether 'mon' is turned to stone by touching poly'd hero */
-        if (Upolyd && touch_petrifies(gy.youmonst.data)
+        if (((Upolyd && touch_petrifies(gy.youmonst.data)) || Gold_touch)
             && !which_armor(mon, W_ARMU | W_ARM | W_ARMC)) {
             /* give poly'd hero credit/blame despite a monster causing it */
-            minstapetrify(mon, TRUE);
+            minstapetrify_material(mon, TRUE, Gold_touch ? GOLD : MINERAL);
             newsym(mon->mx, mon->my);
         }
         /* and whether hero is turned to stone by being touched by 'mon' */
@@ -1088,7 +1094,7 @@ hurtle(int dx, int dy, int range, boolean verbose)
      * for diagonal movement, give the player a message and return.
      */
     if (Punished && !carried(uball)) {
-        You_feel("a tug from the iron ball.");
+        You_feel("a tug from the heavy ball.");
         nomul(0);
         return;
     } else if (u.utrap) {
@@ -1326,6 +1332,15 @@ toss_up(struct obj *obj, boolean hitsroof)
                     Your1(vision_clears);
             }
             break;
+        case WATER_VENOM:
+            if (u.umonnum == PM_GREMLIN) {
+                (void)split_mon(&gy.youmonst, (struct monst *)0);
+            } else if (completelyrusts(gy.youmonst.data)){
+                You("rust!");
+                rehumanize();
+            }
+            (void) water_damage(uarm, 0, FALSE);
+            break;
         default:
             break;
         }
@@ -1342,7 +1357,7 @@ toss_up(struct obj *obj, boolean hitsroof)
         int material = objects[otyp].oc_material;
         boolean is_silver = (material == SILVER),
                 less_damage = (hard_helmet(uarmh)
-                               && (!is_silver || !Hate_silver)),
+                               && (!is_silver || !Hate_material(SILVER))),
                 harmless = (stone_missile(obj)
                             && passes_rocks(gy.youmonst.data)),
                 artimsg = FALSE;
@@ -1368,7 +1383,7 @@ toss_up(struct obj *obj, boolean hitsroof)
                 dmg = 0;
             if (obj->blessed && mon_hates_blessings(&gy.youmonst))
                 dmg += rnd(4);
-            if (is_silver && Hate_silver)
+            if (is_silver && Hate_material(SILVER))
                 dmg += rnd(20);
         }
         if (dmg > 1 && less_damage)
@@ -1411,8 +1426,12 @@ toss_up(struct obj *obj, boolean hitsroof)
             gt.thrownobj = 0;  /* now either gone or on floor */
             done(STONING);
             return obj ? TRUE : FALSE;
+        } else if (Hate_material(obj->material)) {
+            /* dmgval() already added extra damage */
+            searmsg(&gy.youmonst, &gy.youmonst, obj, FALSE);
+            exercise(A_CON, FALSE);
         }
-        if (is_silver && Hate_silver)
+        if (is_silver && Hate_material(SILVER))
             pline_The("silver sears you!");
         if (harmless)
             hit(thesimpleoname(obj), &gy.youmonst, " but doesn't hurt.");
@@ -1619,7 +1638,7 @@ throwit(
          * than 1, so the effects from throwing attached balls are
          * actually possible
          */
-        if (obj->otyp == HEAVY_IRON_BALL)
+        if (obj->otyp == HEAVY_BALL)
             range = urange - (int) (obj->owt / 100);
         else
             range = urange - (int) (obj->owt / 40);
@@ -1926,11 +1945,16 @@ omon_adj(struct monst *mon, struct obj *obj, boolean mon_notices)
         if (mon_notices && mon->data->mmove && !rn2(10)) {
             mon->mcanmove = 1;
             mon->mfrozen = 0;
+            if(mon->data == &mons[PM_CLOCKWORK_AUTOMATON] &&
+                !mon->mspec_used) {
+                mon->mfrozen = 1;
+                mon->mcanmove = 0;
+            }
         }
     }
     /* some objects are more likely to hit than others */
     switch (obj->otyp) {
-    case HEAVY_IRON_BALL:
+    case HEAVY_BALL:
         if (obj != uball)
             tmp += 2;
         break;
@@ -2018,6 +2042,9 @@ thitmonst(
     boolean guaranteed_hit = engulfing_u(mon);
     int dieroll;
 
+    boolean obj_disint = (touch_disintegrates(mon->data) && !mon->mcan &&
+        (mon->mhp > 1) && !oresist_disintegration(obj));
+
     hmode = (obj == uwep) ? HMON_APPLIED
               : (obj == gk.kickedobj) ? HMON_KICKED
                 : HMON_THROWN;
@@ -2062,7 +2089,7 @@ thitmonst(
         case GAUNTLETS_OF_FUMBLING:
             tmp -= 3;
             break;
-        case LEATHER_GLOVES:
+        case GLOVES:
         case GAUNTLETS_OF_DEXTERITY:
             break;
         default:
@@ -2217,7 +2244,7 @@ thitmonst(
             /* projectiles other than magic stones sometimes disappear
                when thrown; projectiles aren't among the types of weapon
                that hmon() might have destroyed so obj is intact */
-            if (should_mulch_missile(obj)) {
+            if (should_mulch_missile(obj) || obj_disint) {
                 if (*u.ushops || obj->unpaid)
                     check_shop_obj(obj, gb.bhitpos.x, gb.bhitpos.y, TRUE);
                 obfree(obj, (struct obj *) 0);
@@ -2230,7 +2257,7 @@ thitmonst(
                 wakeup(mon, TRUE);
         }
 
-    } else if (otyp == HEAVY_IRON_BALL) {
+    } else if (otyp == HEAVY_BALL) {
         exercise(A_STR, TRUE);
         if (tmp >= dieroll) {
             int was_swallowed = guaranteed_hit;
@@ -2239,6 +2266,12 @@ thitmonst(
             if (!hmon(mon, obj, hmode, dieroll)) { /* mon killed */
                 if (was_swallowed && !u.uswallow && obj == uball)
                     return 1; /* already did placebc() */
+            }
+            if (obj_disint) {
+                if (*u.ushops)
+                    check_shop_obj(obj, gb.bhitpos.x, gb.bhitpos.y, TRUE);
+                obfree(obj, (struct obj *)0);
+                return 1;
             }
         } else {
             tmiss(obj, mon, TRUE);
@@ -2249,12 +2282,18 @@ thitmonst(
         if (tmp >= dieroll) {
             exercise(A_DEX, TRUE);
             (void) hmon(mon, obj, hmode, dieroll);
+            if (obj_disint) {
+                if (*u.ushops)
+                    check_shop_obj(obj, gb.bhitpos.x, gb.bhitpos.y, TRUE);
+                obfree(obj, (struct obj *)0);
+                return 1;
+            }
         } else {
             tmiss(obj, mon, TRUE);
         }
 
     } else if ((otyp == EGG || otyp == CREAM_PIE || otyp == BLINDING_VENOM
-                || otyp == ACID_VENOM)
+                || otyp == ACID_VENOM || otyp == WATER_VENOM)
                && (guaranteed_hit || ACURR(A_DEX) > rnd(25))) {
         (void) hmon(mon, obj, hmode, dieroll);
         return 1; /* hmon used it up */
@@ -2316,7 +2355,7 @@ gem_accept(struct monst *mon, struct obj *obj)
         addluck[]    = " gratefully";
     char buf[BUFSZ];
     boolean is_buddy = sgn(mon->data->maligntyp) == sgn(u.ualign.type);
-    boolean is_gem = objects[obj->otyp].oc_material == GEMSTONE;
+    boolean is_gem = obj->material == GEMSTONE;
     int ret = 0;
 
     Strcpy(buf, Monnam(mon));
@@ -2487,7 +2526,7 @@ breakobj(
     boolean explosion = FALSE;
 
     if (is_crackable(obj)) /* if erodeproof, erode_obj() will say so */
-        return (erode_obj(obj, armor_simple_name(obj), ERODE_CRACK,
+        return (erode_obj(obj, simple_typename(obj->otyp), ERODE_CRACK,
                           EF_DESTROY | EF_VERBOSE) == ER_DESTROYED);
 
     switch (obj->oclass == POTION_CLASS ? POT_WATER : obj->otyp) {
@@ -2586,13 +2625,13 @@ breaktest(struct obj *obj)
     /* this may need to be changed if actual glass armor gets added someday;
        for now, it affects crystal plate mail and helm of brilliance;
        either of them will have to be cracked 4 times before breaking */
-    if (obj->oclass == ARMOR_CLASS && objects[obj->otyp].oc_material == GLASS)
-        nonbreakchance = 90;
+    if (obj->oclass == ARMOR_CLASS && obj->material == GLASS)
+        nonbreakchance = 0;
 
     if (obj_resists(obj, nonbreakchance, 99))
         return FALSE;
-    if (objects[obj->otyp].oc_material == GLASS && !obj->oartifact
-        && obj->oclass != GEM_CLASS)
+    if (obj->material == GLASS && !obj->oerodeproof
+        && !obj->oartifact && obj->oclass != GEM_CLASS)
         return TRUE;
     switch (obj->oclass == POTION_CLASS ? POT_WATER : obj->otyp) {
     case EXPENSIVE_CAMERA:
@@ -2602,13 +2641,14 @@ breaktest(struct obj *obj)
     case MELON:
     case ACID_VENOM:
     case BLINDING_VENOM:
+    case WATER_VENOM:
         return TRUE;
     default:
         return FALSE;
     }
 }
 
-staticfn void
+void
 breakmsg(struct obj *obj, boolean in_view)
 {
     const char *to_pieces;
@@ -2619,7 +2659,7 @@ breakmsg(struct obj *obj, boolean in_view)
     to_pieces = "";
     switch (obj->oclass == POTION_CLASS ? POT_WATER : obj->otyp) {
     default: /* glass or crystal wand */
-        if (obj->oclass != WAND_CLASS)
+        if (obj->material != GLASS)
             impossible("breaking odd object (%d)?", obj->otyp);
         FALLTHROUGH;
         /*FALLTHRU*/
@@ -2647,6 +2687,7 @@ breakmsg(struct obj *obj, boolean in_view)
         break;
     case ACID_VENOM:
     case BLINDING_VENOM:
+    case WATER_VENOM:
         pline("Splash!");
         break;
     }

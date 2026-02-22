@@ -162,6 +162,7 @@ struct monst {
     Bitfield(meverseen, 1); /* mon has been seen at some point */
 
     Bitfield(mspotted, 1);  /* mon is currently seen by hero */
+    Bitfield(mgoldtouch, 1);/* mon can turn things to gold */
 
     unsigned long mstrategy; /* for monsters with mflag3: current strategy */
 #ifdef NHSTDC
@@ -203,6 +204,13 @@ struct monst {
 #define MSLOW 1 /* slowed monster */
 #define MFAST 2 /* speeded monster */
 
+#define CLOCKWORK_PANIC   20
+#define CLOCKWORK_LOW    400
+#define CLOCKWORK_MED   1000
+#define CLOCKWORK_HIGH  1800
+#define CLOCKWORK_MAX   2000
+#define CLOCKWORK_WIND    50
+
 #define MON_WEP(mon) ((mon)->mw)
 #define MON_NOWEP(mon) ((mon)->mw = (struct obj *) 0)
 
@@ -212,6 +220,8 @@ struct monst {
 #define is_starting_pet(mon) ((mon)->m_id == svc.context.startingpet_mid)
 #define is_vampshifter(mon) \
     ((mon)->cham == PM_VAMPIRE || (mon)->cham == PM_VAMPIRE_LEADER \
+     || (mon)->cham == PM_VAMPIRE_NOBLE \
+     || (mon)->cham == PM_VAMPIRE_MAGE \
      || (mon)->cham == PM_VLAD_THE_IMPALER)
 #define vampshifted(mon) (is_vampshifter((mon)) && !is_vampire((mon)->data))
 /* Vlad might be vampshifted so just checking monst->data is insufficient */
@@ -259,6 +269,7 @@ struct monst {
 /* Macros for whether a type of monster is too strong for a specific level. */
 #define montoostrong(monindx, lev) (mons[monindx].difficulty > lev)
 #define montooweak(monindx, lev) (mons[monindx].difficulty < lev)
+#define helpless(mon) ((mon)->msleeping || !(mon)->mcanmove)
 
 #ifdef PMNAME_MACROS
 #define Mgender(mon) ((mon)->female ? FEMALE : MALE)

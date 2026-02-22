@@ -219,12 +219,12 @@ loot_classify(Loot *sort_item, struct obj *obj)
             k = 1; /* regular container or unknown bag of tricks */
         else
             switch (otyp) {
-            case WOODEN_FLUTE:
+            case FLUTE:
             case MAGIC_FLUTE:
             case TOOLED_HORN:
             case FROST_HORN:
             case FIRE_HORN:
-            case WOODEN_HARP:
+            case HARP:
             case MAGIC_HARP:
             case BUGLE:
             case LEATHER_DRUM:
@@ -965,6 +965,7 @@ addinv_core1(struct obj *obj)
         if (u.uhave.amulet)
             impossible("already have amulet?");
         u.uhave.amulet = 1;
+        make_divine_hallucinated(1);
         record_achievement(ACH_AMUL);
     } else if (obj->otyp == CANDELABRUM_OF_INVOCATION) {
         if (u.uhave.menorah)
@@ -1362,6 +1363,7 @@ freeinv_core(struct obj *obj)
         if (!u.uhave.amulet)
             impossible("don't have amulet?");
         u.uhave.amulet = 0;
+        make_divine_hallucinated(0);
     } else if (obj->otyp == CANDELABRUM_OF_INVOCATION) {
         if (!u.uhave.menorah)
             impossible("don't have candelabrum?");
@@ -2955,7 +2957,6 @@ xprname(
 
 RESTORE_WARNING_FORMAT_NONLITERAL
 
-
 /* show some or all of inventory while allowing the picking of an item in
    order to preform context-sensitive item action on it; always returns 'ok';
    invent subsets specified by the ')', '[', '(', '=', '"', or '*' commands
@@ -4070,6 +4071,8 @@ dfeature_at(coordxy x, coordxy y, char *buf)
         dfeature = ice_descr(x, y, altbuf), cmap = -1; /* "ice" */
     else if (is_pool(x, y))
         dfeature = "pool of water";
+    else if (IS_PUDDLE(ltyp))
+        dfeature = "shallow pool of water";
     else if (IS_SINK(ltyp))
         cmap = S_sink; /* "sink" */
     else if (IS_ALTAR(ltyp)) {
@@ -4392,6 +4395,10 @@ mergable(
     if (obj->oclass == COIN_CLASS)
         return TRUE;
 
+    /* different types of poison will never merge */
+    if (obj->opoisoned != otmp->opoisoned)
+        return FALSE;
+
     if (obj->cursed != otmp->cursed || obj->blessed != otmp->blessed)
         return FALSE;
 
@@ -4426,7 +4433,7 @@ mergable(
         || (obj->bknown != otmp->bknown && !Role_if(PM_CLERIC) &&
             (Blind || Hallucination))
         || obj->oeroded != otmp->oeroded || obj->oeroded2 != otmp->oeroded2
-        || obj->greased != otmp->greased)
+        || obj->material != otmp->material || obj->greased != otmp->greased)
         return FALSE;
 
     if ((erosion_matters(obj))
@@ -4789,7 +4796,7 @@ useupf(struct obj *obj, long numused)
 static NEARDATA const char *names[] = {
     0, "Illegal objects", "Weapons", "Armor", "Rings", "Amulets", "Tools",
     "Comestibles", "Potions", "Scrolls", "Spellbooks", "Wands", "Coins",
-    "Gems/Stones", "Boulders/Statues", "Iron balls", "Chains", "Venoms"
+    "Gems/Stones", "Boulders/Statues", "Heavy balls", "Chains", "Venoms"
 };
 static NEARDATA const char oth_symbols[] = { CONTAINED_SYM, '\0' };
 static NEARDATA const char *oth_names[] = { "Bagged/Boxed items" };

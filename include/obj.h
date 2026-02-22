@@ -136,10 +136,10 @@ struct obj {
 #define degraded_horn obroken /* unicorn horn will poly to non-magic */
     Bitfield(otrapped, 1);    /* container is trapped */
 /* or accidental tripped rolling boulder trap */
-#define opoisoned otrapped /* object (weapon) is coated with poison */
 
     Bitfield(globby, 1);    /* combines with like types on adjacent squares */
     Bitfield(greased, 1);   /* covered with grease */
+    Bitfield(material, 5); /* material this obj is made of */
     Bitfield(in_use, 1); /* for magic items before useup items */
     Bitfield(bypass, 1); /* mark this as an object to be skipped by bhito() */
     Bitfield(pickup_prev, 1); /* was picked up previously */
@@ -158,6 +158,7 @@ struct obj {
 #endif
 
     int corpsenm;         /* type of corpse is mons[corpsenm] */
+    int opoisoned;        /* type of poison (corresponds to potion otyp) */
 #define leashmon corpsenm /* gets m_id of attached pet */
 #define fromsink corpsenm /* a potion from a sink */
 #define novelidx corpsenm /* 3.6 tribute - the index of the novel title */
@@ -297,16 +298,16 @@ struct obj {
 #define is_suit(otmp) \
     (otmp->oclass == ARMOR_CLASS && objects[otmp->otyp].oc_armcat == ARM_SUIT)
 #define is_elven_armor(otmp)                                              \
-    ((otmp)->otyp == ELVEN_LEATHER_HELM                                   \
-     || (otmp)->otyp == ELVEN_MITHRIL_COAT || (otmp)->otyp == ELVEN_CLOAK \
+    ((otmp)->otyp == ELVEN_HELM                                   \
+     || (otmp)->otyp == ELVEN_RING_MAIL || (otmp)->otyp == ELVEN_CLOAK \
      || (otmp)->otyp == ELVEN_SHIELD || (otmp)->otyp == ELVEN_BOOTS)
 #define is_orcish_armor(otmp)                                            \
     ((otmp)->otyp == ORCISH_HELM || (otmp)->otyp == ORCISH_CHAIN_MAIL    \
      || (otmp)->otyp == ORCISH_RING_MAIL || (otmp)->otyp == ORCISH_CLOAK \
      || (otmp)->otyp == URUK_HAI_SHIELD || (otmp)->otyp == ORCISH_SHIELD)
 #define is_dwarvish_armor(otmp)               \
-    ((otmp)->otyp == DWARVISH_IRON_HELM       \
-     || (otmp)->otyp == DWARVISH_MITHRIL_COAT \
+    ((otmp)->otyp == DWARVISH_HELM       \
+     || (otmp)->otyp == DWARVISH_RING_MAIL \
      || (otmp)->otyp == DWARVISH_CLOAK        \
      || (otmp)->otyp == DWARVISH_ROUNDSHIELD)
 #define is_gnomish_armor(otmp) (FALSE)
@@ -386,16 +387,16 @@ struct obj {
 /* age field of this is relative age rather than absolute; does not include
    magic lamp */
 #define age_is_relative(otmp) \
-    ((otmp)->otyp == BRASS_LANTERN || (otmp)->otyp == OIL_LAMP      \
+    ((otmp)->otyp == LANTERN || (otmp)->otyp == OIL_LAMP      \
      || (otmp)->otyp == CANDELABRUM_OF_INVOCATION                   \
      || (otmp)->otyp == TALLOW_CANDLE || (otmp)->otyp == WAX_CANDLE \
      || (otmp)->otyp == POT_OIL)
 /* object can be ignited; magic lamp used to excluded here too but all
    usage of this macro ended up testing
      (ignitable(obj) || obj->otyp == MAGIC_LAMP)
-   so include it; brass lantern can be lit but not by fire */
+   so include it; lantern can be lit but not by fire */
 #define ignitable(otmp) \
-    ((otmp)->otyp == BRASS_LANTERN || (otmp)->otyp == OIL_LAMP      \
+    ((otmp)->otyp == LANTERN || (otmp)->otyp == OIL_LAMP      \
      || ((otmp)->otyp == MAGIC_LAMP && (otmp)->spe > 0)             \
      || (otmp)->otyp == CANDELABRUM_OF_INVOCATION                   \
      || (otmp)->otyp == TALLOW_CANDLE || (otmp)->otyp == WAX_CANDLE \
@@ -414,10 +415,14 @@ struct obj {
     ((obj)->otyp == LUCKSTONE || (obj)->otyp == LOADSTONE \
      || (obj)->otyp == FLINT || (obj)->otyp == TOUCHSTONE)
 
+/* worthless glass -- assumes all GLASS * are worthless glass */
+#define is_worthless_glass(obj) \
+    ((obj)->oclass == GEM_CLASS && obj->material == GLASS)
+
 /* misc helpers, simple enough to be macros */
 #define is_flimsy(otmp)                           \
-    (objects[(otmp)->otyp].oc_material <= LEATHER \
-     || (otmp)->otyp == RUBBER_HOSE)
+    (otmp->material <= LEATHER || (otmp)->otyp == RUBBER_HOSE)
+#define is_seethru(otmp) (otmp->material == SLIME || otmp->material == GLASS)
 #define is_plural(o) \
     ((o)->quan != 1L                                                    \
      /* "the Eyes of the Overworld" are plural, but                     \
@@ -430,6 +435,17 @@ struct obj {
                        || (o)->otyp == SPE_POLYMORPH \
                        || (o)->otyp == POT_POLYMORPH \
                        || (o)->otyp == AMULET_OF_UNCHANGING)
+
+/* note: worn amulet of life saving must be preserved in order to operate */
+#define oresist_disintegration(obj)                                       \
+    (objects[obj->otyp].oc_oprop == DISINT_RES || obj_resists(obj, 5, 50) \
+     || is_quest_artifact(obj) || obj->oclass == AMULET_CLASS)
+# define weight_dmg(i) {  \
+  i = (i<=100)?1:i/100; \
+  i = rnd(i); \
+  if(i > 6) i = 6; \
+}
+
 
 /* achievement tracking; 3.6.x did this differently */
 #define is_mines_prize(o) ((o)->o_id == svc.context.achieveo.mines_prize_oid)
@@ -473,8 +489,10 @@ struct obj {
 /* propeller method for potionhit() */
 #define POTHIT_HERO_BASH   0 /* wielded by hero */
 #define POTHIT_HERO_THROW  1 /* thrown by hero */
-#define POTHIT_MONST_THROW 2 /* thrown by a monster */
-#define POTHIT_OTHER_THROW 3 /* propelled by some other means [scatter()] */
+#define POTHIT_HERO_WEP    2 /* delivered to monster via weapon poison */
+#define POTHIT_MONST_THROW 3 /* thrown by a monster */
+#define POTHIT_MONST_WEP   4 /* delivered to hero via weapon poison */
+#define POTHIT_OTHER_THROW 5 /* propelled by some other means [scatter()] */
 
 /* tracking how an item left your inventory via how_lost field */
 #define LOST_NONE      0 /* still in inventory, or method not covered below */

@@ -75,14 +75,72 @@ noattacks(struct permonst *ptr)
     return TRUE;
 }
 
+int
+determine_polymon(int material)
+{
+    /* some of these choices are arbitrary */
+    switch(material) {
+    case IRON:
+    case COLD_IRON:
+    case METAL:
+    case MITHRIL:
+    case ADAMANTINE:
+        return PM_IRON_GOLEM;
+    case SILVER:
+        return PM_SILVER_GOLEM;
+    case COPPER:
+    case PLATINUM:
+    case MINERAL:
+        return PM_STONE_GOLEM;
+    case GEMSTONE:
+        return PM_CRYSTAL_GOLEM;
+    case 0:
+    case FLESH:
+        /* there is no flesh type, but all food is type 0, so we use it */
+        return PM_FLESH_GOLEM;
+    case WOOD:
+        return PM_WOOD_GOLEM;
+    case LEATHER:
+        return PM_LEATHER_GOLEM;
+    case CLOTH:
+        return PM_ROPE_GOLEM;
+    case BONE:
+        return PM_SKELETON; /* nearest thing to "bone golem" */
+    case SHADOW:
+        return PM_SHADE; /* nearest thing to "shadow" */
+    case GOLD:
+        return PM_GOLD_GOLEM;
+    case GLASS:
+        return PM_GLASS_GOLEM;
+    case PAPER:
+        return PM_PAPER_GOLEM;
+    default:
+        /* if all else fails... */
+        return PM_STRAW_GOLEM;
+    }
+}
+
 /* does monster-type transform into something else when petrified? */
+boolean
+poly_when_petrified(struct permonst *ptr, int petrify_material)
+{
+    /* golems turn into golems of appropriate material unless latter is genocided */
+    if(is_golem(ptr)) {
+        int pm_index = determine_polymon(petrify_material);
+        if(!is_golem(&mons[pm_index])) {
+            pm_index = PM_STONE_GOLEM;
+        }
+        return (ptr != &mons[pm_index] && !(svm.mvitals[pm_index].mvflags & G_GENOD));
+        /* allow G_EXTINCT */
+    } else {
+        return FALSE;
+    }
+}
+
 boolean
 poly_when_stoned(struct permonst *ptr)
 {
-    /* non-stone golems turn into stone golems unless latter is genocided */
-    return (boolean) (is_golem(ptr) && ptr != &mons[PM_STONE_GOLEM]
-                      && !(svm.mvitals[PM_STONE_GOLEM].mvflags & G_GENOD));
-    /* allow G_EXTINCT */
+    return poly_when_petrified(ptr, MINERAL);
 }
 
 /* is 'mon' (possibly youmonst) protected against damage type 'adtype' via
@@ -327,6 +385,9 @@ can_blnd(
     if (magr && magr->data == &mons[PM_RAVEN] && mdef->data == &mons[PM_RAVEN])
         return FALSE;
 
+    if (magr && magr->data == &mons[PM_UMBRAL_HULK])
+        return FALSE;
+
     switch (aatyp) {
     case AT_EXPL:
     case AT_BOOM:
@@ -512,20 +573,68 @@ mstrength_ranged_attk(struct permonst *ptr)
 }
 #endif /* (NH_DEVEL_STATUS != NH_STATUS_RELEASED) || DEBUG || MAKEDEFS_C */
 
-/* True if specific monster is especially affected by silver weapons */
+/* True if specific monster is especially affected by weapons of the given
+   material type */
 boolean
-mon_hates_silver(struct monst *mon)
+mon_hates_material(struct monst *mon, int material)
 {
-    return (boolean) (is_vampshifter(mon) || hates_silver(mon->data));
+    if (hates_material(mon->data, material))
+        return TRUE;
+    /* extra case: shapeshifted vampires still hate silver */
+    if (material == SILVER && is_vampshifter(mon))
+        return TRUE;
+
+    /* extra extra case: lycanthrope player (monster lycanthropes all fall under
+     * hates_material, and non-lycanthropes can't currently be infected) */
+    if (mon == &gy.youmonst && material == SILVER && u.ulycn >= LOW_PM)
+        return TRUE;
+
+    return FALSE;
 }
 
-/* True if monster-type is especially affected by silver weapons */
+/* True if monster-type is especially affected by weapons of the given
+   material type */
 boolean
-hates_silver(struct permonst *ptr)
+hates_material(struct permonst *ptr, int material)
 {
-    return (boolean) (is_were(ptr) || ptr->mlet == S_VAMPIRE || is_demon(ptr)
-                      || ptr == &mons[PM_SHADE]
-                      || (ptr->mlet == S_IMP && ptr != &mons[PM_TENGU]));
+    if (material == SILVER) {
+        if (ptr->mlet == S_IMP) {
+            /* impish creatures that aren't actually demonic */
+            if (ptr == &mons[PM_TENGU])
+                return FALSE;
+        }
+        return (is_were(ptr)
+                || is_vampire(ptr)
+                || is_demon(ptr) || ptr == &mons[PM_SHADE]
+                || (ptr->mlet == S_IMP));
+    }
+    else if (material == IRON || material == COLD_IRON) {
+        /* cold iron: fairy/fae creatures hate it */
+        return (is_elf(ptr) || ptr->mlet == S_NYMPH
+                || ptr->mlet == S_IMP);
+    }
+    else if (material == COPPER) {
+        /* copper has antibacterial and antifungal properties,
+         * very good versus sickness, mold and decay */
+        return (ptr->mlet == S_FUNGUS || dmgtype(ptr, AD_DISE)
+                || dmgtype(ptr, AD_DCAY) || dmgtype(ptr, AD_PEST));
+    }
+    return FALSE;
+}
+
+/* Return amount of damage a monster will take from coming into contact with a
+* material it hates. */
+int
+sear_damage(int material)
+{
+    switch (material) {
+    case SILVER:
+    case COLD_IRON:
+        return 20;
+    case IRON:
+    default:
+        return 6;
+    }
 }
 
 /* True if specific monster is especially affected by blessed objects */
@@ -1259,6 +1368,7 @@ static const short grownups[][2] = {
     { PM_DEMILICH, PM_MASTER_LICH },
     { PM_MASTER_LICH, PM_ARCH_LICH },
     { PM_VAMPIRE, PM_VAMPIRE_LEADER },
+    { PM_VAMPIRE_LEADER, PM_VAMPIRE_NOBLE },
     { PM_BAT, PM_GIANT_BAT },
     { PM_BABY_GRAY_DRAGON, PM_GRAY_DRAGON },
     { PM_BABY_GOLD_DRAGON, PM_GOLD_DRAGON },
@@ -1273,6 +1383,7 @@ static const short grownups[][2] = {
     { PM_BABY_BLUE_DRAGON, PM_BLUE_DRAGON },
     { PM_BABY_GREEN_DRAGON, PM_GREEN_DRAGON },
     { PM_BABY_YELLOW_DRAGON, PM_YELLOW_DRAGON },
+    { PM_JABBERWOCK, PM_VORPAL_JABBERWOCK },
     { PM_RED_NAGA_HATCHLING, PM_RED_NAGA },
     { PM_BLACK_NAGA_HATCHLING, PM_BLACK_NAGA },
     { PM_GOLDEN_NAGA_HATCHLING, PM_GOLDEN_NAGA },
@@ -1288,14 +1399,20 @@ static const short grownups[][2] = {
     { PM_WATCHMAN, PM_WATCH_CAPTAIN },
     { PM_ALIGNED_CLERIC, PM_HIGH_CLERIC },
     { PM_STUDENT, PM_ARCHEOLOGIST },
+    { PM_CHEMIST, PM_ALCHEMIST },
     { PM_ATTENDANT, PM_HEALER },
     { PM_PAGE, PM_KNIGHT },
+    { PM_TRADER, PM_MERCHANT },
     { PM_ACOLYTE, PM_CLERIC },
     { PM_APPRENTICE, PM_WIZARD },
     { PM_MANES, PM_LEMURE },
     { PM_KEYSTONE_KOP, PM_KOP_SERGEANT },
     { PM_KOP_SERGEANT, PM_KOP_LIEUTENANT },
     { PM_KOP_LIEUTENANT, PM_KOP_KAPTAIN },
+    { PM_DEEP_ONE, PM_DEEPER_ONE },
+    { PM_DEEPER_ONE, PM_DEEPEST_ONE },
+    { PM_MIGO_DRONE, PM_MIGO_WARRIOR },
+    { PM_MIGO_WARRIOR, PM_MIGO_QUEEN },
     { NON_PM, NON_PM }
 };
 
@@ -1431,6 +1548,11 @@ on_fire(struct permonst *mptr, struct attack *mattk)
     case PM_STONE_GOLEM:
     case PM_CLAY_GOLEM:
     case PM_GOLD_GOLEM:
+    case PM_SILVER_GOLEM:
+    case PM_RUBY_GOLEM:
+    case PM_DIAMOND_GOLEM:
+    case PM_SAPPHIRE_GOLEM:
+    case PM_CRYSTAL_GOLEM:
     case PM_AIR_ELEMENTAL:
     case PM_EARTH_ELEMENTAL:
     case PM_DUST_VORTEX:
@@ -1438,7 +1560,11 @@ on_fire(struct permonst *mptr, struct attack *mattk)
         what = "heating up";
         break;
     default:
-        what = (mattk->aatyp == AT_HUGS) ? "being roasted" : "on fire";
+        if(mattk->adtyp == AD_SCLD) {
+            what = "being scalded";
+        } else {
+            what = (mattk->aatyp == AT_HUGS) ? "being roasted" : "on fire";
+        }
         break;
     }
     return what;
@@ -1515,6 +1641,47 @@ olfaction(struct permonst *mdat)
         || mdat->mlet == S_LIGHT)
         return FALSE;
     return TRUE;
+}
+
+/* Return the material a monster is composed of.
+ * Don't get too specific; most monsters should return 0 from here. We're only
+ * interested if it's something unusual. */
+int
+monmaterial(int mndx)
+{
+    switch (mndx) {
+    case PM_GARGOYLE:
+    case PM_WINGED_GARGOYLE:
+    case PM_EARTH_ELEMENTAL:
+        return MINERAL;
+    case PM_SKELETON:
+        return BONE;
+    case PM_PAPER_GOLEM:
+        return PAPER;
+    case PM_GOLD_GOLEM:
+        return GOLD;
+    case PM_SILVER_GOLEM:
+        return SILVER;
+    case PM_LEATHER_GOLEM:
+        return LEATHER;
+    case PM_WOOD_GOLEM:
+        return WOOD;
+    case PM_CLAY_GOLEM:
+    case PM_STONE_GOLEM:
+        return MINERAL;
+    case PM_GLASS_GOLEM:
+        return GLASS;
+    case PM_IRON_GOLEM:
+    case PM_STEEL_GOLEM:
+        return IRON;
+    case PM_RUBY_GOLEM:
+    case PM_DIAMOND_GOLEM:
+    case PM_SAPPHIRE_GOLEM:
+    case PM_CRYSTAL_GOLEM:
+        return GEMSTONE;
+    default:
+        return 0;
+    }
 }
 
 /* Convert attack damage type AD_foo to M_SEEN_bar */

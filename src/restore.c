@@ -701,6 +701,7 @@ restgamestate(NHFILE *nhfp)
         Sfi_spell(nhfp, &svs.spl_book[i], "gamestate-spl_book");
     }
     restore_artifacts(nhfp);
+    restore_alchemic_recipes(nhfp);
     restore_oracles(nhfp);
     Sfi_char(nhfp, svp.pl_character,
              "gamestate-pl_character", sizeof svp.pl_character);

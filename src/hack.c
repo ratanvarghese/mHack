@@ -750,7 +750,7 @@ still_chewing(coordxy x, coordxy y)
         if (metallivorous(gy.youmonst.data)) { /* should always be True here */
             /* arbitrary amount; unlike proper eating, nutrition is
                bestowed in a lump sum at the end */
-            int nut = (int) objects[HEAVY_IRON_BALL].oc_weight;
+            int nut = (int) objects[HEAVY_BALL].oc_weight;
 
             /* lesshungry() requires that victual be set up, so skip it;
                morehungry() of a negative amount will increase nutrition
@@ -812,49 +812,11 @@ movobj(struct obj *obj, coordxy ox, coordxy oy)
     newsym(ox, oy);
 }
 
-staticfn void
-dosinkfall(void)
+void
+unequip_levitating_items(boolean ufall)
 {
-    static const char fell_on_sink[] = "fell onto a sink";
     struct obj *obj;
-    int dmg;
-    boolean lev_boots = (uarmf && uarmf->otyp == LEVITATION_BOOTS),
-            innate_lev = ((HLevitation & (FROMOUTSIDE | FROMFORM)) != 0L),
-            /* to handle being chained to buried iron ball, trying to
-               levitate but being blocked, then moving onto adjacent sink;
-               no need to worry about being blocked by terrain because we
-               couldn't be over a sink at the same time */
-            blockd_lev = (BLevitation == I_SPECIAL),
-            ufall = (!innate_lev && !blockd_lev
-                     && !(HFlying || EFlying)); /* BFlying */
-
-    if (!ufall) {
-        You((innate_lev || blockd_lev) ? "wobble unsteadily for a moment."
-                                       : "gain control of your flight.");
-    } else {
-        long save_ELev = ELevitation, save_HLev = HLevitation;
-
-        /* fake removal of levitation in advance so that final
-           disclosure will be right in case this turns out to
-           be fatal; fortunately the fact that rings and boots
-           are really still worn has no effect on bones data */
-        ELevitation = HLevitation = 0L;
-        You("crash to the floor!");
-        dmg = rn1(8, 25 - (int) ACURR(A_CON));
-        losehp(Maybe_Half_Phys(dmg), fell_on_sink, NO_KILLER_PREFIX);
-        exercise(A_DEX, FALSE);
-        selftouch("Falling, you");
-        for (obj = svl.level.objects[u.ux][u.uy]; obj; obj = obj->nexthere)
-            if (obj->oclass == WEAPON_CLASS || is_weptool(obj)) {
-                You("fell on %s.", doname(obj));
-                losehp(Maybe_Half_Phys(rnd(3)), fell_on_sink,
-                       NO_KILLER_PREFIX);
-                exercise(A_CON, FALSE);
-            }
-        ELevitation = save_ELev;
-        HLevitation = save_HLev;
-    }
-
+    boolean lev_boots = (uarmf && uarmf->otyp == LEVITATION_BOOTS);
     /*
      * Interrupt multi-turn putting on/taking off of armor (in which
      * case we reached the sink due to being teleported while busy;
@@ -893,6 +855,51 @@ dosinkfall(void)
         off_msg(obj);
     }
     HLevitation--;
+}
+
+staticfn void
+dosinkfall(void)
+{
+    static const char fell_on_sink[] = "fell onto a sink";
+    struct obj *obj;
+    int dmg;
+    boolean innate_lev = ((HLevitation & (FROMOUTSIDE | FROMFORM)) != 0L),
+            /* to handle being chained to buried heavy ball, trying to
+               levitate but being blocked, then moving onto adjacent sink;
+               no need to worry about being blocked by terrain because we
+               couldn't be over a sink at the same time */
+            blockd_lev = (BLevitation == I_SPECIAL),
+            ufall = (!innate_lev && !blockd_lev
+                     && !(HFlying || EFlying)); /* BFlying */
+
+    if (!ufall) {
+        You((innate_lev || blockd_lev) ? "wobble unsteadily for a moment."
+                                       : "gain control of your flight.");
+    } else {
+        long save_ELev = ELevitation, save_HLev = HLevitation;
+
+        /* fake removal of levitation in advance so that final
+           disclosure will be right in case this turns out to
+           be fatal; fortunately the fact that rings and boots
+           are really still worn has no effect on bones data */
+        ELevitation = HLevitation = 0L;
+        You("crash to the floor!");
+        dmg = rn1(8, 25 - (int) ACURR(A_CON));
+        losehp(Maybe_Half_Phys(dmg), fell_on_sink, NO_KILLER_PREFIX);
+        exercise(A_DEX, FALSE);
+        selftouch("Falling, you");
+        for (obj = svl.level.objects[u.ux][u.uy]; obj; obj = obj->nexthere)
+            if (obj->oclass == WEAPON_CLASS || is_weptool(obj)) {
+                You("fell on %s.", doname(obj));
+                losehp(Maybe_Half_Phys(rnd(3)), fell_on_sink,
+                       NO_KILLER_PREFIX);
+                exercise(A_CON, FALSE);
+            }
+        ELevitation = save_ELev;
+        HLevitation = save_HLev;
+    }
+
+    unequip_levitating_items(ufall);
     /* probably moot; we're either still levitating or went
        through float_down(), but make sure BFlying is up to date */
     float_vs_flight();
@@ -2155,54 +2162,63 @@ domove_swap_with_pet(
                      (mtmp->mpeaceful && !mtmp->mtame) ? "peaceful" : 0,
                      has_mgivenname(mtmp) ? SUPPRESS_SADDLE : 0, FALSE));
 
-        /* check for displacing it into pools and traps */
-        switch (minliquid(mtmp) ? Trap_Killed_Mon
-                : mintrap(mtmp, NO_TRAP_FLAGS)) {
-        case Trap_Effect_Finished:
-            break;
-        case Trap_Caught_Mon: /* trapped */
-        case Trap_Moved_Mon: /* changed levels */
-            /* there's already been a trap message, reinforce it */
-            abuse_dog(mtmp);
-            adjalign(-3);
-            break;
-        case Trap_Killed_Mon:
-            /* drowned or died...
-             * you killed your pet by direct action, so get experience
-             * and possibly penalties;
-             * we want the level gain message, if it happens, to occur
-             * before the guilt message below
-             */
-            {
-                /* minliquid() and mintrap() call mondead() rather than
-                   killed() so we duplicate some of the latter here */
-                int tmp, mndx;
-
-                if (!u.uconduct.killer++)
-                    livelog_printf(LL_CONDUCT, "killed for the first time");
-                mndx = monsndx(mtmp->data);
-                tmp = experience(mtmp, (int) svm.mvitals[mndx].died);
-                more_experienced(tmp, 0);
-                newexplevel(); /* will decide if you go up */
-            }
-            /* That's no way to treat a pet!  Your god gets angry.
-             *
-             * [This has always been pretty iffy.  Why does your
-             * patron deity care at all, let alone enough to get mad?]
-             */
-            if (rn2(4)) {
-                You_feel("guilty about losing your pet like this.");
-                u.ugangr++;
-                adjalign(-15);
-            }
-            break;
-        default:
-            impossible("that's strange, unknown mintrap result!");
-            break;
-        }
+        displace_onto_trap(mtmp);
     }
     return !didnt_move;
 }
+
+void
+displace_onto_trap(struct monst *mtmp)
+{
+    /* check for displacing it into pools and traps */
+    switch (minliquid(mtmp) ? Trap_Killed_Mon
+            : mintrap(mtmp, NO_TRAP_FLAGS)) {
+    case Trap_Effect_Finished:
+        break;
+    case Trap_Caught_Mon: /* trapped */
+    case Trap_Moved_Mon: /* changed levels */
+        /* there's already been a trap message, reinforce it */
+        if(mtmp->mtame) {
+            abuse_dog(mtmp);
+            adjalign(-3);
+        }
+        break;
+    case Trap_Killed_Mon:
+        /* drowned or died...
+         * you killed your pet by direct action, so get experience
+         * and possibly penalties;
+         * we want the level gain message, if it happens, to occur
+         * before the guilt message below
+         */
+        {
+            /* minliquid() and mintrap() call mondead() rather than
+               killed() so we duplicate some of the latter here */
+            int tmp, mndx;
+
+            if (!u.uconduct.killer++)
+                livelog_printf(LL_CONDUCT, "killed for the first time");
+            mndx = monsndx(mtmp->data);
+            tmp = experience(mtmp, (int) svm.mvitals[mndx].died);
+            more_experienced(tmp, 0);
+            newexplevel(); /* will decide if you go up */
+        }
+        /* That's no way to treat a pet!  Your god gets angry.
+         *
+         * [This has always been pretty iffy.  Why does your
+         * patron deity care at all, let alone enough to get mad?]
+         */
+        if (rn2(4) && mtmp->mtame) {
+            You_feel("guilty about losing your pet like this.");
+            u.ugangr++;
+            adjalign(-15);
+        }
+        break;
+    default:
+        impossible("that's strange, unknown mintrap result!");
+        break;
+    }
+}
+
 
 /* force-fight (x,y) which doesn't have anything to fight */
 staticfn boolean
@@ -2963,7 +2979,7 @@ domove_core(void)
     /* must come after we finished picking up, in spoteffects() */
     if (cause_delay) {
         nomul(-2);
-        gm.multi_reason = "dragging an iron ball";
+        gm.multi_reason = "dragging a heavy ball";
         gn.nomovemsg = "";
     }
 
@@ -3084,7 +3100,7 @@ switch_terrain(void)
     } else if (BLevitation) {
         BLevitation &= ~FROMOUTSIDE;
         /* we're probably levitating now; if not, we must be chained
-           to a buried iron ball so get float_up() feedback for that */
+           to a buried heavy ball so get float_up() feedback for that */
         if (Levitation || BLevitation)
             float_up();
     }
@@ -3191,6 +3207,21 @@ pooleffects(
             if (drown())
                 return TRUE;
         }
+    } else if(!u.ustuck && !Levitation && !Flying && IS_PUDDLE(levl[u.ux][u.uy].typ)) {
+        if(u.umonnum == PM_GREMLIN)
+            (void)split_mon(&gy.youmonst, (struct monst *)0);
+        else if (u.umonnum == PM_IRON_GOLEM &&
+            /* mud boots keep the feet dry */
+            (!uarmf || strncmp(OBJ_DESCR(objects[uarmf->otyp]), "mud ", 4))) {
+            int dam = rnd(6);
+            Your("%s rust!", makeplural(body_part(FOOT)));
+            if (u.mhmax > dam) u.mhmax -= dam;
+            losehp(dam, "rusting away", KILLED_BY);
+        }
+        if (verysmall(gy.youmonst.data))
+            water_damage_chain(gi.invent, FALSE);
+        if (!u.usteed)
+            (void)erode_obj(uarmf, "boots", ERODE_RUST, EF_GREASE);
     }
     return FALSE;
 }

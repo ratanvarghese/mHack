@@ -357,6 +357,7 @@ static const struct {
                 { '-', DBWALL },
                 { '|', VWALL },
                 { '+', DOOR },
+                { 'w', PUDDLE },
                 { 'A', AIR },
                 { 'C', CLOUD },
                 { 'S', SDOOR },

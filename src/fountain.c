@@ -117,12 +117,12 @@ dowaternymph(void)
 
 /* Gushing forth along LOS from (u.ux, u.uy) */
 void
-dogushforth(int drinking)
+dogushforth(int drinking, int x, int y)
 {
     int madepool = 0;
 
-    do_clear_area(u.ux, u.uy, 7, gush, (genericptr_t) &madepool);
-    if (!madepool) {
+    do_clear_area(x, y, 7, gush, (genericptr_t) &madepool);
+    if (!madepool && u.ux == x && u.uy == y) {
         if (drinking)
             Your("thirst is quenched.");
         else
@@ -147,10 +147,9 @@ gush(coordxy x, coordxy y, genericptr_t poolcnt)
     if (!((*(int *) poolcnt)++))
         pline("Water gushes forth from the overflowing fountain!");
 
-    /* Put a pool at x, y */
-    set_levltyp(x, y, POOL);
+    /* Put a puddle at x, y */
+    set_levltyp(x, y, PUDDLE);
     levl[x][y].flags = 0;
-    /* No kelp! */
     del_engr_at(x, y);
     water_damage_chain(svl.level.objects[x][y], TRUE);
 
@@ -278,7 +277,8 @@ drinkfountain(void)
 
     if (fate < 10) {
         pline_The("cool draught refreshes you.");
-        u.uhunger += rnd(10); /* don't choke on water */
+        if (!(Upolyd && gy.youmonst.data == &mons[PM_CLOCKWORK_AUTOMATON] ))
+            u.uhunger += rnd(10); /* don't choke on water */
         newuhs(FALSE);
         if (mgkftn)
             return;
@@ -378,7 +378,7 @@ drinkfountain(void)
             break;
         }
         case 30: /* Gushing forth in this room */
-            dogushforth(TRUE);
+            dogushforth(TRUE, u.ux, u.uy);
             break;
         default:
             pline("This tepid %s is tasteless.",
@@ -490,7 +490,7 @@ dipfountain(struct obj *obj)
         FALLTHROUGH;
         /*FALLTHRU*/
     case 25: /* Water gushes forth */
-        dogushforth(FALSE);
+        dogushforth(FALSE, u.ux, u.uy);
         break;
     case 26: /* Strange feeling */
         pline("A strange tingling runs up your %s.", body_part(ARM));

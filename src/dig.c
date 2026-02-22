@@ -399,6 +399,11 @@ dig(void)
                 else if (uarmf)
                     dmg = (dmg + 1) / 2;
                 You("hit yourself in the %s.", body_part(FOOT));
+                if (Hate_material(uwep->material)) {
+                    /* extra damage already applied by dmgval() */
+                    searmsg(&gy.youmonst, &gy.youmonst, uwep, FALSE);
+                    exercise(A_CON, FALSE);
+                }
                 Sprintf(kbuf, "chopping off %s own %s", uhis(),
                         body_part(FOOT));
                 losehp(Maybe_Half_Phys(dmg), kbuf, KILLED_BY);
@@ -573,7 +578,7 @@ furniture_handled(coordxy x, coordxy y, boolean madeby_u)
     struct rm *lev = &levl[x][y];
 
     if (IS_FOUNTAIN(lev->typ)) {
-        dogushforth(FALSE);
+        dogushforth(FALSE, u.ux, u.uy);
         SET_FOUNTAIN_WARNED(x, y); /* force dryup */
         dryup(x, y, madeby_u);
     } else if (IS_SINK(lev->typ)) {
@@ -919,7 +924,7 @@ dighole(boolean pit_only, boolean by_magic, coord *cc)
         explode(dig_x, dig_y, 0, 20 + d(3, 6), TRAP_EXPLODE, EXPL_MAGICAL);
         deltrap(ttmp);
         newsym(dig_x, dig_y);
-    } else if (is_pool_or_lava(dig_x, dig_y)) {
+    } else if (is_pool_or_lava(dig_x, dig_y) || IS_PUDDLE(lev->typ)) {
         pline_The("%s sloshes furiously for a moment, then subsides.",
                   hliquid(is_lava(dig_x, dig_y) ? "lava" : "water"));
         wake_nearby(FALSE); /* splashing */
@@ -1319,6 +1324,9 @@ use_pick_axe2(struct obj *obj)
         /* Monsters which swim also happen not to be able to dig */
         You("cannot stay under%s long enough.",
             is_pool(u.ux, u.uy) ? "water" : " the lava");
+    } else if (IS_PUDDLE(levl[u.ux][u.uy].typ)) {
+        Your("%s against the water's surface.", aobjnam(obj, "splash"));
+        wake_nearby(FALSE);
     } else if ((trap = t_at(u.ux, u.uy)) != 0
                && (uteetering_at_seen_pit(trap) || uescaped_shaft(trap))) {
         dotrap(trap, FORCEBUNGLE);
@@ -1416,6 +1424,7 @@ mdig_tunnel(struct monst *mtmp)
     struct rm *here;
     boolean sawit, seeit, trapped;
     int pile = rnd(12);
+    int tunnel_waste_obj;
 
     here = &levl[mtmp->mx][mtmp->my];
     if (here->typ == SDOOR)
@@ -1485,9 +1494,15 @@ mdig_tunnel(struct monst *mtmp)
             (void) rnd_treefruit_at(mtmp->mx, mtmp->my);
     } else {
         here->typ = CORR, here->flags = 0;
-        if (pile && pile < 5)
-            (void) mksobj_at((pile == 1) ? BOULDER : ROCK, mtmp->mx, mtmp->my,
+        if (pile && pile < 5) {
+            if(mtmp->data==&mons[PM_HUNGER_HULK]) {
+                tunnel_waste_obj = (pile == 1) ? ENORMOUS_MEATBALL : MEATBALL;
+            } else {
+                tunnel_waste_obj = (pile == 1) ? BOULDER : ROCK;
+            }
+            (void) mksobj_at(tunnel_waste_obj, mtmp->mx, mtmp->my,
                              TRUE, FALSE);
+        }
     }
     newsym(mtmp->mx, mtmp->my);
     if (!sobj_at(BOULDER, mtmp->mx, mtmp->my))
@@ -1545,7 +1560,7 @@ draft_message(boolean unexpected)
 
 /* digging via wand zap or spell cast */
 void
-zap_dig(void)
+zap_dig(boolean override_maze)
 {
     struct rm *room;
     struct monst *mtmp;
@@ -1611,7 +1626,7 @@ zap_dig(void)
 
     /* normal case: digging across the level */
     shopdoor = shopwall = FALSE;
-    maze_dig = svl.level.flags.is_maze_lev && !Is_earthlevel(&u.uz);
+    maze_dig = svl.level.flags.is_maze_lev && !Is_earthlevel(&u.uz) && !override_maze;
     zx = u.ux + u.dx;
     zy = u.uy + u.dy;
     if (u.utrap && u.utraptype == TT_PIT
@@ -1905,7 +1920,7 @@ buried_ball(coord *cc)
        then u.utraptype needs to be for buried ball */
     if (!u.utrap || u.utraptype == TT_BURIEDBALL) {
         for (otmp = svl.level.buriedobjlist; otmp; otmp = otmp->nobj) {
-            if (otmp->otyp != HEAVY_IRON_BALL)
+            if (otmp->otyp != HEAVY_BALL)
                 continue;
             /* if found at the target spot, we're done */
             if (otmp->ox == cc->x && otmp->oy == cc->y)
@@ -1992,7 +2007,7 @@ bury_an_obj(struct obj *otmp, boolean *dealloced)
     if (otmp == uball) {
         unpunish();
         set_utrap((unsigned) rn1(50, 20), TT_BURIEDBALL);
-        pline_The("iron ball gets buried!");
+        pline_The("heavy ball gets buried!");
     }
     /* after unpunish(), or might get deallocated chain */
     otmp2 = otmp->nexthere;
@@ -2036,7 +2051,7 @@ bury_an_obj(struct obj *otmp, boolean *dealloced)
 #if 0
     /* rusting of buried metal not yet implemented */
     } else if (is_rustprone(otmp)) {
-        (void) start_timer((long) rnd((otmp->otyp == HEAVY_IRON_BALL)
+        (void) start_timer((long) rnd((otmp->otyp == HEAVY_BALL)
                                          ? 1500
                                          : 250),
                            TIMER_OBJECT, RUST_METAL, obj_to_any(otmp));
@@ -2153,6 +2168,8 @@ rot_corpse(anything *arg, long timeout)
     if (on_floor) {
         x = obj->ox;
         y = obj->oy;
+        if (obj->owt>1000 && !rn2((2000 - obj->owt)/30))
+            makemon(&mons[PM_OTYUGH], 0, 0, NO_MM_FLAGS);
     } else if (in_invent) {
         if (flags.verbose) {
             char *cname = corpse_xname(obj, (const char *) 0, CXN_NO_PFX);

@@ -1,0 +1,242 @@
+mhack
+
+General Fixes and Modified Features
+-----------------------------------
+Wizards start with extra wands and spellbooks.
+	However they no longer start with rings, potions or scrolls.
+In wizard mode, it is possible to embark on the quest without permission.
+The Mazes of Menace are significantly shorter
+	The Dungeons of Doom is now 20-24 levels, compared to 25-29 levels in vanilla NetHack.
+	Gehennom is now 11-12 levels, compared to 20-24 levels in vanilla NetHack.
+	Lairs for Asmodeus, Baalzebub and Juiblex are removed.
+	Sokoban is now 3 levels, compared to 4 levels in vanilla NetHack.
+The mysterious force in Gehennom does not teleport the player, instead it summons demons.
+	Cross-aligned named demons are prioritized.
+Filler levels on the Healer, Knight and Samurai Quests have shallow water.
+Adjusted difficulty calculations to increase difficulty more steeply in a shorter Gehennom.
+Added des.ugname function to Lua special level loader.
+Fix for predefined corpses inside of ice boxes on special levels.
+Remove the Fake Wizard tower which does not have a magic portal.
+Hallucination no longer prevents offering the Amulet of Yendor.
+Grayswandir no longer grants hallucination resistance.
+Sunword grants hallucination resistance when wielded.
+The Heart of Ahriman grants hallucination resistance when carried.
+The Ranger pantheon is changed to Taurus, Sagittarius and Ursa Major.
+The Priest quest artifact is changed to the Sceptre of Might.
+	When invoked, it performs an energy boost instead of causing conflict.
+The Mitre of Holiness is removed from the game entirely.
+The spell of dig is level 3.
+Adjust probabilities of various spellbooks.
+The spell of create familiar only creates co-aligned monsters of specific classes.
+	This is inspired one of Tomsod's YANIs listed on the wiki.
+	Only monster classes &, A, D, E, H, J, L, N, O, T, X and ' will be created.
+	& will only be created if in Gehennom, A will only be created if not in Gehennom.
+	This also applies to expert zaps of the wand of create monster (see wands
+	skill below).
+The spell of extra healing has a stronger effect with higher skill.
+	This is inspired by other variants.
+The spell of invisibility is level 3.
+Undeferred vorpal jabberwock and vampire mage.
+
+Fixes to Post-X.X.X Problems that Were Exposed Via git Repository
+------------------------------------------------------------------
+
+
+Platform- and/or Interface-Specific Fixes
+-----------------------------------------
+
+
+General New Features
+--------------------
+Added wands skill, which can be #enhanced for more powerful wand effects.
+	Certain monsters have high effective wand skill as well.
+	This is not as comprehensive as the wands balance patch in other variants.
+	The main focus is to make the early game easier, not to make the late game
+	more difficult.
+Added Merchant role.
+	Merchants are always looking for markets to buy supplies and sell
+	their wares. They start with precious gems and expensive pieces of jewelry.
+	Merchants are always neutral, and can be either human or gnomish.
+	The special spell for merchants is wizard lock.
+	On the Merchant Quest, Pasion tasks the player with fighting Sostratus
+	for the Crown of Midas, a neutral dunce cap.
+Added the Crown of Midas
+	When worn, The Crown of Midas grants hunger, petrification resistance, and
+	the golden touch.
+	A player (or monster!) who fights bare-handed with the golden touch can
+	turn enemies into gold statues, subject to petrification resistance just
+	like stoning by cockatrice. Enemies are also subject to a petrifying
+	passive attack, as if they were attacking a cockatrice. Weapons that hit
+	a player or monster with the golden touch will turn to gold. Golems without
+	petrification resistance will turn into gold golems instead of stone golems.
+	Players with the golden touch also turn items to gold when applying, wearing,
+	throwing, eating, unlocking, locking, picking up, looting, removing (from a
+	container), quaffing or wielding the item. Some items, including most weapons,
+	can change their material to gold as part of the object materials system.
+	Other items, including most food, will turn into gold pieces. Artifacts and
+	the corpses of petrification-resistant monsters will not turn to gold.
+	Many items had to be added to the object materials system to implement the
+	Crown of Midas including heavy balls, conical hats and statues.
+	The Crown of Midas is intended to be hazardous to careless players, but
+	rewarding to those who can work around the various problems. It also makes
+	the Merchant quest somewhat dangerous, since Sostratus is likely to wear
+	the Crown and use it against the player.
+Added bribery skill, which can be #enhanced for cheaper bribes.
+	Bribery is expensive, but effective against most humanoid monsters.
+	The formula is 'B + ((B * M * M)/C)', where B is 1000 or less (depending on
+	the bribery skill), M is the monster level, and C is charisma.
+	Merchants start at basic in bribery, and can reach expert.
+	Rogues, Tourists and Priests can also enhance the skill. Other roles are
+	restricted, meaning they pay the full price for bribes.
+Added 3 variants of the middle level of the Wizard's tower.
+Added a new map for the Monk locate level, replacing the old map.
+	The new map is a bit of a puzzle.
+Added 2 variants of the bottom level of Vlad's tower, replacing the old map.
+Added 2 variants of the middle level of Vlad's tower.
+Added 2 variants of the top level of Vlad's tower.
+Added a cockatrice-themed Mine's End variant.
+Added an Orcus Town variant with a central maze.
+Added an Orcus Town variant with flower-, skull- and hourglass-shaped rooms.
+Added 2 serpent-themed variants of Medusa's Island.
+Added a Moloch's Sanctum variant focused on a red eye of lava.
+Added a Valley of the Dead variant surrounded by caves.
+Added 3 variants of the Fake Wizard's Tower which has a magic portal.
+Added 3 variants of the Oracle level.
+Added 2 variants to the bottom level of the Wizard's Tower.
+Added 13 variants to the top level of the Wizard's Tower.
+Added a Mine's End variant with many gnomes and wands.
+The Amulet of Yendor grants extrinsic hallucination.
+	Extrinsic hallucination does not time out and is not cured with a unicorn horn.
+	It can be resisted with an item granting hallucination resistance.
+	It can be avoided by dropping the Amulet.
+Added randomized alchemy system, conical flasks and alchemy skill
+	Alchemical recipes are randomized each game. They can be discovered by trial and
+	error or by using a scroll of alchemy. By using a conical flask while standing
+	above water, it is also possible to test an alchemical recipe without using up
+	the potions involved.
+	Certain recipes are 'difficult': for difficult recipes, the chance of success
+	scales with the player's skill at alchemy. The alchemy skill is trained by
+	discovering a new alchemical recipe through trial and error (with or without
+	a conical flask).
+	Once learned, recipes are listed on the Discoveries page.
+	Scrolls of alchemy cannot be written, but scrolls of alchemy and conical flasks
+	can be found in the inventory of Q-class monsters.
+Added #wizshowalchemy command
+	This command shows all alchemical recipes in the current game. It is exclusive
+	to wizard mode.
+Added Alchemist role.
+	Alchemists have a deep understanding of the materials and energies of the
+	universe. Using their potions and laboratory equipment, alchemists can
+	neutralize enemies, transform objects and even mutate their own bodies.
+	Alchemists are neutral or chaotic, and can be human, elvish, gnomish or orcish.
+	Their special spell is polymorph, and their crowning gift is a spellbook of polymorph.
+	The first sacrifice gift for Alchemists is Sourcoil: a rubber hose which does double
+	damage to targets which are not acid resistant.
+	On the Alchemist quest, Maria tasks the player with fighting Unbioctium for
+	the Stone of Philosophers, a neutral amethyst.
+	The Alchemist starting inventory is slightly inspired by the Drunk role in
+	NetHack-- and SLASHTHEM.
+Added the Stone of Philosophers
+	When carried, the Stone of Philosophers grants acid resistance and polymorph
+	control. When invoked, it can change the material of a carried object, similar
+	to a transmuter.
+Added Legislator role.
+	Legislators are skilled rhetoricians and writers, capable of swaying the masses
+	to gain a political edge. They prefer to fight with words than with blades, and
+	arrive in the dungeon with pamphlets, books and a pen.
+	Legislators are always lawful humans.
+	Their special spell is slow monsters.
+	On the Legislator quest, Cicero tasks the player with fighting Catiline for the
+	Stylus of Gracchus, a lawful magic marker.
+Added the Stylus of Gracchus
+	It can be invoked to cause conflict. It can be recharged an unlimited number of
+	times, but after the second recharge it does not hold much ink.
+Added the Doom Horn: an artifact tooled horn which can create a disintegration field.
+	The Caveperson quest artifact is changed to the Doom Horn.
+Added the spell of launch boulder, a level 5 matter spell.
+	This will drop a boulder on an adjacent square and launch it similar to a
+	rolling boulder trap.
+Added the spell of swap places, a level 4 escape spell.
+	This allows the player to magically displace an adjacent monster. Monsters
+	naturally capable of displacement will resist.
+Added the spell of rejuvenation, a level 7 healing spell.
+	This is inspired one of Tomsod's YANIs listed on the wiki, but with a twist.
+	This will heal up to 400 HP, but then drain 3 experience levels. Drain resistance
+	prevents both the healing and the draining. Players of experience level 5 or
+	lower are also prevented from going through either effect.
+	This spell is the new crowning gift for Monks.
+Added ouroboros monster.
+
+Platform- and/or Interface-Specific New Features
+------------------------------------------------
+
+
+NetHack Community Patches (or Variation) Included
+-------------------------------------------------
+Imported object materials from SpliceHack.
+Imported transmuter from SpliceHack.
+Imported 1 Sokoban puzzle from SpliceHack.
+Imported 55 Sokoban puzzles from HackEM.
+	These likely originated from GruntHack, NetHack Fourk, and the New Sokoban Levels patch.
+Imported Zoo Town and Lavender Town variants of Mine town from SpliceHack.
+Imported shallow water from L's terrain patch.
+	Many imported levels from other variants (below) were modified to include shallow water.
+Imported sewer system big room variant from L's terrain patch.
+Imported Orc Temple variant of Mine's End from EvilHack.
+	This originated from Khor's patch.
+Imported Sewers of Waterdeep variant of Mine's End from EvilHack.
+	Used shallow water instead of sewage, and used different monsters and loot.
+Imported 2 Castle variants from UnNetHack.
+	These originated in a patch by Pasi Kallinen.
+Imported 3 Castle variants from dNetHack.
+Imported Grund's Stronghold from SLASHEM via HackEM, modified to be a Castle variant.
+	Significantly changed the layout and monsters of the left side of the stronghold.
+	Added a moat and random mazes on each side of the stronghold.
+Imported Wizard's Manse from the Lethe patch, modified to be a Castle variant.
+	Reduced the number of thrones, changed the monsters and loot significantly.
+	Changed the islands and shores outside the Manse.
+Imported Orcus Town variant from the Lethe patch.
+Imported 6 variants of the Priest home level from the biodiversity patch.
+	Fixed bugs in the layouts.
+Imported the Banquet Hall from early versions of SpliceHack as a Mine's End variant.
+Imported 1 SLASHEM Mall variant as a Mine Town variant.
+	Changed the shop probabilities and monsters, added a temple.
+Imported Cthulu's Sanctum from the Lethe patch as a Sanctum of Moloch variant.
+	Replaced Lethe patch monsters with vanilla monsters, including Cthulu himself.
+	Fixed the possible location of the high altar.
+Imported Temple of Moloch from SLASHEM as a Moloch's Sanctum variant.
+	Replaced SLASHEM monsters with vanilla NetHack monsters.
+	Modified the layout significantly to be appropriate for the Sanctum.
+Imported Valley of the Dead variant from the Lethe patch.
+Imported Castle Dungeon from the Lethe patch as a Valley of the Dead variant.
+	Modified the layout and monsters significantly to be more Hell-ish.
+	Replaced barracks with "pseudo-barracks" filled with undead using mercenary gear.
+Imported 2 variants of the Oracle level from xNetHack.
+Imported Lost Tomb from SLASHEM via SpliceHack as a Valley of the Dead variant.
+	Modified the layout significantly to have all the features of the Valley of the Dead.
+Imported potion-coated projectiles from SpliceHack.
+	The special effect of potions of oil was left out. Most other potion-coatings
+	including drugged projectiles (potion of sleeping) and envenomed projectiles
+	(potion of paralysis) still work.
+Imported many monsters from the Lethe Patch.
+	The monsters are: migo drone, migo warrior, migo queen, deep one, deeper one,
+	deepest one, cow, bull, parrot, byakhee, nightgaunt, ogre shaman, shuggoth,
+	giant shuggoth, fire vampire, star vampire, ghoul magii, ghoul king/queen, gug,
+	ruby golem, diamond golem, sapphire golem, steel golem, crystal golem, Cthulhu.
+	These monsters have appeared in SLASH'EM and other variants over the years, in
+	some cases nerfs from those variants were applied.
+Imported many monsters from the Biodiversity Patch.
+	The monsters are: sphinx (without riddles), waterspout gargoyle, brownie,
+	pooka, labyrinth trapper, gold bug, will o' wisp, bannik, leshy, bandersnatch,
+	jubjub bird, clockwork automaton, quark (with changed abilities), disintegrator,
+	umbral hulk, hunger hulk, nosferatu, blemmye, otyugh, poltergeist.
+Imported scalding attack for steam vortices from the Biodiversity Patch.
+Imported vampire nobility from EvilHack.
+	They are counts and countesses instead of kings and queens.
+Imported silver golem from SpliceHack.
+Imported shopkeeper names from the Lethe Patch.
+Imported changes to orc players' riding logic from the Biodiversity Patch.
+Imported changes to stone-to-flesh on amber stones from the Biodiversity Patch.
+
+Code Cleanup and Reorganization
+-------------------------------

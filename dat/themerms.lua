@@ -129,7 +129,6 @@ themeroom_fills = {
                                      data = { sel = selection.room() } });
       end
    },
-
    {
       name = "Buried treasure",
       contents = function(rm)
@@ -173,13 +172,13 @@ themeroom_fills = {
       name = "Massacre",
       contents = function(rm)
          local mon = { "apprentice", "warrior", "ninja", "thug",
-                     "hunter", "acolyte", "abbot", "page",
-                     "attendant", "neanderthal", "chieftain",
-                     "student", "wizard", "valkyrie", "tourist",
-                     "samurai", "rogue", "ranger", "priestess",
-                     "priest", "monk", "knight", "healer",
-                     "cavewoman", "caveman", "barbarian",
-                     "archeologist" };
+                    "hunter", "acolyte", "trader", "abbot", "senator", "page",
+                    "attendant", "neanderthal", "chieftain", "chemist",
+                    "student", "wizard", "valkyrie", "tourist",
+                    "samurai", "rogue", "ranger", "priestess",
+                    "priest", "merchant", "monk", "knight", "legislator", "healer",
+                    "cavewoman", "caveman", "barbarian", "alchemist",
+                    "archeologist" };
          local idx = math.random(#mon);
          for i = 1, d(5,5) do
             if (percent(10)) then idx = math.random(#mon); end

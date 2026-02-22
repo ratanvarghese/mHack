@@ -84,6 +84,15 @@
 #define AD_CORR 42  /* corrode armor (black pudding) */
 #define AD_POLY 43  /* polymorph the target (genetic engineer) */
 
+#define AD_MTRL 101  /* change material (transmuter) */
+#define AD_EGLD 102  /* eats gold (gold bug) */
+#define AD_SCLD 103  /* scald, similar to AD_FIRE */
+#define AD_FLVR 104  /* quark flavour attacks */
+#define AD_SHOE 105  /* brownie damages, steals, or fixes shoes */
+#define AD_HNGY 106  /* a mini version of FAMN, */
+#define AD_TCKL 107  /* Tickle (Nightgaunts) */
+#define AD_BHED 108  /* beheading (vorpal jabberwock) */
+
 #define AD_CLRC 240 /* random clerical spell */
 #define AD_SPEL 241 /* random magic spell */
 #define AD_RBRE 242 /* random breath weapon */

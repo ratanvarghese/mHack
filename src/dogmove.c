@@ -1125,6 +1125,7 @@ dog_move(
                  && (!mtmp2->minvis || perceives(mtmp->data))
                  && !mon_reflects(mtmp, (char *) NULL))
                 || (mtmp2->data == &mons[PM_GELATINOUS_CUBE] && rn2(10))
+                || (touch_disintegrates(mtmp2->data) && !resists_disint(mtmp))
                 || (touch_petrifies(mtmp2->data) && !resists_ston(mtmp))) {
                 /* only skip this foe if a ranged attack isn't viable */
                 if (dist2(mtmp->mx, mtmp->my, mtmp2->mx, mtmp2->my) <= 2

@@ -100,7 +100,8 @@
            are mutually exclusive; explicitly applying !BBlinded to both
            internal and external blindness should be more robust in case
            of future changes */
-#define Blind ((HBlinded || EBlinded) && !BBlinded)
+#define Blind (((HBlinded || EBlinded) && !BBlinded) || \
+            !haseyes(gy.youmonst.data) || Blemmye_blindness(&gy.youmonst))
 
 /*
  * Maladies
@@ -112,12 +113,13 @@
 #define Glib u.uprops[GLIB].intrinsic
 #define Slimed u.uprops[SLIMED].intrinsic /* [Tom] */
 
-/* Hallucination is solely a timeout */
+/* Timeout, plus a worn mask */
 #define HHallucination u.uprops[HALLUC].intrinsic
+#define EHallucination u.uprops[HALLUC].extrinsic
 #define HHalluc_resistance u.uprops[HALLUC_RES].intrinsic
 #define EHalluc_resistance u.uprops[HALLUC_RES].extrinsic
 #define Halluc_resistance (HHalluc_resistance || EHalluc_resistance)
-#define Hallucination (HHallucination && !Halluc_resistance)
+#define Hallucination ((HHallucination || EHallucination) && !Halluc_resistance)
 
 /* Timeout, plus a worn mask */
 #define HDeaf u.uprops[DEAF].intrinsic
@@ -386,6 +388,8 @@
 
 #define Lifesaved u.uprops[LIFESAVED].extrinsic
 
+#define Gold_touch u.uprops[GOLD_TOUCH].extrinsic
+
 /*
  * Some pseudo-properties.
  */
@@ -398,11 +402,13 @@
    redundant but allows the function calls to be skipped most of the time */
 #define Unaware (gm.multi < 0 && (unconscious() || is_fainted()))
 
-#define Hate_silver (u.ulycn >= LOW_PM || hates_silver(gy.youmonst.data))
+#define Hate_material(material) mon_hates_material(&gy.youmonst, material)
 
 /* _The_Hitchhikers_Guide_to_the_Galaxy_ on uses for 'towel': "wrap it round
    your head to ward off noxious fumes" [we require it to be damp or wet] */
 #define Half_gas_damage \
     (ublindf && ublindf->otyp == TOWEL && ublindf->spe > 0)
+
+#define Hearing_muffled ((ublindf && ublindf->otyp == TOWEL))
 
 #endif /* YOUPROP_H */

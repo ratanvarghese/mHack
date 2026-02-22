@@ -52,7 +52,9 @@ static const char *const shkbooks[] = {
     "Ballingeary", "Kilgarvan", "Cahersiveen",    "Glenbeigh",
     "Kilmihil",    "Kiltamagh", "Droichead Atha", "Inniscrone",
     "Clonegal",    "Lisnaskea", "Culdaff",        "Dunfanaghy",
-    "Inishbofin",  "Kesh",      0
+    "Inishbofin",  "Kesh",
+    /* Mythos */
+    "T'farcevol Drawoh", "Thims Nothsa",           0
 };
 
 static const char *const shkarmors[] = {
@@ -289,7 +291,7 @@ const struct shclass shtypes[] = {
       3,
       D_SHOP,
       { { 90, WAND_CLASS },
-        { 5, -LEATHER_GLOVES },
+        { 5, -GLOVES },
         { 5, -ELVEN_CLOAK },
         { 0, 0 } },
       shkwands },
@@ -336,7 +338,7 @@ const struct shclass shtypes[] = {
       D_SHOP,
       { { 30, -WAX_CANDLE },
         { 44, -TALLOW_CANDLE },
-        { 5, -BRASS_LANTERN },
+        { 5, -LANTERN },
         { 9, -OIL_LAMP },
         { 3, -MAGIC_LAMP },
         { 5, -POT_OIL },

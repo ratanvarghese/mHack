@@ -20,6 +20,7 @@ staticfn short ini_inv_obj_substitution(const struct trobj *,
                                         struct obj *) NONNULLPTRS;
 staticfn boolean ini_inv_adjust_obj(const struct trobj *,
                                     struct obj *) NONNULLPTRS;
+staticfn void ini_inv_adjust_obj_material(struct obj *obj) NONNULLARG1;
 staticfn void ini_inv_use_obj(struct obj *) NONNULLARG1;
 staticfn void ini_inv(const struct trobj *) NONNULLARG1;
 staticfn void knows_object(int, boolean);
@@ -38,11 +39,25 @@ staticfn boolean restricted_spell_discipline(int);
 /*
  *      Initial inventory for the various roles.
  */
+static const struct trobj Alchemist[] = {
+    { DART, 2, WEAPON_CLASS, 21, 40, UNDEF_BLESS },
+    { RUBBER_HOSE, 2, WEAPON_CLASS, 1, 1, UNDEF_BLESS },
+    { DENTED_POT, 0, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
+    { ALCHEMY_SMOCK, 1, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
+    { POT_POLYMORPH, 0, POTION_CLASS, 3, 3, 1 }, /* blessed polymorph */
+    { POT_PARALYSIS, 0, POTION_CLASS, 1, 1, 0 },
+    { UNDEF_TYP, 0, POTION_CLASS, 6, 6, 0 },
+    { WAN_CANCELLATION, UNDEF_SPE, WAND_CLASS, 1, 1, UNDEF_BLESS },
+    { OILSKIN_SACK, UNDEF_SPE, TOOL_CLASS, 1, 1, UNDEF_BLESS },
+    { CONICAL_FLASK, UNDEF_SPE, TOOL_CLASS, 1, 1, UNDEF_BLESS },
+    { TOWEL, UNDEF_SPE, TOOL_CLASS, 1, 1, UNDEF_BLESS },
+    { 0, 0, 0, 0, 0, 0 }
+};
 
 static const struct trobj Archeologist[] = {
     /* if adventure has a name...  idea from tan@uvm-gen */
     { BULLWHIP, 2, WEAPON_CLASS, 1, 1, UNDEF_BLESS },
-    { LEATHER_JACKET, 0, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
+    { JACKET, 0, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
     { FEDORA, 0, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
     { FOOD_RATION, 0, FOOD_CLASS, 3, 3, 0 },
     { PICK_AXE, UNDEF_SPE, TOOL_CLASS, 1, 1, UNDEF_BLESS },
@@ -70,12 +85,12 @@ static const struct trobj Cave_man[] = {
     { SLING, 2, WEAPON_CLASS, 1, 1, UNDEF_BLESS },
     { FLINT, 0, GEM_CLASS, 10, 20, UNDEF_BLESS },
     { ROCK, 0, GEM_CLASS, 3, 3, 0 }, /* yields 18..33 */
-    { LEATHER_ARMOR, 0, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
+    { LIGHT_ARMOR, 0, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
     { 0, 0, 0, 0, 0, 0 }
 };
 static const struct trobj Healer[] = {
     { SCALPEL, 0, WEAPON_CLASS, 1, 1, UNDEF_BLESS },
-    { LEATHER_GLOVES, 1, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
+    { GLOVES, 1, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
     { STETHOSCOPE, 0, TOOL_CLASS, 1, 1, 0 },
     { POT_HEALING, 0, POTION_CLASS, 4, 4, UNDEF_BLESS },
     { POT_EXTRA_HEALING, 0, POTION_CLASS, 4, 4, UNDEF_BLESS },
@@ -93,13 +108,38 @@ static const struct trobj Knight[] = {
     { RING_MAIL, 1, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
     { HELMET, 0, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
     { SMALL_SHIELD, 0, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
-    { LEATHER_GLOVES, 0, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
+    { GLOVES, 0, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
     { APPLE, 0, FOOD_CLASS, 10, 10, 0 },
     { CARROT, 0, FOOD_CLASS, 10, 10, 0 },
     { 0, 0, 0, 0, 0, 0 }
 };
+static const struct trobj Legislator[] = {
+    { DAGGER, 0, WEAPON_CLASS, 1, 1, UNDEF_BLESS },
+    { ROBE, 0, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
+    { LOW_BOOTS, 0, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
+    { SCR_IDENTIFY, 0, SCROLL_CLASS, 1, 1, 1 },
+    { SCR_TAMING, 0, SCROLL_CLASS, 3, 3, 0 },
+    { UNDEF_TYP, 0, SCROLL_CLASS, 3, 3, UNDEF_BLESS },
+    { SPE_CONFUSE_MONSTER, UNDEF_SPE, SPBOOK_CLASS, 1, 1, UNDEF_BLESS },
+    { SPE_SLOW_MONSTER, UNDEF_SPE, SPBOOK_CLASS, 1, 1, UNDEF_BLESS },
+    { MIRROR, 0, TOOL_CLASS, 1, 1, UNDEF_BLESS },
+    { MAGIC_MARKER, 100, TOOL_CLASS, 1, 1, 0 }, /* intentionally many charges */
+    { 0, 0, 0, 0, 0, 0 }
+};
+static const struct trobj Merchant[] = {
+    { AMULET_OF_GUARDING, 0, AMULET_CLASS, 1, 1, UNDEF_BLESS },
+    { WAR_HAMMER, 0, WEAPON_CLASS, 1, 1, UNDEF_BLESS},
+    { RIN_INCREASE_ACCURACY, 4, RING_CLASS, 1, 1, UNDEF_BLESS },
+    { RIN_INCREASE_DAMAGE, 2, RING_CLASS, 1, 1, UNDEF_BLESS },
+    { UNDEF_TYP, UNDEF_SPE, RING_CLASS, 3, 3, UNDEF_BLESS },
+    { SKELETON_KEY, 0, TOOL_CLASS, 1, 1, UNDEF_BLESS },
+    { UNDEF_TYP, UNDEF_SPE, GEM_CLASS, 5, 5, UNDEF_BLESS },
+    { TOUCHSTONE, 0, GEM_CLASS, 1, 1, 1 },
+    { WAN_STRIKING, UNDEF_SPE, WAND_CLASS, 1, 1, UNDEF_BLESS },
+    { 0, 0, 0, 0, 0, 0 }
+};
 static const struct trobj Monk[] = {
-    { LEATHER_GLOVES, 2, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
+    { GLOVES, 2, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
     { ROBE, 1, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
     { UNDEF_TYP, UNDEF_SPE, SCROLL_CLASS, 1, 1, UNDEF_BLESS },
     { POT_HEALING, 0, POTION_CLASS, 3, 3, UNDEF_BLESS },
@@ -133,7 +173,7 @@ static const struct trobj Ranger[] = {
 static const struct trobj Rogue[] = {
     { SHORT_SWORD, 0, WEAPON_CLASS, 1, 1, UNDEF_BLESS },
     { DAGGER, 0, WEAPON_CLASS, 6, 15, 0 },
-    { LEATHER_ARMOR, 1, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
+    { LIGHT_ARMOR, 1, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
     { POT_SICKNESS, 0, POTION_CLASS, 1, 1, 0 },
     { LOCK_PICK, 0, TOOL_CLASS, 1, 1, 0 },
     { SACK, 0, TOOL_CLASS, 1, 1, 0 },
@@ -167,12 +207,9 @@ static const struct trobj Valkyrie[] = {
 static const struct trobj Wizard[] = {
     { QUARTERSTAFF, 1, WEAPON_CLASS, 1, 1, 1 },
     { CLOAK_OF_MAGIC_RESISTANCE, 0, ARMOR_CLASS, 1, 1, UNDEF_BLESS },
-    { UNDEF_TYP, UNDEF_SPE, WAND_CLASS, 1, 1, UNDEF_BLESS },
-    { UNDEF_TYP, UNDEF_SPE, RING_CLASS, 2, 2, UNDEF_BLESS },
-    { UNDEF_TYP, UNDEF_SPE, POTION_CLASS, 3, 3, UNDEF_BLESS },
-    { UNDEF_TYP, UNDEF_SPE, SCROLL_CLASS, 3, 3, UNDEF_BLESS },
+    { UNDEF_TYP, UNDEF_SPE, WAND_CLASS, 2, 2, UNDEF_BLESS },
     { SPE_FORCE_BOLT, 0, SPBOOK_CLASS, 1, 1, 1 },
-    { UNDEF_TYP, UNDEF_SPE, SPBOOK_CLASS, 1, 1, UNDEF_BLESS },
+    { UNDEF_TYP, UNDEF_SPE, SPBOOK_CLASS, 3, 3, UNDEF_BLESS },
     { MAGIC_MARKER, 19, TOOL_CLASS, 1, 1, 0 }, /* actually spe = 18 + d4 */
     { 0, 0, 0, 0, 0, 0 }
 };
@@ -228,7 +265,7 @@ static const struct inv_sub {
     { PM_ELF, SHORT_SWORD, ELVEN_SHORT_SWORD },
     { PM_ELF, BOW, ELVEN_BOW },
     { PM_ELF, ARROW, ELVEN_ARROW },
-    { PM_ELF, HELMET, ELVEN_LEATHER_HELM },
+    { PM_ELF, HELMET, ELVEN_HELM },
     /* { PM_ELF, SMALL_SHIELD, ELVEN_SHIELD }, */
     { PM_ELF, CLOAK_OF_DISPLACEMENT, ELVEN_CLOAK },
     { PM_ELF, CRAM_RATION, LEMBAS_WAFER },
@@ -245,13 +282,38 @@ static const struct inv_sub {
     { PM_ORC, LEMBAS_WAFER, TRIPE_RATION },
     { PM_DWARF, SPEAR, DWARVISH_SPEAR },
     { PM_DWARF, SHORT_SWORD, DWARVISH_SHORT_SWORD },
-    { PM_DWARF, HELMET, DWARVISH_IRON_HELM },
+    { PM_DWARF, HELMET, DWARVISH_HELM },
     /* { PM_DWARF, SMALL_SHIELD, DWARVISH_ROUNDSHIELD }, */
     /* { PM_DWARF, PICK_AXE, DWARVISH_MATTOCK }, */
     { PM_DWARF, LEMBAS_WAFER, CRAM_RATION },
     { PM_GNOME, BOW, CROSSBOW },
     { PM_GNOME, ARROW, CROSSBOW_BOLT },
     { NON_PM, STRANGE_OBJECT, STRANGE_OBJECT }
+};
+
+static const struct def_skill Skill_Alc[] = {
+    { P_DAGGER, P_SKILLED },
+    { P_KNIFE, P_EXPERT },
+    { P_PICK_AXE, P_BASIC },
+    { P_HAMMER, P_BASIC },
+    { P_QUARTERSTAFF, P_BASIC },
+    { P_SPEAR, P_SKILLED },
+    { P_TRIDENT, P_SKILLED },
+    { P_BOW, P_SKILLED },
+    { P_SLING, P_SKILLED },
+    { P_CROSSBOW, P_EXPERT },
+    { P_DART, P_EXPERT },
+    { P_SHURIKEN, P_BASIC },
+    { P_WHIP, P_EXPERT },
+    { P_UNICORN_HORN, P_EXPERT },
+    { P_ATTACK_SPELL, P_BASIC },
+    { P_DIVINATION_SPELL, P_BASIC },
+    { P_MATTER_SPELL, P_EXPERT },
+    { P_TWO_WEAPON_COMBAT, P_BASIC },
+    { P_BARE_HANDED_COMBAT, P_BASIC },
+    { P_WAND, P_SKILLED },
+    { P_ALCHEMY, P_EXPERT },
+    { P_NONE, 0 }
 };
 
 static const struct def_skill Skill_A[] = {
@@ -274,6 +336,7 @@ static const struct def_skill Skill_A[] = {
     { P_RIDING, P_BASIC },
     { P_TWO_WEAPON_COMBAT, P_BASIC },
     { P_BARE_HANDED_COMBAT, P_EXPERT },
+    { P_WAND, P_SKILLED },
     { P_NONE, 0 }
 };
 static const struct def_skill Skill_B[] = {
@@ -322,6 +385,7 @@ static const struct def_skill Skill_C[] = {
     { P_BOOMERANG, P_EXPERT },
     { P_UNICORN_HORN, P_BASIC },
     { P_BARE_HANDED_COMBAT, P_MASTER },
+    { P_WAND, P_BASIC },
     { P_NONE, 0 }
 };
 static const struct def_skill Skill_H[] = {
@@ -341,6 +405,8 @@ static const struct def_skill Skill_H[] = {
     { P_UNICORN_HORN, P_EXPERT },
     { P_HEALING_SPELL, P_EXPERT },
     { P_BARE_HANDED_COMBAT, P_BASIC },
+    { P_WAND, P_EXPERT },
+    { P_ALCHEMY, P_SKILLED },
     { P_NONE, 0 }
 };
 static const struct def_skill Skill_K[] = {
@@ -370,6 +436,54 @@ static const struct def_skill Skill_K[] = {
     { P_RIDING, P_EXPERT },
     { P_TWO_WEAPON_COMBAT, P_SKILLED },
     { P_BARE_HANDED_COMBAT, P_EXPERT },
+    { P_WAND, P_SKILLED },
+    { P_NONE, 0 }
+};
+static const struct def_skill Skill_L[] = {
+    { P_DAGGER, P_EXPERT },
+    { P_KNIFE, P_EXPERT },
+    { P_PICK_AXE, P_BASIC },
+    { P_SHORT_SWORD, P_SKILLED },
+    { P_CLUB, P_BASIC },
+    { P_SPEAR, P_EXPERT },
+    { P_SLING, P_BASIC },
+    { P_DART, P_SKILLED },
+    { P_WHIP, P_BASIC },
+    { P_ENCHANTMENT_SPELL, P_EXPERT },
+    { P_RIDING, P_BASIC },
+    { P_TWO_WEAPON_COMBAT, P_BASIC },
+    { P_BARE_HANDED_COMBAT, P_BASIC },
+    { P_WAND, P_SKILLED },
+    { P_BRIBERY, P_SKILLED },
+    { P_NONE, 0 }
+};
+static const struct def_skill Skill_Mer[] = {
+    { P_DAGGER, P_SKILLED },
+    { P_KNIFE, P_EXPERT },
+    { P_AXE, P_EXPERT },
+    { P_PICK_AXE, P_SKILLED },
+    { P_SHORT_SWORD, P_BASIC },
+    { P_FLAIL, P_BASIC },
+    { P_CLUB, P_BASIC },
+    { P_MACE, P_BASIC },
+    { P_MORNING_STAR, P_BASIC },
+    { P_HAMMER, P_EXPERT },
+    { P_QUARTERSTAFF, P_BASIC },
+    { P_POLEARMS, P_BASIC },
+    { P_SPEAR, P_SKILLED },
+    { P_TRIDENT, P_EXPERT },
+    { P_LANCE, P_BASIC },
+    { P_SLING, P_BASIC },
+    { P_DART, P_BASIC },
+    { P_WHIP, P_EXPERT },
+    { P_MATTER_SPELL, P_SKILLED },
+    { P_ENCHANTMENT_SPELL, P_BASIC },
+    { P_DIVINATION_SPELL, P_SKILLED },
+    { P_RIDING, P_BASIC },
+    { P_BARE_HANDED_COMBAT, P_EXPERT },
+    { P_WAND, P_EXPERT },
+    { P_BRIBERY, P_EXPERT },
+    { P_ALCHEMY, P_BASIC },
     { P_NONE, 0 }
 };
 static const struct def_skill Skill_Mon[] = {
@@ -385,6 +499,8 @@ static const struct def_skill Skill_Mon[] = {
     { P_ESCAPE_SPELL, P_SKILLED },
     { P_MATTER_SPELL, P_BASIC },
     { P_MARTIAL_ARTS, P_GRAND_MASTER },
+    { P_WAND, P_EXPERT },
+    { P_ALCHEMY, P_BASIC },
     { P_NONE, 0 }
 };
 static const struct def_skill Skill_P[] = {
@@ -409,6 +525,9 @@ static const struct def_skill Skill_P[] = {
     { P_DIVINATION_SPELL, P_EXPERT },
     { P_CLERIC_SPELL, P_EXPERT },
     { P_BARE_HANDED_COMBAT, P_BASIC },
+    { P_WAND, P_EXPERT },
+    { P_BRIBERY, P_BASIC },
+    { P_ALCHEMY, P_BASIC },
     { P_NONE, 0 }
 };
 static const struct def_skill Skill_R[] = {
@@ -435,6 +554,9 @@ static const struct def_skill Skill_R[] = {
     { P_RIDING, P_BASIC },
     { P_TWO_WEAPON_COMBAT, P_EXPERT },
     { P_BARE_HANDED_COMBAT, P_EXPERT },
+    { P_WAND, P_SKILLED },
+    { P_BRIBERY, P_SKILLED },
+    { P_ALCHEMY, P_BASIC },
     { P_NONE, 0 }
 };
 static const struct def_skill Skill_Ran[] = {
@@ -462,6 +584,7 @@ static const struct def_skill Skill_Ran[] = {
     { P_ESCAPE_SPELL, P_BASIC },
     { P_RIDING, P_BASIC },
     { P_BARE_HANDED_COMBAT, P_BASIC },
+    { P_WAND, P_SKILLED },
     { P_NONE, 0 }
 };
 static const struct def_skill Skill_S[] = {
@@ -485,6 +608,7 @@ static const struct def_skill Skill_S[] = {
     { P_RIDING, P_SKILLED },
     { P_TWO_WEAPON_COMBAT, P_EXPERT },
     { P_MARTIAL_ARTS, P_MASTER },
+    { P_WAND, P_BASIC },
     { P_NONE, 0 }
 };
 static const struct def_skill Skill_T[] = {
@@ -520,6 +644,9 @@ static const struct def_skill Skill_T[] = {
     { P_RIDING, P_BASIC },
     { P_TWO_WEAPON_COMBAT, P_SKILLED },
     { P_BARE_HANDED_COMBAT, P_SKILLED },
+    { P_WAND, P_EXPERT },
+    { P_BRIBERY, P_BASIC },
+    { P_ALCHEMY, P_BASIC },
     { P_NONE, 0 }
 };
 static const struct def_skill Skill_V[] = {
@@ -543,6 +670,7 @@ static const struct def_skill Skill_V[] = {
     { P_RIDING, P_SKILLED },
     { P_TWO_WEAPON_COMBAT, P_SKILLED },
     { P_BARE_HANDED_COMBAT, P_EXPERT },
+    { P_WAND, P_SKILLED },
     { P_NONE, 0 }
 };
 static const struct def_skill Skill_W[] = {
@@ -568,6 +696,8 @@ static const struct def_skill Skill_W[] = {
     { P_MATTER_SPELL, P_EXPERT },
     { P_RIDING, P_BASIC },
     { P_BARE_HANDED_COMBAT, P_BASIC },
+    { P_WAND, P_EXPERT },
+    { P_ALCHEMY, P_BASIC },
     { P_NONE, 0 }
 };
 
@@ -647,6 +777,15 @@ u_init_role(void)
      * random number generators are bad enough to seriously
      * skew the results if we use rn2(2)...  --KAA
      */
+    case PM_ALCHEMIST:
+        u.uedibility = 1;
+        ini_inv(Alchemist);
+        if (!rn2(5))
+            ini_inv(Magicmarker);
+        knows_class(POTION_CLASS);
+        knows_object(SCR_ALCHEMY, FALSE);
+        skill_init(Skill_Alc);
+        break;
     case PM_ARCHEOLOGIST:
         ini_inv(Archeologist);
         if (!rn2(10))
@@ -687,6 +826,19 @@ u_init_role(void)
         knows_class(ARMOR_CLASS);
         /* give knights chess-like mobility--idea from wooledge@..cwru.edu */
         HJumping |= FROMOUTSIDE;
+        break;
+    case PM_LEGISLATOR:
+        ini_inv(Legislator);
+        knows_object(RIN_CONFLICT, FALSE);
+        skill_init(Skill_L);
+        break;
+    case PM_MERCHANT:
+        u.umoney0 = (30 * rn1(100, 1)) + 1000;
+        ini_inv(Merchant);
+        knows_object(POT_HEALING, FALSE);
+        knows_object(POT_EXTRA_HEALING, FALSE);
+        knows_object(WAN_MAGIC_MISSILE, FALSE);
+        skill_init(Skill_Mer);
         break;
     case PM_MONK: {
         static const struct trobj *M_spell[] = {
@@ -802,7 +954,7 @@ u_init_race(void)
          */
         if (Role_if(PM_CLERIC) || Role_if(PM_WIZARD)) {
             static const int trotyp[] =
-                { WOODEN_FLUTE, TOOLED_HORN, WOODEN_HARP,
+                { FLUTE, TOOLED_HORN, HARP,
                   BELL,         BUGLE,       LEATHER_DRUM };
             const struct trobj Instrument[] =
                 { { ROLL_FROM(trotyp), 0, TOOL_CLASS, 1, 1, 0 },
@@ -817,8 +969,8 @@ u_init_race(void)
         knows_object(ELVEN_SPEAR, FALSE);
         knows_object(ELVEN_DAGGER, FALSE);
         knows_object(ELVEN_BROADSWORD, FALSE);
-        knows_object(ELVEN_MITHRIL_COAT, FALSE);
-        knows_object(ELVEN_LEATHER_HELM, FALSE);
+        knows_object(ELVEN_RING_MAIL, FALSE);
+        knows_object(ELVEN_HELM, FALSE);
         knows_object(ELVEN_SHIELD, FALSE);
         knows_object(ELVEN_BOOTS, FALSE);
         knows_object(ELVEN_CLOAK, FALSE);
@@ -829,8 +981,8 @@ u_init_race(void)
         knows_object(DWARVISH_SPEAR, FALSE);
         knows_object(DWARVISH_SHORT_SWORD, FALSE);
         knows_object(DWARVISH_MATTOCK, FALSE);
-        knows_object(DWARVISH_IRON_HELM, FALSE);
-        knows_object(DWARVISH_MITHRIL_COAT, FALSE);
+        knows_object(DWARVISH_HELM, FALSE);
+        knows_object(DWARVISH_RING_MAIL, FALSE);
         knows_object(DWARVISH_CLOAK, FALSE);
         knows_object(DWARVISH_ROUNDSHIELD, FALSE);
         break;
@@ -903,6 +1055,7 @@ pauper_reinit(void)
     case PM_CAVE_DWELLER:
         preknown = FLINT;
         break;
+    case PM_MERCHANT:
     case PM_ROGUE:
     case PM_TOURIST:
         preknown = SACK;
@@ -912,7 +1065,11 @@ pauper_reinit(void)
            discoveries list for players who might not recognize what it is */
         preknown = FOOD_RATION;
         break;
+    case PM_LEGISLATOR:
+        preknown = SPE_CONFUSE_MONSTER;
+        break;
     default:
+    case PM_ALCHEMIST:
     case PM_BARBARIAN:
     case PM_RANGER:
     case PM_VALKYRIE:
@@ -1040,6 +1197,9 @@ skills_for_role(void)
     const struct def_skill *skills;
 
     switch (Role_switch) {
+    case PM_ALCHEMIST:
+        skills = Skill_Alc;
+        break;
     case PM_ARCHEOLOGIST:
         skills = Skill_A;
         break;
@@ -1054,6 +1214,12 @@ skills_for_role(void)
         break;
     case PM_KNIGHT:
         skills = Skill_K;
+        break;
+    case PM_LEGISLATOR:
+        skills = Skill_L;
+        break;
+    case PM_MERCHANT:
+        skills = Skill_Mer;
         break;
     case PM_MONK:
         skills = Skill_Mon;
@@ -1120,12 +1286,12 @@ ini_inv_mkobj_filter(int oclass, boolean got_level1_spellbook)
 
     /*
      * For random objects, do not create certain overly powerful
-     * items: wand of wishing, ring of levitation, or the
+     * items: wand of wishing or the
      * polymorph/polymorph control combination.  Specific objects,
      * i.e. the discovery wishing, are still OK.
      * Also, don't get a couple of really useless items.  (Note:
      * punishment isn't "useless".  Some players who start out with
-     * one will immediately read it and use the iron ball as a
+     * one will immediately read it and use the heavy ball as a
      * weapon.)
      */
     obj = mkobj(oclass, FALSE);
@@ -1133,10 +1299,9 @@ ini_inv_mkobj_filter(int oclass, boolean got_level1_spellbook)
 
     while (otyp == WAN_WISHING || otyp == gn.nocreate
            || otyp == gn.nocreate2 || otyp == gn.nocreate3
-           || otyp == gn.nocreate4 || otyp == RIN_LEVITATION
+           || otyp == gn.nocreate4 || otyp == gn.nocreate5
+           || otyp == gn.nocreate6
            /* 'useless' items */
-           || otyp == POT_HALLUCINATION
-           || otyp == POT_ACID
            || otyp == SCR_AMNESIA
            || otyp == SCR_FIRE
            || otyp == SCR_BLANK_PAPER
@@ -1150,6 +1315,20 @@ ini_inv_mkobj_filter(int oclass, boolean got_level1_spellbook)
            || (otyp == SCR_ENCHANT_WEAPON && Role_if(PM_MONK))
            /* wizard patch -- they already have one */
            || (otyp == SPE_FORCE_BOLT && Role_if(PM_WIZARD))
+           /* Legislators already get these scrolls */
+           || (otyp == SCR_IDENTIFY && Role_if(PM_LEGISLATOR))
+           || (otyp == SCR_TAMING && Role_if(PM_LEGISLATOR))
+           /* Merchants already get these rings */
+           || (otyp == RIN_INCREASE_DAMAGE && Role_if(PM_MERCHANT))
+           || (otyp == RIN_INCREASE_ACCURACY && Role_if(PM_MERCHANT))
+           /* Merchants should get expensive rings */
+           || (objects[otyp].oc_cost < 200 && Role_if(PM_MERCHANT))
+           /* Merchants should not get random rocks */
+           || (oclass == GEM_CLASS
+               && !(otyp >= FIRST_REAL_GEM && otyp <= LAST_REAL_GEM)
+               && Role_if(PM_MERCHANT))
+           /* Alchemists should get magic potions */
+           || (oclass == POTION_CLASS && !objects[otyp].oc_magic && Role_if(PM_ALCHEMIST))
            /* powerful spells are either useless to
               low level players or unbalancing; also
               spells in restricted skill categories */
@@ -1194,10 +1373,28 @@ ini_inv_obj_substitution(const struct trobj *trop, struct obj *obj)
                             (trop->trotyp == UNDEF_TYP) ? "random " : "",
                             OBJ_NAME(objects[obj->otyp]));
                 obj->otyp = inv_subs[i].subs_otyp;
+                obj->material = objects[obj->otyp].oc_material;
                 break;
             }
     }
     return obj->otyp;
+}
+
+staticfn void
+ini_inv_adjust_obj_material(struct obj *obj)
+{
+    int new_material;
+    if(Role_if(PM_ALCHEMIST)) {
+        switch(obj->otyp) {
+        case DENTED_POT: new_material = ADAMANTINE; break;
+        case ALCHEMY_SMOCK: new_material = LEATHER; break;
+        case DART: new_material = SILVER; break;
+        default: new_material = objects[obj->otyp].oc_material;
+        }
+    } else {
+        new_material = objects[obj->otyp].oc_material;
+    }
+    obj->material = new_material;
 }
 
 /* returns: TRUE to stop generating items from this trobj,
@@ -1241,6 +1438,7 @@ ini_inv_adjust_obj(const struct trobj *trop, struct obj *obj)
         if (trop->trbless != UNDEF_BLESS)
             obj->blessed = trop->trbless;
 
+        ini_inv_adjust_obj_material(obj);
     }
     /* defined after setting otyp+quan + blessedness */
     obj->owt = weight(obj);
@@ -1293,6 +1491,10 @@ ini_inv_use_obj(struct obj *obj)
     }
     if (obj->oclass == SPBOOK_CLASS && obj->otyp != SPE_BLANK_PAPER)
         initialspell(obj);
+
+    if (obj->oclass == AMULET_CLASS) {
+        setworn(obj, W_AMUL);
+    }
 }
 
 staticfn void
@@ -1311,6 +1513,14 @@ ini_inv(const struct trobj *trop)
         otyp = (int) trop->trotyp;
         if (otyp != UNDEF_TYP) {
             obj = mksobj(otyp, TRUE, FALSE);
+            /* See my comment on start scumming object materials below - Kes */
+            if (rn2(50)) obj->material = objects[obj->otyp].oc_material;
+            /* Don't allow weapons to roll high enchantment and get an oname
+             * when they'll then have their enchantment set after this */
+            if ((Hate_material(SILVER) && obj->material == SILVER)
+                || (Hate_material(COLD_IRON) && obj->material == COLD_IRON))
+                obj->material = IRON;
+            free_oname(obj);
         } else { /* UNDEF_TYP */
             obj = ini_inv_mkobj_filter(trop->trclass, got_sp1);
             otyp = obj->otyp;
@@ -1332,8 +1542,16 @@ ini_inv(const struct trobj *trop)
                 gn.nocreate3 = POT_POLYMORPH;
             }
             /* Don't have 2 of the same ring or spellbook */
-            if (obj->oclass == RING_CLASS || obj->oclass == SPBOOK_CLASS)
-                gn.nocreate4 = otyp;
+            if (obj->oclass == RING_CLASS || obj->oclass == SPBOOK_CLASS) {
+                if(gn.nocreate4 == STRANGE_OBJECT) {
+                    gn.nocreate4 = otyp;
+                } else if(gn.nocreate5 == STRANGE_OBJECT) {
+                    gn.nocreate5 = otyp;
+                } else {
+                    gn.nocreate6 = otyp;
+                }
+                
+            }
         }
         /* Put post-creation object adjustments that don't depend on whether
          * it was UNDEF_TYP or not after this. */

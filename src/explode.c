@@ -40,6 +40,7 @@ explosionmask(
                 res = EXPL_HERO;
             break;
         case AD_FIRE:
+        case AD_SCLD:
             if (Fire_resistance)
                 res = EXPL_HERO;
             break;
@@ -80,6 +81,7 @@ explosionmask(
                 res = EXPL_MON;
             break;
         case AD_FIRE:
+        case AD_SCLD:
             if (resists_fire(m))
                 res = EXPL_MON;
             break;
@@ -805,7 +807,7 @@ scatter(coordxy sx, coordxy sy,  /* location of objects to scatter */
 
             /* 1 in 10 chance of destruction of obj; glass, egg destruction */
         } else if ((scflags & MAY_DESTROY) != 0
-                   && (!rn2(10) || (objects[otmp->otyp].oc_material == GLASS
+                   && (!rn2(10) || (otmp->material == GLASS
                                     || otmp->otyp == EGG))) {
             if (breaks(otmp, sx, sy))
                 used_up = TRUE;

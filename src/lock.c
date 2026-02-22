@@ -436,6 +436,14 @@ pick_lock(
             There("isn't any sort of lock up %s.",
                   Levitation ? "here" : "there");
             return PICKLOCK_LEARNED_SOMETHING;
+        }else if(Upolyd && gy.youmonst.data == &mons[PM_CLOCKWORK_AUTOMATON] &&
+            picktyp == SKELETON_KEY){
+            Sprintf(qbuf, "Wind up your clockwork?");
+            c = ynq(qbuf);
+            if(c == 'q')
+                return PICKLOCK_DID_NOTHING;
+            if(c == 'y' && start_clockwinding(pick))
+                return PICKLOCK_DID_SOMETHING;
         } else if (is_lava(u.ux, u.uy)) {
             pline("Doing that would probably melt %s.", yname(pick));
             return PICKLOCK_LEARNED_SOMETHING;
@@ -646,6 +654,15 @@ pick_lock(
             gx.xlock.box = 0;
         }
     }
+
+    if(Gold_touch) {
+        struct obj* new_pick = turn_object_to_gold(pick, TRUE);
+        if(pick != new_pick) {
+            pick_obj(new_pick);
+            return PICKLOCK_DID_NOTHING;
+        }
+    }
+
     svc.context.move = 0;
     gx.xlock.chance = ch;
     gx.xlock.picktyp = picktyp;
@@ -1291,7 +1308,7 @@ chest_shatter_msg(struct obj *otmp)
     HBlinded = 1L,  BBlinded = 0L;
     thing = singular(otmp, xname);
     HBlinded = save_HBlinded,  BBlinded = save_BBlinded;
-    switch (objects[otmp->otyp].oc_material) {
+    switch (otmp->material) {
     case PAPER:
         disposition = "is torn to shreds";
         break;
@@ -1309,6 +1326,9 @@ chest_shatter_msg(struct obj *otmp)
         break;
     case WOOD:
         disposition = "splinters to fragments";
+        break;
+    case SLIME:
+        disposition = "splatters";
         break;
     default:
         disposition = "is destroyed";

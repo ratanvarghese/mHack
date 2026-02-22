@@ -28,6 +28,7 @@ staticfn boolean bane_applies(const struct artifact *, struct monst *)
 staticfn int spec_applies(const struct artifact *, struct monst *)
                                                                  NONNULLARG12;
 staticfn int invoke_ok(struct obj *);
+staticfn int transmute_ok(struct obj *);
 staticfn void nothing_special(struct obj *) NONNULLARG1;
 staticfn int invoke_taming(struct obj *) NONNULLARG1;
 staticfn int invoke_healing(struct obj *) NONNULLARG1;
@@ -214,7 +215,8 @@ mk_artifact(
                 eligible[0] = m;
                 n = 1;
                 break; /* skip all other candidates */
-            }
+            } else if (Hate_material(SILVER) && a->otyp == SABER)
+                continue; /* kludge to stop silver-haters from getting silver */
 
             /* check if this is skill-compatible */
             skill_compatibility = P_SKILLED;
@@ -549,6 +551,23 @@ arti_reflects(struct obj *obj)
     return FALSE;
 }
 
+/* used to check whether a monster has the golden touch from an artifact */
+boolean
+arti_golden_touch(struct obj *obj)
+{
+    const struct artifact *arti = get_artifact(obj);
+
+    if (arti != &artilist[ART_NONARTIFACT]) {
+        /* while being worn */
+        if ((obj->owornmask & ~W_ART) && (arti->spfx & SPFX_GOLD))
+            return TRUE;
+        /* just being carried - should not be possible*/
+        if (arti->cspfx & SPFX_GOLD)
+            return TRUE;
+    }
+    return FALSE;
+}
+
 /* decide whether this obj is effective when attacking against shades;
    does not consider the bonus for blessed objects versus undead */
 boolean
@@ -556,8 +575,8 @@ shade_glare(struct obj *obj)
 {
     const struct artifact *arti;
 
-    /* any silver object is effective */
-    if (objects[obj->otyp].oc_material == SILVER)
+    /* any silver object is effective; bone too, though it gets no bonus */
+    if (obj->material == SILVER || obj->material == BONE)
         return TRUE;
     /* non-silver artifacts with bonus against undead also are effective */
     arti = get_artifact(obj);
@@ -734,6 +753,8 @@ set_artifact_intrinsic(
         mask = &EFire_resistance;
     else if (dtyp == AD_COLD)
         mask = &ECold_resistance;
+    else if (dtyp == AD_ACID)
+        mask = &EAcid_resistance;
     else if (dtyp == AD_ELEC)
         mask = &EShock_resistance;
     else if (dtyp == AD_MAGM)
@@ -744,6 +765,8 @@ set_artifact_intrinsic(
         mask = &EPoison_resistance;
     else if (dtyp == AD_DRLI)
         mask = &EDrain_resistance;
+    else if (dtyp == AD_STON)
+        mask = &EStone_resistance;
 
     if (mask && wp_mask == W_ART && !on) {
         /* find out if some other artifact also confers this intrinsic;
@@ -876,6 +899,23 @@ set_artifact_intrinsic(
         else
             EProtection &= ~wp_mask;
     }
+    if (spfx & SPFX_GOLD) {
+        if (on) {
+            Gold_touch |= wp_mask;
+            EHunger |= wp_mask;
+        }
+        else {
+            Gold_touch &= ~wp_mask;
+            EHunger &= ~wp_mask;
+        }
+    }
+    if (spfx & SPFX_PCTRL) {
+        if (on) {
+            EPolymorph_control |= wp_mask;
+        } else {
+            EPolymorph_control &= ~wp_mask;
+        }
+    }
 
     if (wp_mask == W_ART && !on && oart->inv_prop) {
         /* might have to turn off invoked power too */
@@ -943,7 +983,7 @@ touch_artifact(struct obj *obj, struct monst *mon)
 
     if (((badclass || badalign) && self_willed)
         || (badalign && (!yours || !rn2(4)))) {
-        int dmg, tmp;
+        int dmg;
         char buf[BUFSZ];
 
         if (!yours)
@@ -951,9 +991,10 @@ touch_artifact(struct obj *obj, struct monst *mon)
         You("are blasted by %s power!", s_suffix(the(xname(obj))));
         touch_blasted = TRUE;
         dmg = d((Antimagic ? 2 : 4), (self_willed ? 10 : 4));
-        /* add half (maybe quarter) of the usual silver damage bonus */
-        if (objects[obj->otyp].oc_material == SILVER && Hate_silver)
-            tmp = rnd(10), dmg += Maybe_Half_Phys(tmp);
+        /* add half of the usual material damage bonus */
+        if (Hate_material(obj->material)) {
+            dmg += (rnd(sear_damage(obj->material)) / 2) + 1;
+        }
         Sprintf(buf, "touching %s", oart->name);
         losehp(dmg, buf, KILLED_BY); /* magic damage, not physical */
         exercise(A_WIS, FALSE);
@@ -1041,6 +1082,8 @@ spec_applies(const struct artifact *weap, struct monst *mtmp)
             return !(yours ? Fire_resistance : resists_fire(mtmp));
         case AD_COLD:
             return !(yours ? Cold_resistance : resists_cold(mtmp));
+        case AD_ACID:
+            return !(yours ? Acid_resistance : resists_acid(mtmp));
         case AD_ELEC:
             return !(yours ? Shock_resistance : resists_elec(mtmp));
         case AD_MAGM:
@@ -1510,6 +1553,14 @@ artifact_hit(
         }
         return realizes_damage;
     }
+    if (attacks(AD_ACID, otmp)) {
+        if (realizes_damage) {
+            pline_The("sizzling hose %s %s%c",
+                      !gs.spec_dbon_applies ? "hits" : "melts", hittee,
+                      !gs.spec_dbon_applies ? '.' : '!');
+        }
+        return realizes_damage;
+    }
     if (attacks(AD_ELEC, otmp)) {
         if (realizes_damage)
             pline_The("massive hammer hits%s %s%c",
@@ -1593,59 +1644,23 @@ artifact_hit(
                 return TRUE;
             }
         } else if (is_art(otmp, ART_VORPAL_BLADE)
-                   && (dieroll == 1 || mdef->data == &mons[PM_JABBERWOCK])) {
-            static const char *const behead_msg[2] = { "%s beheads %s!",
-                                                       "%s decapitates %s!" };
-
-            if (youattack && engulfing_u(mdef))
-                return FALSE;
-            wepdesc = artilist[ART_VORPAL_BLADE].name;
-            if (!youdefend) {
-                if (!has_head(mdef->data) || gn.notonhead || u.uswallow) {
-                    if (youattack)
-                        pline("Somehow, you miss %s wildly.", mon_nam(mdef));
-                    else if (vis)
-                        pline("Somehow, %s misses wildly.", mon_nam(magr));
-                    *dmgptr = 0;
-                    return (boolean) (youattack || vis);
-                }
-                if (noncorporeal(mdef->data) || amorphous(mdef->data)) {
-                    pline("%s slices through %s %s.", wepdesc,
-                          s_suffix(mon_nam(mdef)), mbodypart(mdef, NECK));
-                    return TRUE;
-                }
-                *dmgptr = 2 * mdef->mhp + FATAL_DAMAGE_MODIFIER;
-                pline(ROLL_FROM(behead_msg), wepdesc,
-                      mon_nam(mdef));
-                if (Hallucination && !flags.female)
-                    pline("Good job Henry, but that wasn't Anne.");
-                observe_object(otmp);
-                return TRUE;
-            } else {
-                if (!has_head(gy.youmonst.data)) {
-                    pline("Somehow, %s misses you wildly.",
-                          magr ? mon_nam(magr) : wepdesc);
-                    *dmgptr = 0;
-                    return TRUE;
-                }
-                if (noncorporeal(gy.youmonst.data)
-                    || amorphous(gy.youmonst.data)) {
-                    pline("%s slices through your %s.", wepdesc,
-                          body_part(NECK));
-                    return TRUE;
-                }
-                *dmgptr = 2 * (Upolyd ? u.mh : u.uhp) + FATAL_DAMAGE_MODIFIER;
-                pline(ROLL_FROM(behead_msg), wepdesc, "you");
-                observe_object(otmp);
-                /* Should amulets fall off? */
-                return TRUE;
-            }
+                   && (dieroll == 1 || mdef->data == &mons[PM_JABBERWOCK]
+                       || mdef->data == &mons[PM_VORPAL_JABBERWOCK])) {
+            return decapitate(magr, mdef, otmp, dmgptr);
         }
     }
     if (spec_ability(otmp, SPFX_DRLI)) {
         /* some non-living creatures (golems, vortices) are vulnerable to
            life drain effects so can get "<Arti> draws the <life>" feedback */
         const char *life = nonliving(mdef->data) ? "animating force" : "life";
+        if (item_catches_drain(mdef)) {
+            /* This has to go here rather than along with the resists_drli
+             * check; otherwise a drainable item gets drained even if the
+             * attack is a miss.
+             * Return FALSE because no special draining damage happened so we
+             * want the attack to do its regular non-artifact damage. */
+            return FALSE;
+        }
 
         if (!youdefend) {
             int m_lev = (int) mdef->m_lev, /* will be 0 for 1d4 mon */
@@ -1742,6 +1757,93 @@ invoke_ok(struct obj *obj)
         return GETOBJ_SUGGEST;
 
     return GETOBJ_EXCLUDE;
+}
+
+/* getobj callback for object to be transmuted */
+staticfn int
+transmute_ok(struct obj *obj)
+{
+    int new_material;
+    if (!obj)
+        return GETOBJ_EXCLUDE;
+    if (obj->oartifact)
+        return GETOBJ_EXCLUDE;
+    for(new_material = 1; new_material < NUM_MATERIAL_TYPES; new_material++) {
+        if(obj->material != new_material && !valid_obj_material(obj, new_material)) {
+            return GETOBJ_SUGGEST;
+        }
+    }
+    return GETOBJ_EXCLUDE;
+}
+
+boolean
+decapitate(
+    struct monst *magr, /* attacker; might be Null if 'mdef' is youmonst */
+    struct monst *mdef, /* defender */
+    struct obj *otmp,   /* artifact weapon */
+    int *dmgptr)        /* output */
+{
+    boolean youattack = (magr == &gy.youmonst);
+    boolean youdefend = (mdef == &gy.youmonst);
+    boolean vis = (!youattack && magr && cansee(magr->mx, magr->my))
+                  || (!youdefend && cansee(mdef->mx, mdef->my))
+                  || (youattack && engulfing_u(mdef) && !Blind);
+    const char *wepdesc;
+    static const char *const behead_verb[2] = { "behead",
+                                               "decapitate" };
+    if(!magr && !otmp) {
+        impossible("decapitate: who or what is the perpetrator?");
+    }
+    if (youattack && engulfing_u(mdef))
+        return FALSE;
+    wepdesc = (otmp) ? artilist[ART_VORPAL_BLADE].name : NULL;
+    if (!youdefend) {
+        if (!has_head(mdef->data) || gn.notonhead || u.uswallow) {
+            if (youattack)
+                pline("Somehow, you miss %s wildly.", mon_nam(mdef));
+            else if (vis)
+                pline("Somehow, %s misses wildly.", mon_nam(magr));
+            *dmgptr = 0;
+            return (boolean) (youattack || vis);
+        }
+        if (noncorporeal(mdef->data) || amorphous(mdef->data)) {
+            pline("%s slices through %s %s.", wepdesc ? wepdesc : Monnam(magr),
+                  s_suffix(mon_nam(mdef)), mbodypart(mdef, NECK));
+            return TRUE;
+        }
+        *dmgptr = 2 * mdef->mhp + FATAL_DAMAGE_MODIFIER;
+        pline("%s %s%s %s!", (wepdesc ? wepdesc : Monnam(magr)),
+                ROLL_FROM(behead_verb), (wepdesc || !youattack) ? "s" : "",
+                mon_nam(mdef));
+        if (Hallucination && !flags.female)
+            pline("Good job Henry, but that wasn't Anne.");
+        if(otmp) {
+            observe_object(otmp);;
+        }
+        return TRUE;
+    } else {
+        if (!has_head(gy.youmonst.data)) {
+            pline("Somehow, %s misses you wildly.",
+                  magr ? mon_nam(magr) : wepdesc);
+            *dmgptr = 0;
+            return TRUE;
+        }
+        if (noncorporeal(gy.youmonst.data)
+            || amorphous(gy.youmonst.data)) {
+            pline("%s slices through your %s.", (wepdesc ? wepdesc : Monnam(magr)),
+                  body_part(NECK));
+            return TRUE;
+        }
+        *dmgptr = 2 * (Upolyd ? u.mh : u.uhp) + FATAL_DAMAGE_MODIFIER;
+        pline("%s %s%s %s!", (wepdesc ? wepdesc : Monnam(magr)),
+            ROLL_FROM(behead_verb), (wepdesc || !youattack) ? "s" : "",
+            "you");
+        if(otmp) {
+            observe_object(otmp);
+        }
+        /* Should amulets fall off? */
+        return TRUE;
+    }
 }
 
 /* the #invoke command */
@@ -2170,6 +2272,25 @@ arti_invoke(struct obj *obj)
             /*FALLTHRU*/
         case FIRESTORM: res = invoke_storm_spell(obj); break;
         case BLINDING_RAY: res = invoke_blinding_ray(obj); break;
+        case TRANSMUTE: {
+            struct obj *otmp = getobj("transmute", transmute_ok, GETOBJ_PROMPT);
+            if (!otmp) {
+                obj->age = 0;
+                return ECMD_CANCEL;
+            }
+            if(warp_material(otmp, TRUE, select_new_material(otmp))) {
+                pline("Your %s warp%s!", simpleonames(otmp), otmp->quan == 1 ? "s" : "");
+            } else {
+                nothing_special(obj);
+                return ECMD_TIME;
+            }
+            break;
+        }
+        case DISINTEGRATION_FIELD: {
+            #define BLAST_O_DISN (20 + (AD_DISN - 1)) /* value kludge, see zap.c*/
+            explode(u.ux, u.uy, BLAST_O_DISN, d(16,6), TOOL_CLASS, EXPL_MAGICAL);
+            break;
+        }
         default:
             impossible("Unknown invoke power %d.", oart->inv_prop);
             break;
@@ -2325,6 +2446,7 @@ abil_to_adtyp(long *abil)
     } abil2adtyp[] = {
         { &EFire_resistance, AD_FIRE },
         { &ECold_resistance, AD_COLD },
+        { &EAcid_resistance, AD_ACID },
         { &EShock_resistance, AD_ELEC },
         { &EAntimagic, AD_MAGM },
         { &EDisint_resistance, AD_DISN },
@@ -2519,12 +2641,13 @@ retouch_object(
 
     if (touch_artifact(obj, &gy.youmonst)) {
         char buf[BUFSZ];
-        int dmg = 0, tmp;
-        boolean ag = (objects[obj->otyp].oc_material == SILVER && Hate_silver),
+        int dmg = 0;
+        int tmp = 0;
+        boolean hatemat = Hate_material(obj->material),
                 bane = bane_applies(get_artifact(obj), &gy.youmonst);
 
         /* nothing else to do if hero can successfully handle this object */
-        if (!ag && !bane)
+        if (!hatemat && !bane)
             return 1;
 
         /* hero can't handle this object, but didn't get touch_artifact()'s
@@ -2535,7 +2658,7 @@ retouch_object(
         if (!touch_blasted) {
             const char *what = killer_xname(obj);
 
-            if (ag && !obj->oartifact && !bane) {
+            if (hatemat && !obj->oartifact && !bane) {
                 /* 'obj' is silver; for rings and wands it ended up that
                    way due to randomization at start of game; showing this
                    game's silver item without stating that it is silver
@@ -2548,14 +2671,24 @@ retouch_object(
             }
             /* damage is somewhat arbitrary; half the usual 1d20 physical
                for silver, 1d10 magical for <foo>bane, potentially both */
-            if (ag)
-                tmp = rnd(10), dmg += Maybe_Half_Phys(tmp);
+            if (hatemat) {
+                tmp = rnd(10);
+                dmg += Maybe_Half_Phys(tmp);
+            }
             if (bane)
                 dmg += rnd(10);
             Sprintf(buf, "handling %s", what);
             losehp(dmg, buf, KILLED_BY);
             exercise(A_CON, FALSE);
         }
+        /* concession to elves wishing to use iron gear: don't make them
+         * totally unable to use them. In fact, they can touch them just fine
+         * as long as they're willing to.
+         * In keeping with the flavor of searing vs just pain implemented
+         * everywhere else, only silver is actually unbearable -- other
+         * hated non-silver materials can be used too. */
+        if (!bane && !(hatemat && obj->material == SILVER))
+            return 1;
     }
 
     /* removing a worn item might result in loss of levitation,

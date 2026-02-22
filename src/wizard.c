@@ -34,10 +34,12 @@ static NEARDATA const int nasties[] = {
     PM_OWLBEAR, PM_PURPLE_WORM, PM_XAN, PM_UMBER_HULK,
     PM_XORN, PM_ZRUTY, PM_LEOCROTTA, PM_BALUCHITHERIUM,
     PM_CARNIVOROUS_APE, PM_FIRE_ELEMENTAL, PM_JABBERWOCK,
+    PM_VORPAL_JABBERWOCK,
     PM_IRON_GOLEM, PM_OCHRE_JELLY, PM_GREEN_SLIME,
     PM_DISPLACER_BEAST, PM_GENETIC_ENGINEER,
     /* chaotic */
     PM_BLACK_DRAGON, PM_RED_DRAGON, PM_ARCH_LICH, PM_VAMPIRE_LEADER,
+    PM_VAMPIRE_NOBLE,
     PM_MASTER_MIND_FLAYER, PM_DISENCHANTER, PM_WINGED_GARGOYLE,
     PM_STORM_GIANT, PM_OLOG_HAI, PM_ELF_NOBLE, PM_ELVEN_MONARCH,
     PM_OGRE_TYRANT, PM_CAPTAIN, PM_GREMLIN,
@@ -440,6 +442,7 @@ tactics(struct monst *mtmp)
                               distant_name(otmp, doname));
                     obj_extract_self(otmp);
                     (void) mpickobj(mtmp, otmp);
+                    check_gear_next_turn(mtmp);
                     return 1;
                 } else
                     return 0;
@@ -500,6 +503,11 @@ aggravate(void)
         if (!mtmp->mcanmove && !rn2(5)) {
             mtmp->mfrozen = 0;
             mtmp->mcanmove = 1;
+        }
+        if(mtmp->data == &mons[PM_CLOCKWORK_AUTOMATON] &&
+            !mtmp->mspec_used){
+            mtmp->mfrozen = 1;
+            mtmp->mcanmove = 0;
         }
     }
 }

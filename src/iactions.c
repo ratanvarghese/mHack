@@ -336,7 +336,7 @@ itemactions(struct obj *otmp)
     else if (otmp->otyp == SADDLE)
         ia_addmenu(win, IA_APPLY_OBJ, 'a', "Place this saddle on a pet");
     else if (otmp->otyp == MAGIC_WHISTLE
-             || otmp->otyp == TIN_WHISTLE)
+             || otmp->otyp == PEA_WHISTLE)
         ia_addmenu(win, IA_APPLY_OBJ, 'a', "Blow this whistle");
     else if (otmp->otyp == EUCALYPTUS_LEAF)
         ia_addmenu(win, IA_APPLY_OBJ, 'a', "Use this leaf as a whistle");
@@ -362,7 +362,7 @@ itemactions(struct obj *otmp)
             Sprintf(buf, "%s %s %s", light, s, simpleonames(otmp));
         ia_addmenu(win, IA_APPLY_OBJ, 'a', buf);
     } else if (otmp->otyp == OIL_LAMP || otmp->otyp == MAGIC_LAMP
-               || otmp->otyp == BRASS_LANTERN) {
+               || otmp->otyp == LANTERN) {
         Sprintf(buf, "%s this light source", light);
         ia_addmenu(win, IA_APPLY_OBJ, 'a', buf);
     } else if (otmp->otyp == POT_OIL && objects[otmp->otyp].oc_name_known) {
@@ -380,6 +380,8 @@ itemactions(struct obj *otmp)
                    "Clean yourself off with this towel");
     else if (otmp->otyp == CRYSTAL_BALL)
         ia_addmenu(win, IA_APPLY_OBJ, 'a', "Peer into this crystal ball");
+    else if (otmp->otyp == CONICAL_FLASK)
+        ia_addmenu(win, IA_APPLY_OBJ, 'a', "Test mixing potions with this flask");
     else if (otmp->otyp == MAGIC_MARKER)
         ia_addmenu(win, IA_APPLY_OBJ, 'a',
                    "Write on something with this marker");
@@ -390,7 +392,7 @@ itemactions(struct obj *otmp)
     else if (otmp->otyp == HORN_OF_PLENTY
              && objects[otmp->otyp].oc_name_known)
         ia_addmenu(win, IA_APPLY_OBJ, 'a', "Blow into the horn of plenty");
-    else if (otmp->otyp >= WOODEN_FLUTE && otmp->otyp <= DRUM_OF_EARTHQUAKE)
+    else if (otmp->otyp >= FLUTE && otmp->otyp <= DRUM_OF_EARTHQUAKE)
         ia_addmenu(win, IA_APPLY_OBJ, 'a', "Play this musical instrument");
     else if (otmp->otyp == LAND_MINE || otmp->otyp == BEARTRAP)
         ia_addmenu(win, IA_APPLY_OBJ, 'a', "Arm this trap");
@@ -554,7 +556,7 @@ itemactions(struct obj *otmp)
         ia_addmenu(win, IA_TAKEOFF_OBJ, 'R', buf);
     }
     if (otmp->otyp == OIL_LAMP || otmp->otyp == MAGIC_LAMP
-        || otmp->otyp == BRASS_LANTERN) {
+        || otmp->otyp == LANTERN) {
         Sprintf(buf, "Rub this %s", simpleonames(otmp));
         ia_addmenu(win, IA_RUB_OBJ, 'R', buf);
     } else if (otmp->oclass == GEM_CLASS && is_graystone(otmp))
@@ -608,7 +610,7 @@ itemactions(struct obj *otmp)
     if (otmp == uwep || cantwield(gy.youmonst.data)) {
         ; /* either already wielded or can't wield anything; skip 'w' */
     } else if (otmp->oclass == WEAPON_CLASS || is_weptool(otmp)
-               || is_wet_towel(otmp) || otmp->otyp == HEAVY_IRON_BALL) {
+               || is_wet_towel(otmp) || otmp->otyp == HEAVY_BALL) {
         Sprintf(buf, "Wield this %s as your weapon",
                 (otmp->quan > 1L) ? "stack" : "item");
         ia_addmenu(win, IA_WIELD_OBJ, 'w', buf);

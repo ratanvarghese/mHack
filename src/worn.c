@@ -148,6 +148,7 @@ setnotworn(struct obj *obj)
 {
     const struct worn *wp;
     int p;
+    int was_blind = Blemmye_blindness(&gy.youmonst);
 
     if (!obj)
         return;
@@ -171,6 +172,15 @@ setnotworn(struct obj *obj)
         }
     if (!uarm)
         iflags.tux_penalty = FALSE;
+
+    if (was_blind && !Blind){
+        You("can see again.");
+        /* blindness has just been toggled */
+        if (Blind_telepat || Infravision)
+            see_monsters();
+        gv.vision_full_recalc = 1; /* recalc vision limits */
+        disp.botl = TRUE;
+    }
     update_inventory();
     recalc_telepat_range();
 }
@@ -580,6 +590,14 @@ update_mon_extrinsics(
     int which = (int) objects[obj->otyp].oc_oprop,
         altwhich = altprop(obj);
 
+    if(arti_golden_touch(obj)) {
+        if(!which) {
+            which = GOLD_TOUCH;
+        } else if(!altwhich) {
+            altwhich = GOLD_TOUCH;
+        }
+    }
+
     unseen = !canseemon(mon);
     if (!which && !altwhich)
         goto maybe_blocks;
@@ -596,6 +614,10 @@ update_mon_extrinsics(
                 gi.in_mklev = TRUE;
             mon_adjust_speed(mon, 0, obj);
             gi.in_mklev = save_in_mklev;
+            break;
+        }
+        case GOLD_TOUCH: {
+            mon->mgoldtouch = TRUE;
             break;
         }
         /* properties handled elsewhere */
@@ -633,6 +655,10 @@ update_mon_extrinsics(
                 gi.in_mklev = TRUE;
             mon_adjust_speed(mon, 0, obj);
             gi.in_mklev = save_in_mklev;
+            break;
+        }
+        case GOLD_TOUCH: {
+            mon->mgoldtouch = FALSE;
             break;
         }
         case FIRE_RES:
@@ -860,6 +886,8 @@ m_dowear_type(
             /* (flimsy exception matches polyself handling) */
             if (has_horns(mon->data) && !is_flimsy(obj))
                 continue;
+            if (!has_head(mon->data))
+                continue;
             break;
         case W_ARMS:
             if (!is_shield(obj))
@@ -877,6 +905,8 @@ m_dowear_type(
             if (!is_suit(obj))
                 continue;
             if (racialexception && (racial_exception(mon, obj) < 1))
+                continue;
+            if (!has_head(mon->data))
                 continue;
             break;
         }
@@ -1276,7 +1306,7 @@ mon_break_armor(struct monst *mon, boolean polyspot)
             m_lose_armor(mon, otmp, polyspot);
         }
     }
-    if (handless_or_tiny || has_horns(mdat)) {
+    if (handless_or_tiny || has_horns(mdat) || !has_head(mdat)) {
         if ((otmp = which_armor(mon, W_ARMH)) != 0
             /* flimsy test for horns matches polyself handling */
             && (handless_or_tiny || !is_flimsy(otmp))) {

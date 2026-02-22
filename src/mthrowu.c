@@ -136,10 +136,11 @@ thitu(
             potionhit(&gy.youmonst, obj, POTHIT_OTHER_THROW);
             *objp = obj = 0; /* potionhit() uses up the potion */
         } else {
-            if (obj && objects[obj->otyp].oc_material == SILVER
-                && Hate_silver) {
-                /* extra damage already applied by dmgval() */
-                pline_The("silver sears your flesh!");
+            if (obj && Hate_material(obj->material)) {
+                /* extra damage already applied by dmgval();
+                 * dmgval is not called in this function but we assume that the
+                 * caller used it when constructing the dmg parameter */
+                searmsg((struct monst *) 0, &gy.youmonst, obj, TRUE);
                 exercise(A_CON, FALSE);
             }
             if (is_acid) {
@@ -168,6 +169,8 @@ drop_throw(
 
     if (obj->otyp == CREAM_PIE || obj->oclass == VENOM_CLASS
         || (ohit && obj->otyp == EGG)) {
+        broken = TRUE;
+    } else if (!IS_SOFT(levl[x][y].typ) && breaktest(obj)) {
         broken = TRUE;
     } else {
         broken = (ohit && should_mulch_missile(obj));
@@ -247,6 +250,8 @@ monmulti(
             || (is_gnome(mtmp->data) && otmp->otyp == CROSSBOW_BOLT
                 && mwep && mwep->otyp == CROSSBOW))
             multishot++;
+        if( mtmp->data == &mons[PM_POLTERGEIST])
+          multishot += (curr_mon_load(mtmp) * 2) / max_mon_load(mtmp);
     }
 
     if (otmp->quan < multishot)
@@ -366,7 +371,6 @@ ohitmon(
         potionhit(mtmp, otmp, POTHIT_OTHER_THROW);
         return 1;
     } else {
-        int material = objects[otmp->otyp].oc_material;
         boolean harmless = (stone_missile(otmp) && passes_rocks(mtmp->data));
 
         damage = dmgval(otmp, mtmp);
@@ -399,8 +403,25 @@ ohitmon(
             pline("%s%s is hit%s", (otmp->otyp == EGG) ? "Splat!  " : "",
                   Monnam(mtmp), exclam(damage));
 
+        if (touch_disintegrates(mtmp->data) && !mtmp->mcan && mtmp->mhp>6 &&
+            !oresist_disintegration(otmp)){
+            damage = otmp->owt;
+            weight_dmg(damage);
+            mtmp->mhp-=damage;
+            if(gv.vis)
+                pline("It disintegrates!"); 
+            obfree(otmp, (struct obj*) 0);
+            return TRUE;
+        }
+
+
         if (otmp->opoisoned && is_poisonable(otmp)) {
-            if (resists_poison(mtmp)) {
+            if (otmp->opoisoned != POT_SICKNESS) {
+                struct obj *pseudo = mksobj(otmp->opoisoned, FALSE, FALSE);
+                pseudo->blessed = 0;
+                pseudo->cursed = 1;
+                potionhit(mtmp, pseudo, POTHIT_MONST_WEP);
+            } else if (resists_poison(mtmp)) {
                 if (vis)
                     pline_The("poison doesn't seem to affect %s.",
                               mon_nam(mtmp));
@@ -414,20 +435,9 @@ ohitmon(
                 }
             }
         }
-        if (material == SILVER && mon_hates_silver(mtmp)) {
-            boolean flesh = (!noncorporeal(mtmp->data)
-                             && !amorphous(mtmp->data));
-
-            /* note: extra silver damage is handled by dmgval() */
-            if (vis) {
-                char *m_name = mon_nam(mtmp);
-
-                if (flesh) /* s_suffix returns a modifiable buffer */
-                    m_name = strcat(s_suffix(m_name), " flesh");
-                pline_The("silver sears %s!", m_name);
-            } else if (verbose && !gm.mtarget) {
-                pline("%s is seared!", flesh ? "Its flesh" : "It");
-            }
+        if (mon_hates_material(mtmp, otmp->material)) {
+            /* Extra damage is already handled in dmgval(). */
+            searmsg((struct monst *) 0, mtmp, otmp, vis);
         }
         if (otmp->otyp == ACID_VENOM && cansee(mtmp->mx, mtmp->my)) {
             if (resists_acid(mtmp)) {
@@ -439,7 +449,17 @@ ohitmon(
                 else if (verbose && !gm.mtarget)
                     pline("It is burned!");
             }
+        } else if (otmp->otyp == WATER_VENOM) {
+            if (completelyrusts(mtmp->data)) {
+                if (canseemon(mtmp))
+                    pline("%s rusts.", Monnam(mtmp));
+                damage=d(1,6);
+            } else if(mtmp->data == &mons[PM_GREMLIN]){
+                (void)split_mon(mtmp,(struct monst *)0);
+            }
+            water_damage(which_armor(mtmp, W_ARM), 0, FALSE);
         }
+
         if (otmp->otyp == EGG && touch_petrifies(&mons[otmp->corpsenm])) {
             if (!munstone(mtmp, FALSE))
                 minstapetrify(mtmp, FALSE);
@@ -688,6 +708,7 @@ m_throw(
                 /*FALLTHRU*/
             case CREAM_PIE:
             case BLINDING_VENOM:
+            case WATER_VENOM:
                 hitu = thitu(8, 0, &singleobj, (char *) 0);
                 break;
             default:
@@ -723,7 +744,7 @@ m_throw(
                 poisoned(onmbuf, A_STR, knmbuf,
                          /* if damage triggered life-saving,
                             poison is limited to attrib loss */
-                         (u.umortality > oldumort) ? 0 : 10, TRUE);
+                         (u.umortality > oldumort) ? 0 : 10, TRUE, singleobj->opoisoned);
             }
             if (hitu && can_blnd((struct monst *) 0, &gy.youmonst,
                                  (uchar) ((singleobj->otyp == BLINDING_VENOM)
@@ -749,6 +770,18 @@ m_throw(
                         Your("%s %s.", eyes, vtense(eyes, "sting"));
                 }
             }
+
+            if (hitu && singleobj->otyp == WATER_VENOM) {
+                if (u.umonnum == PM_GREMLIN){
+                    (void)split_mon(&gy.youmonst, (struct monst *)0);
+                } else if (completelyrusts(gy.youmonst.data)) {
+                    You("rust!");
+                    rehumanize();
+                }
+                (void) water_damage(uarm, 0, FALSE);
+            } 
+
+
             if (hitu && singleobj->otyp == EGG) {
                 if (!Stoned && !Stone_resistance
                     && !(poly_when_stoned(gy.youmonst.data)
@@ -1012,6 +1045,9 @@ spitmm(struct monst *mtmp, struct attack *mattk, struct monst *mtarg)
         case AD_DRST:
             otmp = mksobj(BLINDING_VENOM, TRUE, FALSE);
             break;
+        case AD_RUST:
+            otmp = mksobj(WATER_VENOM, TRUE, FALSE);
+            break;
         default:
             impossible("bad attack type in spitmm");
             FALLTHROUGH;
@@ -1022,7 +1058,7 @@ spitmm(struct monst *mtmp, struct attack *mattk, struct monst *mtarg)
         }
         if (!rn2(BOLT_LIM-distmin(mtmp->mx,mtmp->my,tx,ty))) {
             if (canseemon(mtmp))
-                pline("%s spits venom!", Monnam(mtmp));
+                pline("%s spits %s!", Monnam(mtmp),(mattk->adtyp==AD_RUST?"water":"venom"));
             if (!utarg)
                 gm.mtarget = mtarg;
             m_throw(mtmp, mtmp->mx, mtmp->my, sgn(gt.tbx), sgn(gt.tby),
@@ -1151,9 +1187,11 @@ thrwmu(struct monst *mtmp)
     int rang;
     const struct throw_and_return_weapon *arw;
     boolean always_toss = FALSE;
+    boolean mon_likes_throw = (mtmp->data == &mons[PM_POLTERGEIST]);
 
     /* Rearranged beginning so monsters can use polearms not in a line */
-    if (mtmp->weapon_check == NEED_WEAPON || !MON_WEP(mtmp)) {
+    if (!mon_likes_throw &&
+        (mtmp->weapon_check == NEED_WEAPON || !MON_WEP(mtmp))) {
         mtmp->weapon_check = NEED_RANGED_WEAPON;
         /* mon_wield_item resets weapon_check as appropriate */
         if (mon_wield_item(mtmp) != 0)
@@ -1162,10 +1200,13 @@ thrwmu(struct monst *mtmp)
 
     /* Pick a weapon */
     otmp = select_rwep(mtmp);
-    if (!otmp)
+    if (!otmp){
+        if (mon_likes_throw)
+            monflee(mtmp, 3, TRUE, FALSE);
         return;
+    }
 
-    if (is_pole(otmp)) {
+    if (is_pole(otmp) && !mon_likes_throw) {
         int dam, hitv;
 
         if (otmp != MON_WEP(mtmp))
@@ -1214,6 +1255,10 @@ thrwmu(struct monst *mtmp)
         rang = dist2(mtmp->mx, mtmp->my, mtmp->mux, mtmp->muy);
         if (rang > arw->range || !couldsee(mtmp->mx, mtmp->my))
             return; /* Out of range, or intervening wall */
+        always_toss = TRUE;
+    }
+
+    if (mon_likes_throw) {
         always_toss = TRUE;
     }
 
@@ -1425,13 +1470,13 @@ hit_bars(
             static const char *const barsounds[] = {
                 "", "Whang", "Whap", "Flapp", "Clink", "Clonk"
             };
-            int bsindx = (obj_type == BOULDER || obj_type == HEAVY_IRON_BALL)
+            int bsindx = (obj_type == BOULDER || obj_type == HEAVY_BALL)
                          ? 1
                          : harmless_missile(otmp) ? 2
                          : is_flimsy(otmp) ? 3
                          : (otmp->oclass == COIN_CLASS
-                            || objects[obj_type].oc_material == GOLD
-                            || objects[obj_type].oc_material == SILVER)
+                            || otmp->material == GOLD
+                            || otmp->material == SILVER)
                            ? 4
                            : SIZE(barsounds) - 1;
 
@@ -1443,11 +1488,11 @@ hit_bars(
             noise = 4 * 4;
 
         if (your_fault && (otmp->otyp == WAR_HAMMER
-                           || otmp->otyp == HEAVY_IRON_BALL)) {
-            /* iron ball isn't a weapon or wep-tool so doesn't use obj->spe;
+                           || otmp->otyp == HEAVY_BALL)) {
+            /* heavy ball isn't a weapon or wep-tool so doesn't use obj->spe;
                weight is normally 480 but can be increased by increments
                of 160 (scrolls of punishment read while already punished) */
-            int spe = ((otmp->otyp == HEAVY_IRON_BALL) /* 3+ for iron ball */
+            int spe = ((otmp->otyp == HEAVY_BALL) /* 3+ for iron ball */
                        ? ((int) otmp->owt / WT_IRON_BALL_INCR)
                        : otmp->spe);
             /* chance: used in saving throw for the bars; more likely to
@@ -1499,7 +1544,7 @@ hits_bars(
             hits = (obj_type != SKELETON_KEY && obj_type != LOCK_PICK
                     && obj_type != CREDIT_CARD && obj_type != TALLOW_CANDLE
                     && obj_type != WAX_CANDLE && obj_type != LENSES
-                    && obj_type != TIN_WHISTLE && obj_type != MAGIC_WHISTLE);
+                    && obj_type != PEA_WHISTLE && obj_type != MAGIC_WHISTLE);
             break;
         case ROCK_CLASS: /* includes boulder */
             if (obj_type != STATUE || mons[otmp->corpsenm].msize > MZ_TINY)

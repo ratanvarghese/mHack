@@ -140,7 +140,7 @@ float_vs_flight(void)
         BFlying &= ~I_SPECIAL;
     /* being trapped on the ground (bear trap, web, molten lava survived
        with fire resistance, former lava solidified via cold, tethered
-       to a buried iron ball) overrides floating--the floor is reachable */
+       to a buried heavy ball) overrides floating--the floor is reachable */
     if ((HLevitation || ELevitation) && stuck_in_floor)
         BLevitation |= I_SPECIAL;
     else
@@ -666,7 +666,9 @@ polyself(int psflags)
         } else if (isvamp) {
  do_vampyr:
             if (mntmp < LOW_PM || (mons[mntmp].geno & G_UNIQ)) {
-                mntmp = (gy.youmonst.data == &mons[PM_VAMPIRE_LEADER]
+                mntmp = ((gy.youmonst.data == &mons[PM_VAMPIRE_LEADER]
+                          || gy.youmonst.data == &mons[PM_VAMPIRE_NOBLE]
+                          || gy.youmonst.data == &mons[PM_VAMPIRE_MAGE])
                          && !rn2(10)) ? PM_WOLF
                                       : !rn2(4) ? PM_FOG_CLOUD
                                                 : PM_VAMPIRE_BAT;
@@ -714,6 +716,10 @@ polyself(int psflags)
     gs.sex_change_ok--; /* reset */
 
  made_change:
+    if(gy.youmonst.data == &mons[PM_BANDERSNATCH]) {
+        HUnchanging=-1L;
+        pline("You have a feeling of permanency.");
+    }
     new_light = emits_light(gy.youmonst.data);
     if (old_light != new_light) {
         if (old_light)
@@ -800,10 +806,18 @@ polymon(int mntmp)
     Strcat(buf, pmname(&mons[mntmp], flags.female ? FEMALE : MALE));
     You("%s %s!", (u.umonnum != mntmp) ? "turn into" : "feel like", an(buf));
 
-    if (Stoned && poly_when_stoned(&mons[mntmp])) {
-        /* poly_when_stoned already checked stone golem genocide */
-        mntmp = PM_STONE_GOLEM;
-        make_stoned(0L, "You turn to stone!", 0, (char *) 0);
+    if (Stoned && poly_when_petrified(&mons[mntmp], u.petrify_material)) {
+        /* poly_when_stoned already checked golem genocide */
+        mntmp = determine_polymon(u.petrify_material);
+
+        if (u.petrify_material == GOLD) {
+            make_stoned(0L, "You turn to gold!", 0, (char *) 0);
+        } else if (u.petrify_material == MINERAL) {
+            make_stoned(0L, "You turn to stone!", 0, (char *) 0);
+        } else {
+            impossible("polymon: u.petrify_material %d?", u.petrify_material);
+            make_stoned(0L, "You turn to something!", 0, (char *) 0);
+        }
     }
 
     u.mtimedone = rn1(500, 500);
@@ -1032,11 +1046,15 @@ polymon(int mntmp)
 
         if (can_breathe(uptr))
             pline(use_thec, monsterc, "use your breath weapon");
-        if (attacktype(uptr, AT_SPIT))
+        if (uptr == &mons[PM_WATERSPOUT_GARGOYLE])
+            pline(use_thec, monsterc, "spit water");
+        else if (attacktype(uptr, AT_SPIT))
             pline(use_thec, monsterc, "spit venom");
         if (uptr->mlet == S_NYMPH)
-            pline(use_thec, monsterc, "remove an iron ball");
-        if (attacktype(uptr, AT_GAZE))
+            pline(use_thec, monsterc, "remove a heavy ball");
+        if (gy.youmonst.data == &mons[PM_JUBJUB_BIRD])
+            pline(use_thec,monsterc,"screech at monsters");
+        else if (attacktype(uptr, AT_GAZE))
             pline(use_thec, monsterc, "gaze at monsters");
         if (might_hide && webmaker(uptr))
             pline(use_thec, monsterc, "hide or to spin a web");
@@ -1164,24 +1182,37 @@ break_armor(void)
             if (otmp->lamplit)
                 end_burn(otmp, FALSE);
 
-            You("break out of your armor!");
-            exercise(A_STR, FALSE);
-            (void) Armor_gone();
-            useup(otmp);
+            if (otmp->material == SLIME) {
+                Your("armor contorts to fit you.");
+            } else {
+                You("break out of your armor!");
+                exercise(A_STR, FALSE);
+                (void) Armor_gone();
+                useup(otmp);
+            }
         }
         if ((otmp = uarmc) != 0
             /* mummy wrapping adapts to small and very big sizes */
             && (otmp->otyp != MUMMY_WRAPPING || !WrappingAllowed(uptr))) {
-            pline_The("clasp on your %s breaks open!", cloak_simple_name(otmp));
-            (void) Cloak_off();
-            dropp(otmp);
+            if (otmp->material == SLIME) {
+                Your("%s stretches to fit you.", cloak_simple_name(otmp));
+            } else {
+                pline_The("clasp on your %s breaks open!", cloak_simple_name(otmp));
+                (void) Cloak_off();
+                dropp(otmp);
+            }
         }
-        if (uarmu) {
-            Your("shirt rips to shreds!");
-            useup(uarmu);
+        if ((otmp = uarmu) != 0) {
+            if (otmp->material == SLIME) {
+                Your("shirt expands to fit you.");
+            } else {
+                Your("shirt rips to shreds!");
+                useup(uarmu);
+            }
         }
     } else if (sliparm(uptr)) {
-        if ((otmp = uarm) != 0 && racial_exception(&gy.youmonst, otmp) < 1) {
+        if ((otmp = uarm) != 0 && racial_exception(&gy.youmonst, otmp) < 1
+            && otmp->material != SLIME) {
             if (donning(otmp))
                 cancel_don();
             Your("armor falls around you!");
@@ -1195,20 +1226,30 @@ break_armor(void)
         if ((otmp = uarmc) != 0
             /* mummy wrapping adapts to small and very big sizes */
             && (otmp->otyp != MUMMY_WRAPPING || !WrappingAllowed(uptr))) {
-            if (is_whirly(uptr))
+            if (is_whirly(gy.youmonst.data)) {
                 Your("%s falls, unsupported!", cloak_simple_name(otmp));
-            else
+                (void) Cloak_off();
+                dropp(otmp);
+            } else if (otmp->material == SLIME)
+                Your("%s shrinks to fit you.", cloak_simple_name(otmp));
+            else {
                 You("shrink out of your %s!", cloak_simple_name(otmp));
-            (void) Cloak_off();
-            dropp(otmp);
+                (void) Cloak_off();
+                dropp(otmp);
+            }
         }
         if ((otmp = uarmu) != 0) {
-            if (is_whirly(uptr))
+            if (is_whirly(gy.youmonst.data)) {
                 You("seep right through your shirt!");
-            else
+                setworn((struct obj *) 0, otmp->owornmask & W_ARMU);
+                dropp(otmp);
+            } else if (otmp->material == SLIME)
+                Your("%s shrinks to fit you.", shirt_simple_name(otmp));
+            else {
                 You("become much too small for your shirt!");
-            setworn((struct obj *) 0, otmp->owornmask & W_ARMU);
-            dropp(otmp);
+                setworn((struct obj *) 0, otmp->owornmask & W_ARMU);
+                dropp(otmp);
+            }
         }
     }
     if (has_horns(uptr)) {
@@ -1367,6 +1408,15 @@ rehumanize(void)
             Your("%s %s!", simpleonames(uamul), otense(uamul, "fail"));
             observe_object(uamul);
             makeknown(AMULET_OF_UNCHANGING);
+        } else if (gy.youmonst.data == &mons[PM_CLOCKWORK_AUTOMATON] && 
+            u.uhs >= 4 ) { /* FAINTING */
+            u.uhs = 6; /* STARVED */
+            disp.botl = TRUE;
+            bot();
+            Your("clockwork completely unwinds.");
+            svk.killer.format = NO_KILLER_PREFIX;
+            Sprintf(svk.killer.name, "%s ticker stopped", uhis());
+            done(STARVING);
         }
     }
 
@@ -1446,6 +1496,10 @@ dospit(void)
         case AD_BLND:
         case AD_DRST:
             otmp = mksobj(BLINDING_VENOM, TRUE, FALSE);
+            break;
+        case AD_SCLD:
+        case AD_RUST:
+            otmp = mksobj(WATER_VENOM, TRUE, FALSE);
             break;
         default:
             impossible("bad attack type in dospit");
@@ -1637,12 +1691,15 @@ dogaze(void)
             break;
         }
     }
-    if (adtyp != AD_CONF && adtyp != AD_FIRE) {
+    if (adtyp == AD_HNGY)
+        adtyp = AD_CONF;
+    if (adtyp != AD_CONF && adtyp != AD_FIRE
+        && adtyp != AD_PLYS && adtyp != AD_DRIN) {
         impossible("gaze attack %d?", adtyp);
         return ECMD_OK;
     }
 
-    if (Blind) {
+    if (Blind && adtyp != AD_DRIN) {
         You_cant("see anything to gaze at.");
         return ECMD_OK;
     } else if (Hallucination) {
@@ -1650,7 +1707,8 @@ dogaze(void)
         return ECMD_OK;
     }
     if (u.uen < 15) {
-        You("lack the energy to use your special gaze!");
+        You("lack the energy to use your special %s!",
+            (adtyp == AD_DRIN)?"squawk":"gaze");
         return ECMD_OK;
     }
     u.uen -= 15;
@@ -1659,6 +1717,36 @@ dogaze(void)
     for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
         if (DEADMONSTER(mtmp))
             continue;
+        if (adtyp == AD_DRIN && couldsee(mtmp->mx, mtmp->my)){
+            looked++;
+            mtmp->msleeping = 0;
+            if(mindless(mtmp->data))
+                pline("%s doesn't seems to care about your squawk.", Monnam(mtmp));
+            else if (flags.safe_dog && !Confusion && !Hallucination &&
+                mtmp->mtame)
+                You("avoid squaking too loudly at %s.", y_monnam(mtmp));
+            else {
+                if(flags.confirm && mtmp->mpeaceful && !Confusion
+                    && !Hallucination) {
+                    Sprintf(qbuf, "Really screech at %s?", mon_nam(mtmp));
+                    if (ynq(qbuf) != 'y')
+                        continue;
+                    setmangry(mtmp, TRUE);
+                    if (!mtmp->mconf)
+                        Your("screech confuses %s!", mon_nam(mtmp));
+                    else
+                        pline("%s is getting more and more confused.",
+                          Monnam(mtmp));
+                    mtmp->mconf = 1;
+                        if (!resist(mtmp, SPBOOK_CLASS, 0, NOTELL))
+                            monflee(mtmp, 0, FALSE, FALSE);
+                    else
+                        pline("But %s is not afraid.", mon_nam(mtmp));
+                }
+            }
+            continue;
+        }
+
         if (canseemon(mtmp) && couldsee(mtmp->mx, mtmp->my)) {
             looked++;
             if (Invis && !perceives(mtmp->data)) {
@@ -1674,7 +1762,8 @@ dogaze(void)
             } else {
                 if (flags.confirm && mtmp->mpeaceful && !Confusion) {
                     Sprintf(qbuf, "Really %s %s?",
-                            (adtyp == AD_CONF) ? "confuse" : "attack",
+                            (adtyp == AD_CONF) ? "confuse" :
+                            ((adtyp == AD_PLYS)? "frighten" : "attack"),
                             mon_nam(mtmp));
                     if (y_n(qbuf) != 'y')
                         continue;
@@ -1711,7 +1800,14 @@ dogaze(void)
                         mtmp->mhp -= dmg;
                     if (DEADMONSTER(mtmp))
                         killed(mtmp);
+                } else if (adtyp == AD_PLYS) { /* really it's frighten */
+                    if (! resist(mtmp, SPBOOK_CLASS, 0, NOTELL) || 
+                         is_undead(mtmp->data) || is_demon(mtmp->data))
+                        monflee(mtmp, 0, FALSE, FALSE);
+                    else
+                        pline("%s is not afraid.", Monnam(mtmp));
                 }
+
                 /* For consistency with passive() in uhitm.c, this only
                  * affects you if the monster is still alive.
                  */
@@ -1752,7 +1848,8 @@ dogaze(void)
         }
     }
     if (!looked)
-        You("gaze at no place in particular.");
+        You("%s at no place in particular.",
+            (adtyp == AD_DRIN)?"squawk":"gaze");
     return ECMD_TIME;
 }
 
@@ -2045,6 +2142,7 @@ mbodypart(struct monst *mon, int part)
 
     /* some special cases */
     if (mptr->mlet == S_DOG || mptr->mlet == S_FELINE
+        || mptr == &mons[PM_POOKA]
         || mptr->mlet == S_RODENT || mptr == &mons[PM_OWLBEAR]) {
         switch (part) {
         case HAND:
@@ -2065,9 +2163,19 @@ mbodypart(struct monst *mon, int part)
     }
     if ((part == HAND || part == HANDED)
         && (humanoid(mptr) && attacktype(mptr, AT_CLAW)
-            && !strchr(not_claws, mptr->mlet) && mptr != &mons[PM_STONE_GOLEM]
+            && (!strchr(not_claws, mptr->mlet) && mptr == &mons[PM_NOSFERATU])
+            && mptr != &mons[PM_STONE_GOLEM]
+            && mptr != &mons[PM_BLEMMYE]
             && mptr != &mons[PM_AMOROUS_DEMON]))
         return (part == HAND) ? "claw" : "clawed";
+    if (mptr == &mons[PM_BLEMMYE]) {
+        if (part == HEAD)
+            return "shoulders";
+        else if (part == NECK)
+            return "torso";
+        else if (part == LIGHT_HEADED)
+            return "addlebrained";
+    }
     if ((mptr == &mons[PM_MUMAK] || mptr == &mons[PM_MASTODON])
         && part == NOSE)
         return "trunk";
@@ -2090,7 +2198,7 @@ mbodypart(struct monst *mon, int part)
         || mptr == &mons[PM_KI_RIN]
         || (mptr == &mons[PM_ROTHE] && part != HAIR))
         return horse_parts[part];
-    if (mptr->mlet == S_LIGHT) {
+    if (mptr->mlet == S_LIGHT || mptr == &mons[PM_QUARK]) {
         if (part == HANDED)
             return "rayed";
         else if (part == ARM || part == FINGER || part == FINGERTIP
@@ -2233,6 +2341,8 @@ polysense(void)
         break;
     case PM_VAMPIRE:
     case PM_VAMPIRE_LEADER:
+    case PM_VAMPIRE_NOBLE:
+    case PM_VAMPIRE_MAGE:
         svc.context.warntype.polyd = M2_HUMAN | M2_ELF;
         HWarn_of_mon |= FROMRACE;
         return;

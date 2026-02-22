@@ -385,6 +385,7 @@ struct you {
     int uhunger;  /* refd only in eat.c and shk.c (also insight.c) */
     unsigned uhs; /* hunger state - see eat.c */
 
+    int petrify_material; /* differentiate between cockatrice and midas */
     struct prop uprops[LAST_PROP + 1];
 
     unsigned umconf;
@@ -521,12 +522,11 @@ struct _hitmon_data {
     struct permonst *mdat;
     boolean use_weapon_skill;
     boolean train_weapon_skill;
-    int barehand_silver_rings;
-    boolean silvermsg;
-    boolean silverobj;
     boolean lightobj;
     int material;
     int jousting;
+    int specialpoison;
+    struct obj *hated_obj;
     boolean hittxt;
     boolean get_dmg_bonus;
     boolean unarmed;
@@ -541,6 +541,8 @@ struct _hitmon_data {
     boolean dryit;
     boolean doreturn;
     boolean retval;
+    boolean needrustmsg;
+    boolean disint_obj;
     char saved_oname[BUFSZ];
 };
 

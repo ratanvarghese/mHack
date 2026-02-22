@@ -631,6 +631,7 @@ regen_hp(int wtcap)
             rehumanize();
         } else if (gy.youmonst.data->mlet == S_EEL
                    && !is_pool(u.ux, u.uy) && !Is_waterlevel(&u.uz)
+                   && !IS_PUDDLE(levl[u.ux][u.uy].typ)
                    && !Breathless) {
             /* eel out of water loses hp, similar to monster eels;
                as hp gets lower, rate of further loss slows down */
@@ -778,6 +779,7 @@ newgame(void)
         svm.mvitals[i].mvflags = mons[i].geno & G_NOCORPSE;
 
     init_objects(); /* must be before u_init() */
+    init_alchemic_recipes();
 
     flags.pantheon = -1; /* role_init() will reset this */
     role_init();         /* must be before init_dungeons(), u_init(),

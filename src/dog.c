@@ -121,13 +121,18 @@ pick_familiar_pm(struct obj *otmp, boolean quietly)
                 pline("... into a pile of dust.");
             return (struct permonst *) 0;
         }
-    } else if (!rn2(3)) {
-        pm = &mons[pet_type()];
     } else {
-        int skill = spell_skilltype(SPE_CREATE_FAMILIAR);
-        int max = 3 * P_SKILL(skill);
-
-        pm = rndmonst_adj(0, max);
+        char familiar_classes[] = {
+            (Inhell ? S_DEMON : S_ANGEL), (Inhell ? S_DEMON : S_ANGEL),
+            S_DRAGON, S_ELEMENTAL, S_GIANT, S_JABBERWOCK,
+            S_LICH, S_NAGA, S_OGRE, S_TROLL, S_XORN, S_GOLEM
+        };
+        int i;
+        char c;
+        for(i = 0; i < 12 && !pm; i++) {
+            c = familiar_classes[rn2(sizeof familiar_classes)];
+            pm = mkclass_aligned(c, 0, u.ualign.type);
+        }
         if (!pm && !quietly)
             There("seems to be nothing available for a familiar.");
     }
@@ -649,7 +654,8 @@ mon_catchup_elapsed_time(
         else
             mtmp->mblinded -= imv;
     }
-    if (mtmp->mfrozen) {
+    if (mtmp->mfrozen &&
+        (mtmp->data != &mons[PM_CLOCKWORK_AUTOMATON] || !mtmp->mspec_used)) {
         if (imv >= (int) mtmp->mfrozen)
             mtmp->mfrozen = 1;
         else
@@ -1061,6 +1067,7 @@ dogfood(struct monst *mon, struct obj *obj)
         case CORPSE:
             if ((peek_at_iced_corpse_age(obj) + 50L <= svm.moves
                  && !(fx == PM_LIZARD || fx == PM_LICHEN)
+                 && mon->data != &mons[PM_OTYUGH]
                  && mptr->mlet != S_FUNGUS)
                 || (acidic(fptr) && !resists_acid(mon))
                 || (poisonous(fptr) && !resists_poison(mon)))
@@ -1077,6 +1084,9 @@ dogfood(struct monst *mon, struct obj *obj)
                      && (!is_undead(mptr) && fptr->mlet != S_KOBOLD
                          && fptr->mlet != S_ORC && fptr->mlet != S_OGRE))
                 return (starving && carni && !is_elf(mptr)) ? ACCFOOD : TABU;
+            else if (obj->corpsenm == PM_FLOATING_EYE &&
+                mptr == &mons[PM_RAVEN])
+                return DOGFOOD;
             else
                 return carni ? CADAVER : MANFOOD;
         case GLOB_OF_GREEN_SLIME: /* other globs use the default case */
@@ -1087,7 +1097,8 @@ dogfood(struct monst *mon, struct obj *obj)
                    : (herbi || starving) ? ACCFOOD
                      : MANFOOD;
         case TIN:
-            return metallivorous(mptr) ? ACCFOOD : MANFOOD;
+            return metallivorous(mptr) && !(mon->data == &mons[PM_GOLD_BUG])
+                ? ACCFOOD : MANFOOD;
         case APPLE:
             return herbi ? DOGFOOD : starving ? ACCFOOD : MANFOOD;
         case CARROT:
@@ -1108,10 +1119,14 @@ dogfood(struct monst *mon, struct obj *obj)
         if (obj->otyp == AMULET_OF_STRANGULATION
             || obj->otyp == RIN_SLOW_DIGESTION)
             return TABU;
-        if (mon_hates_silver(mon) && objects[obj->otyp].oc_material == SILVER)
+        if (mon_hates_material(mon, obj->material))
             return TABU;
         if (mptr == &mons[PM_GELATINOUS_CUBE] && is_organic(obj))
             return ACCFOOD;
+        if ((mon->data == &mons[PM_GOLD_BUG]
+            || mon->data == &mons[PM_SHUGGOTH]
+            || mon->data == &mons[PM_GIANT_SHUGGOTH]) && is_golden(obj))
+            return DOGFOOD;
         if (metallivorous(mptr) && is_metallic(obj)
             && (is_rustprone(obj) || mptr != &mons[PM_RUST_MONSTER])) {
             /* Non-rustproofed ferrous-based metals are preferred. */
@@ -1273,6 +1288,12 @@ tamedog(
     if (attacktype(mtmp->data, AT_WEAP)) {
         mtmp->weapon_check = NEED_HTH_WEAPON;
         (void) mon_wield_item(mtmp);
+    }
+
+    if (monsndx(mtmp->data) == PM_OUROBOROS && canspotmon(mtmp)) {
+        if(discover_random_recipe(STRANGE_OBJECT)) {
+            pline("Eureka!");
+        }
     }
     return TRUE;
 }
