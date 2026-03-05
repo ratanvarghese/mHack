@@ -446,6 +446,9 @@ oname(
             /* prevent any wishes for materials on an artifact */
             obj->material = objects[obj->otyp].oc_material;
         }
+        if(obj->material != objects[obj->otyp].oc_material) {
+            obj->owt = weight(obj);
+        }
     }
     if (carried(obj) && !skip_inv_update)
         update_inventory();

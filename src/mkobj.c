@@ -1878,12 +1878,13 @@ const int matdensities[] = {
     70,  // METAL
     85,  // COPPER
     90,  // SILVER
-   120, /* GOLD */
-   120, /* PLATINUM */
+   120,  // GOLD
+   120,  // PLATINUM
     60,  // ADAMANTINE
     80,  // COLD IRON
-    50, /* MITHRIL */
+    50,  // MITHRIL
     20,  // PLASTIC
+    50,  // SLIME
     60,  // GLASS
     55,  // GEMSTONE
      1,  // SHADOW
@@ -2046,6 +2047,7 @@ const int matac[] = {
      5,  // COLD IRON
      6,  // MITHRIL
      3,  // PLASTIC
+     3,  // SLIME
      5,  // GLASS
      7,  // GEMSTONE
      5,  // SHADOW
