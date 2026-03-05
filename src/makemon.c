@@ -361,7 +361,9 @@ m_initweap(struct monst *mtmp)
             otmp->spe = rn2(4);
             if (typ == MACE) {
                 otmp->spe += 3;
-                otmp->material = SILVER;
+                if(!otmp->oartifact) {
+                    warp_material(otmp, FALSE, SILVER);
+                }
             }
             (void) mpickobj(mtmp, otmp);
 
